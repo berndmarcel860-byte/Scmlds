@@ -5,33 +5,45 @@
  * Provides two functions:
  *   send_confirmation_email(array $data) – confirmation to the user
  *   send_admin_notification(array $data) – new-lead alert to admin
+ *
+ * SMTP credentials are read from the `smtp_settings` DB table first;
+ * config constants are used as a fallback.
  */
 
 require_once __DIR__ . '/../vendor/autoload.php';
 require_once __DIR__ . '/../config/config.php';
+require_once __DIR__ . '/../includes/db.php';
+require_once __DIR__ . '/../includes/functions.php';
 
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 
 /**
- * Build a configured PHPMailer instance.
+ * Build a configured PHPMailer instance using DB SMTP settings (fallback to constants).
  */
 function _build_mailer(): PHPMailer
 {
     $mail = new PHPMailer(true);
 
+    // Prefer DB settings; fall back to config.php constants.
+    $smtp = get_smtp_settings();
+
     $mail->isSMTP();
-    $mail->Host       = SMTP_HOST;
-    $mail->Port       = SMTP_PORT;
+    $mail->Host       = $smtp['host']      ?? SMTP_HOST;
+    $mail->Port       = (int) ($smtp['port']  ?? SMTP_PORT);
     $mail->SMTPAuth   = true;
-    $mail->Username   = SMTP_USER;
-    $mail->Password   = SMTP_PASS;
-    $mail->SMTPSecure = SMTP_SECURE;
-    $mail->SMTPDebug  = SMTP_DEBUG;
+    $mail->Username   = $smtp['username']  ?? SMTP_USER;
+    $mail->Password   = $smtp['password']  ?? SMTP_PASS;
+    $secure           = $smtp['secure']    ?? SMTP_SECURE;
+    $mail->SMTPSecure = ($secure !== 'none') ? $secure : '';
+    $mail->SMTPDebug  = (int) ($smtp['debug'] ?? SMTP_DEBUG);
 
     $mail->CharSet  = 'UTF-8';
     $mail->Encoding = 'base64';
-    $mail->setFrom(FROM_EMAIL, FROM_NAME);
+    $mail->setFrom(
+        $smtp['from_email'] ?? FROM_EMAIL,
+        $smtp['from_name']  ?? FROM_NAME
+    );
 
     return $mail;
 }
@@ -47,7 +59,8 @@ function send_confirmation_email(array $data): bool
     try {
         $mail = _build_mailer();
         $mail->addAddress($data['email'], $data['first_name'] . ' ' . $data['last_name']);
-        $mail->Subject = 'Ihre Fallprüfung bei ' . BRAND_NAME . ' – Eingangsbestätigung';
+        $brandName = get_setting('company_name', BRAND_NAME);
+        $mail->Subject = 'Ihre Fallprüfung bei ' . $brandName . ' – Eingangsbestätigung';
 
         $mail->isHTML(true);
         $mail->Body    = confirmation_email_html($data);
@@ -62,16 +75,20 @@ function send_confirmation_email(array $data): bool
 }
 
 /**
- * Send a new-lead notification to the admin.
+ * Send a new-lead notification to the admin and (optionally) Telegram.
  *
  * @param array $data  Associative array with lead fields.
  * @return bool
  */
 function send_admin_notification(array $data): bool
 {
+    // Telegram notification (non-blocking; failures only logged)
+    send_telegram_notification($data);
+
     try {
+        $adminEmail = get_setting('admin_email', ADMIN_EMAIL);
         $mail = _build_mailer();
-        $mail->addAddress(ADMIN_EMAIL, BRAND_NAME . ' Admin');
+        $mail->addAddress($adminEmail, (get_setting('company_name', BRAND_NAME)) . ' Admin');
         $mail->Subject = '🔔 Neue Falleinreichung – ' . $data['first_name'] . ' ' . $data['last_name'];
 
         $mail->isHTML(true);

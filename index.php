@@ -1,6 +1,9 @@
 <?php
 require_once __DIR__ . '/config/config.php';
-$page_title = 'VerlustRückholung – KI-gestützte Kapitalrückholung bei Anlagebetrug';
+require_once __DIR__ . '/includes/db.php';
+require_once __DIR__ . '/includes/functions.php';
+$page_title   = get_setting('page_title', 'VerlustRückholung – KI-gestützte Kapitalrückholung bei Anlagebetrug');
+$modal_delay  = max(5, (int) get_setting('modal_delay_seconds', '60'));
 $success = isset($_GET['success']) && $_GET['success'] === '1';
 $error   = isset($_GET['error'])   ? htmlspecialchars($_GET['error'], ENT_QUOTES, 'UTF-8') : '';
 ?>
@@ -1432,8 +1435,10 @@ $error   = isset($_GET['error'])   ? htmlspecialchars($_GET['error'], ENT_QUOTES
     </div>
 </div>
 
-<!-- Exit Intent / 60-Second Engagement Modal -->
-<div class="modal fade" id="exitIntentModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+<!-- Exit Intent / Engagement Modal (shown after configurable delay) -->
+<div class="modal fade" id="exitIntentModal" tabindex="-1"
+     data-bs-backdrop="static" data-bs-keyboard="false"
+     data-modal-delay="<?= $modal_delay ?>">
     <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content engagement-modal-content">
             <button type="button" class="btn-close engagement-close" data-bs-dismiss="modal" aria-label="Schließen"></button>
@@ -1484,27 +1489,100 @@ $error   = isset($_GET['error'])   ? htmlspecialchars($_GET['error'], ENT_QUOTES
                         <form action="submit_lead.php" method="POST" id="engagementForm" novalidate>
                             <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
                             <input type="hidden" name="lead_source" value="engagement_modal">
-                            <input type="hidden" name="platform_category" value="Andere">
                             <input type="hidden" name="visit_id" id="visitIdEngagementForm" value="">
+                            <!-- Section 1: Personal details -->
                             <div class="row g-2 mb-3">
-                                <div class="col-6">
-                                    <input type="text" name="first_name" class="form-control" placeholder="Vorname *" required>
+                                <div class="col-sm-6">
+                                    <label class="form-label fw-semibold small">Vorname *</label>
+                                    <input type="text" name="first_name" class="form-control form-control-sm" placeholder="Max" required>
                                     <div class="invalid-feedback">Bitte eingeben.</div>
                                 </div>
-                                <div class="col-6">
-                                    <input type="text" name="last_name" class="form-control" placeholder="Nachname *" required>
+                                <div class="col-sm-6">
+                                    <label class="form-label fw-semibold small">Nachname *</label>
+                                    <input type="text" name="last_name" class="form-control form-control-sm" placeholder="Mustermann" required>
                                     <div class="invalid-feedback">Bitte eingeben.</div>
                                 </div>
-                                <div class="col-12">
-                                    <input type="email" name="email" class="form-control" placeholder="Ihre E-Mail-Adresse *" required>
+                                <div class="col-sm-6">
+                                    <label class="form-label fw-semibold small">E-Mail *</label>
+                                    <input type="email" name="email" class="form-control form-control-sm" placeholder="max@example.de" required>
                                     <div class="invalid-feedback">Bitte gültige E-Mail eingeben.</div>
                                 </div>
+                                <div class="col-sm-6">
+                                    <label class="form-label fw-semibold small">Telefon</label>
+                                    <input type="tel" name="phone" class="form-control form-control-sm" placeholder="+49 123 456789">
+                                </div>
+                                <div class="col-sm-6">
+                                    <label class="form-label fw-semibold small">Land *</label>
+                                    <select name="country" class="form-select form-select-sm" required>
+                                        <option value="">Land auswählen...</option>
+                                        <option value="Deutschland">🇩🇪 Deutschland</option>
+                                        <option value="Österreich">🇦🇹 Österreich</option>
+                                        <option value="Schweiz">🇨🇭 Schweiz</option>
+                                        <option value="USA">🇺🇸 USA</option>
+                                        <option value="Vereinigtes Königreich">🇬🇧 Vereinigtes Königreich</option>
+                                        <option value="Frankreich">🇫🇷 Frankreich</option>
+                                        <option value="Spanien">🇪🇸 Spanien</option>
+                                        <option value="Italien">🇮🇹 Italien</option>
+                                        <option value="Niederlande">🇳🇱 Niederlande</option>
+                                        <option value="Polen">🇵🇱 Polen</option>
+                                        <option value="Türkei">🇹🇷 Türkei</option>
+                                        <option value="Vereinigte Arabische Emirate">🇦🇪 VAE</option>
+                                        <option value="Andere">🌍 Anderes Land</option>
+                                    </select>
+                                    <div class="invalid-feedback">Bitte Land auswählen.</div>
+                                </div>
+                                <div class="col-sm-6">
+                                    <label class="form-label fw-semibold small">Jahr des Verlusts</label>
+                                    <select name="year_lost" class="form-select form-select-sm">
+                                        <option value="">Jahr auswählen...</option>
+                                        <?php for ($y = date('Y'); $y >= 2015; $y--): ?>
+                                        <option value="<?= $y ?>"><?= $y ?></option>
+                                        <?php endfor; ?>
+                                        <option value="2014">Vor 2015</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <!-- Section 2: Case details -->
+                            <div class="row g-2 mb-3">
+                                <div class="col-sm-6">
+                                    <label class="form-label fw-semibold small">Betrag (ca.) *</label>
+                                    <div class="input-group input-group-sm">
+                                        <span class="input-group-text">€</span>
+                                        <input type="number" name="amount_lost" class="form-control" placeholder="10000" min="1" required>
+                                    </div>
+                                    <div class="invalid-feedback">Bitte Betrag eingeben.</div>
+                                </div>
+                                <div class="col-sm-6">
+                                    <label class="form-label fw-semibold small">Betrugsart *</label>
+                                    <select name="platform_category" class="form-select form-select-sm" required>
+                                        <option value="">Betrugsart wählen...</option>
+                                        <option value="Krypto-Betrug">₿ Krypto-Betrug</option>
+                                        <option value="Forex-Betrug">📈 Forex-Betrug</option>
+                                        <option value="Fake-Broker">🏢 Fake-Broker</option>
+                                        <option value="Romance-Scam mit Investitionsbetrug">💔 Romance-Scam</option>
+                                        <option value="Binäre Optionen">📊 Binäre Optionen</option>
+                                        <option value="Andere">❓ Andere</option>
+                                    </select>
+                                    <div class="invalid-feedback">Bitte Betrugsart auswählen.</div>
+                                </div>
                                 <div class="col-12">
-                                    <input type="tel" name="phone" class="form-control" placeholder="Telefonnummer (optional)">
+                                    <label class="form-label fw-semibold small">Kurze Fallbeschreibung *</label>
+                                    <textarea name="case_description" class="form-control form-control-sm" rows="2" required
+                                              placeholder="Was ist passiert? Welche Plattform? Seit wann kein Zugriff?"></textarea>
+                                    <div class="invalid-feedback">Bitte Beschreibung eingeben.</div>
+                                </div>
+                                <div class="col-12">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="engPrivacy" required>
+                                        <label class="form-check-label small text-muted" for="engPrivacy">
+                                            Ich stimme der <a href="#" class="text-primary" data-bs-dismiss="modal" data-bs-toggle="modal" data-bs-target="#privacyModal">Datenschutzerklärung</a> zu. *
+                                        </label>
+                                        <div class="invalid-feedback">Bitte akzeptieren.</div>
+                                    </div>
                                 </div>
                             </div>
                             <button type="submit" class="btn btn-warning btn-lg w-100 fw-bold">
-                                <i class="bi bi-arrow-right-circle me-2"></i>Jetzt kostenlos prüfen lassen
+                                <i class="bi bi-search me-2"></i>Jetzt kostenlos prüfen lassen
                             </button>
                             <div class="text-center mt-2">
                                 <button type="button" class="btn btn-link text-muted small p-0" data-bs-dismiss="modal">

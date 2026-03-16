@@ -510,8 +510,9 @@
         const fpModal = document.getElementById('fallPruefenModal');
         if (fpModal) fpModal.addEventListener('show.bs.modal', () => markEngaged());
 
-        // Trigger after 60 seconds
-        setTimeout(showEngModal, 60000);
+        // Trigger after configurable delay (read from data-modal-delay attribute, default 60s)
+        const delaySeconds = parseInt(engModal.getAttribute('data-modal-delay') || '60', 10);
+        setTimeout(showEngModal, delaySeconds * 1000);
 
         // Also trigger on mouse leaving the viewport (exit intent, desktop only)
         document.addEventListener('mouseleave', e => {

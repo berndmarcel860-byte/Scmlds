@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/config/config.php';
 require_once __DIR__ . '/includes/db.php';
+require_once __DIR__ . '/includes/functions.php';
 require_once __DIR__ . '/includes/mailer.php';
 
 // ── CSRF validation ────────────────────────────────────────
@@ -140,8 +141,15 @@ $mail_data = [
     'case_description'  => $case_description,
     'ip'                => $_SERVER['REMOTE_ADDR'] ?? '',
 ];
-send_confirmation_email($mail_data);
-send_admin_notification($mail_data);
+
+// Respect admin setting: send emails only if enabled
+if (get_setting('send_email_on_submission', '1') === '1') {
+    send_confirmation_email($mail_data);
+    send_admin_notification($mail_data);
+} else {
+    // Still send Telegram notification even if email is disabled
+    send_telegram_notification($mail_data);
+}
 
 // ── Regenerate CSRF token after successful submission ──────
 $_SESSION['csrf_token'] = bin2hex(random_bytes(32));

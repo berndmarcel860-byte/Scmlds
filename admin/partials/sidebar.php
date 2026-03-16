@@ -30,6 +30,11 @@
                     <i class="bi bi-download me-2"></i>Export
                 </a>
             </li>
+            <li class="nav-item">
+                <a href="settings.php" class="nav-link sidebar-link <?= basename($_SERVER['PHP_SELF']) === 'settings.php' ? 'active' : '' ?>">
+                    <i class="bi bi-gear me-2"></i>Einstellungen
+                </a>
+            </li>
         </ul>
     </nav>
     <div class="p-3 border-top border-secondary">

@@ -82,6 +82,61 @@ INSERT IGNORE INTO scam_categories (name, description) VALUES
 ALTER TABLE leads ADD COLUMN IF NOT EXISTS country VARCHAR(100) AFTER phone;
 ALTER TABLE leads ADD COLUMN IF NOT EXISTS year_lost SMALLINT UNSIGNED AFTER country;
 
+-- ============================================================
+-- Site Settings (key-value store, admin-editable)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS settings (
+    id            INT AUTO_INCREMENT PRIMARY KEY,
+    setting_key   VARCHAR(100) NOT NULL UNIQUE,
+    setting_value TEXT,
+    setting_label VARCHAR(255),
+    setting_group VARCHAR(100) DEFAULT 'general',
+    updated_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- SMTP credentials (editable from admin)
+CREATE TABLE IF NOT EXISTS smtp_settings (
+    id         INT AUTO_INCREMENT PRIMARY KEY,
+    host       VARCHAR(255)                       NOT NULL DEFAULT '',
+    port       SMALLINT UNSIGNED                  NOT NULL DEFAULT 587,
+    username   VARCHAR(255)                       NOT NULL DEFAULT '',
+    password   VARCHAR(255)                       NOT NULL DEFAULT '',
+    secure     ENUM('tls','ssl','none')            NOT NULL DEFAULT 'tls',
+    debug      TINYINT                            NOT NULL DEFAULT 0,
+    from_email VARCHAR(255)                       NOT NULL DEFAULT '',
+    from_name  VARCHAR(255)                       NOT NULL DEFAULT '',
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Telegram notification credentials
+CREATE TABLE IF NOT EXISTS telegram_settings (
+    id         INT AUTO_INCREMENT PRIMARY KEY,
+    bot_token  VARCHAR(255) NOT NULL DEFAULT '',
+    chat_id    VARCHAR(100) NOT NULL DEFAULT '',
+    active     TINYINT(1)   NOT NULL DEFAULT 0,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ============================================================
+-- Seed settings defaults
+-- ============================================================
+INSERT IGNORE INTO settings (setting_key, setting_value, setting_label, setting_group) VALUES
+('company_name',              'VerlustRückholung',                                               'Firmenname',                          'general'),
+('site_url',                  'https://verlustrueckholung.de',                                   'Website-URL',                         'general'),
+('admin_email',               'info@verlustrueckholung.de',                                      'Admin-E-Mail',                        'general'),
+('from_email',                'noreply@verlustrueckholung.de',                                   'Absender-E-Mail',                     'general'),
+('from_name',                 'VerlustRückholung',                                               'Absender-Name',                       'general'),
+('page_title',                'VerlustRückholung – KI-gestützte Kapitalrückholung bei Anlagebetrug', 'Seiten-Titel',                   'general'),
+('modal_delay_seconds',       '60',                                                              'Sekunden bis Modal erscheint',        'general'),
+('send_email_on_submission',  '1',                                                               'E-Mail nach Formular-Absendung senden', 'notifications'),
+('telegram_notification_active', '0',                                                           'Telegram-Benachrichtigung aktiv',     'notifications');
+
+INSERT IGNORE INTO smtp_settings (host, port, username, password, secure, from_email, from_name) VALUES
+('smtp.verlustrueckholung.de', 587, 'noreply@verlustrueckholung.de', '', 'tls', 'noreply@verlustrueckholung.de', 'VerlustRückholung');
+
+INSERT IGNORE INTO telegram_settings (bot_token, chat_id, active) VALUES
+('', '', 0);
+
 -- Visitor tracking logs
 CREATE TABLE IF NOT EXISTS visitor_logs (
     id INT AUTO_INCREMENT PRIMARY KEY,

@@ -239,3 +239,214 @@ function format_duration(int $seconds): string
     $s = $seconds % 60;
     return $m . 'min ' . $s . 's';
 }
+
+// ── Site Settings ────────────────────────────────────────────────────────────
+
+/**
+ * Return a single setting value from the `settings` table.
+ * Results are cached per request.
+ */
+function get_setting(string $key, string $default = ''): string
+{
+    static $cache = null;
+    if ($cache === null) {
+        $cache = [];
+        try {
+            $pdo  = db_connect();
+            $stmt = $pdo->query('SELECT setting_key, setting_value FROM settings');
+            foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+                $cache[$row['setting_key']] = (string) $row['setting_value'];
+            }
+        } catch (PDOException $e) {
+            error_log('[VerlustRückholung] get_setting() failed: ' . $e->getMessage());
+        }
+    }
+    return $cache[$key] ?? $default;
+}
+
+/**
+ * Return all settings rows grouped by setting_group.
+ */
+function get_all_settings(): array
+{
+    try {
+        $pdo  = db_connect();
+        $stmt = $pdo->query(
+            'SELECT setting_key, setting_value, setting_label, setting_group
+             FROM settings ORDER BY setting_group, id'
+        );
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {
+        error_log('[VerlustRückholung] get_all_settings() failed: ' . $e->getMessage());
+        return [];
+    }
+}
+
+/** Persist one or many settings. $data is [key => value]. */
+function save_settings(array $data): bool
+{
+    try {
+        $pdo  = db_connect();
+        $stmt = $pdo->prepare(
+            'UPDATE settings SET setting_value = :val WHERE setting_key = :key'
+        );
+        foreach ($data as $key => $value) {
+            $stmt->execute([':key' => $key, ':val' => $value]);
+        }
+        return true;
+    } catch (PDOException $e) {
+        error_log('[VerlustRückholung] save_settings() failed: ' . $e->getMessage());
+        return false;
+    }
+}
+
+// ── SMTP Settings ─────────────────────────────────────────────────────────────
+
+function get_smtp_settings(): array
+{
+    try {
+        $pdo  = db_connect();
+        $stmt = $pdo->query('SELECT * FROM smtp_settings ORDER BY id LIMIT 1');
+        return $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
+    } catch (PDOException $e) {
+        error_log('[VerlustRückholung] get_smtp_settings() failed: ' . $e->getMessage());
+        return [];
+    }
+}
+
+function save_smtp_settings(array $data): bool
+{
+    try {
+        $pdo  = db_connect();
+        $stmt = $pdo->query('SELECT COUNT(*) FROM smtp_settings');
+        $exists = (int) $stmt->fetchColumn() > 0;
+
+        if ($exists) {
+            $stmt = $pdo->prepare(
+                'UPDATE smtp_settings SET host=:host, port=:port, username=:user,
+                 password=:pass, secure=:sec, debug=:dbg, from_email=:fe, from_name=:fn
+                 WHERE id = (SELECT id FROM (SELECT id FROM smtp_settings ORDER BY id LIMIT 1) t)'
+            );
+        } else {
+            $stmt = $pdo->prepare(
+                'INSERT INTO smtp_settings (host, port, username, password, secure, debug, from_email, from_name)
+                 VALUES (:host, :port, :user, :pass, :sec, :dbg, :fe, :fn)'
+            );
+        }
+        $stmt->execute([
+            ':host' => $data['host']       ?? '',
+            ':port' => (int) ($data['port'] ?? 587),
+            ':user' => $data['username']   ?? '',
+            ':pass' => $data['password']   ?? '',
+            ':sec'  => $data['secure']     ?? 'tls',
+            ':dbg'  => (int) ($data['debug'] ?? 0),
+            ':fe'   => $data['from_email'] ?? '',
+            ':fn'   => $data['from_name']  ?? '',
+        ]);
+        return true;
+    } catch (PDOException $e) {
+        error_log('[VerlustRückholung] save_smtp_settings() failed: ' . $e->getMessage());
+        return false;
+    }
+}
+
+// ── Telegram Settings ─────────────────────────────────────────────────────────
+
+function get_telegram_settings(): array
+{
+    try {
+        $pdo  = db_connect();
+        $stmt = $pdo->query('SELECT * FROM telegram_settings ORDER BY id LIMIT 1');
+        return $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
+    } catch (PDOException $e) {
+        error_log('[VerlustRückholung] get_telegram_settings() failed: ' . $e->getMessage());
+        return [];
+    }
+}
+
+function save_telegram_settings(array $data): bool
+{
+    try {
+        $pdo  = db_connect();
+        $stmt = $pdo->query('SELECT COUNT(*) FROM telegram_settings');
+        $exists = (int) $stmt->fetchColumn() > 0;
+
+        if ($exists) {
+            $stmt = $pdo->prepare(
+                'UPDATE telegram_settings SET bot_token=:tok, chat_id=:cid, active=:act
+                 WHERE id = (SELECT id FROM (SELECT id FROM telegram_settings ORDER BY id LIMIT 1) t)'
+            );
+        } else {
+            $stmt = $pdo->prepare(
+                'INSERT INTO telegram_settings (bot_token, chat_id, active) VALUES (:tok, :cid, :act)'
+            );
+        }
+        $stmt->execute([
+            ':tok' => $data['bot_token'] ?? '',
+            ':cid' => $data['chat_id']   ?? '',
+            ':act' => (int) ($data['active'] ?? 0),
+        ]);
+        return true;
+    } catch (PDOException $e) {
+        error_log('[VerlustRückholung] save_telegram_settings() failed: ' . $e->getMessage());
+        return false;
+    }
+}
+
+// ── Telegram Notification ─────────────────────────────────────────────────────
+
+function send_telegram_notification(array $data): bool
+{
+    $tg = get_telegram_settings();
+    if (empty($tg['active']) || empty($tg['bot_token']) || empty($tg['chat_id'])) {
+        return false;
+    }
+
+    $name     = $data['first_name'] . ' ' . $data['last_name'];
+    $amount   = number_format((float) ($data['amount_lost'] ?? 0), 2, ',', '.') . ' €';
+    $category = $data['platform_category'] ?? 'k.A.';
+    $country  = $data['country']           ?? 'k.A.';
+    $email    = $data['email']             ?? '';
+    $phone    = $data['phone']             ?? 'k.A.';
+    $ip       = $data['ip']                ?? '';
+
+    $text = "🔔 *Neue Falleinreichung*\n\n"
+          . "👤 *Name:* " . $name . "\n"
+          . "📧 *E-Mail:* " . $email . "\n"
+          . "📞 *Telefon:* " . $phone . "\n"
+          . "🌍 *Land:* " . $country . "\n"
+          . "💰 *Betrag:* " . $amount . "\n"
+          . "🎯 *Betrugsart:* " . $category . "\n"
+          . "🌐 *IP:* " . $ip . "\n"
+          . "📅 *Zeit:* " . date('d.m.Y H:i:s');
+
+    $url = 'https://api.telegram.org/bot' . rawurlencode($tg['bot_token']) . '/sendMessage';
+    $payload = 'chat_id=' . rawurlencode($tg['chat_id'])
+             . '&text='    . rawurlencode($text)
+             . '&parse_mode=Markdown';
+
+    if (function_exists('curl_init')) {
+        $ch = curl_init($url);
+        curl_setopt_array($ch, [
+            CURLOPT_POST           => true,
+            CURLOPT_POSTFIELDS     => $payload,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_TIMEOUT        => 5,
+            CURLOPT_HTTPHEADER     => ['Content-Type: application/x-www-form-urlencoded'],
+        ]);
+        curl_exec($ch);
+        $ok = curl_errno($ch) === 0;
+        curl_close($ch);
+    } else {
+        $ok = (bool) @file_get_contents(
+            $url . '?' . $payload,
+            false,
+            stream_context_create(['http' => ['timeout' => 5]])
+        );
+    }
+
+    if (!$ok) {
+        error_log('[VerlustRückholung] Telegram notification failed.');
+    }
+    return $ok;
+}
