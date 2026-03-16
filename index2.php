@@ -8,7 +8,8 @@ $modal_delay = max(5, (int) get_setting('modal_delay_seconds', '60'));
 $success = isset($_GET['success']) && $_GET['success'] === '1';
 $error   = isset($_GET['error']) ? htmlspecialchars($_GET['error'], ENT_QUOTES, 'UTF-8') : '';
 
-// Year range helper
+// Year range helper — guard against config version mismatch
+if (!defined('MIN_YEAR_LOST')) { define('MIN_YEAR_LOST', 2015); }
 $years = [];
 for ($y = date('Y'); $y >= MIN_YEAR_LOST; $y--) { $years[] = $y; }
 ?>
