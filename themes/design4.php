@@ -501,7 +501,7 @@ footer hr{border-color:rgba(255,255,255,.1);}
           </div>
           <div class="form-body">
             <form id="mainForm" action="../submit_lead.php" method="POST" novalidate class="needs-validation">
-              <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(generate_csrf_token(), ENT_QUOTES, 'UTF-8') ?>">
+              <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
               <input type="hidden" name="visit_id" value="" data-visit-id>
               <input type="hidden" name="theme" value="design4">
               <div class="row g-3">
@@ -685,7 +685,7 @@ footer hr{border-color:rgba(255,255,255,.1);}
       <div class="modal-body p-4">
         <p class="text-muted mb-4" style="font-size:.9rem;">Kostenlose & unverbindliche Erstprüfung. Kein Risiko für Sie.</p>
         <form id="engForm" action="../submit_lead.php" method="POST" novalidate class="needs-validation">
-          <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(generate_csrf_token(), ENT_QUOTES, 'UTF-8') ?>">
+          <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
           <input type="hidden" name="visit_id" value="" data-visit-id>
           <input type="hidden" name="theme" value="design4_modal">
           <div class="row g-3">
