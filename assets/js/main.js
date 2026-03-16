@@ -1,5 +1,5 @@
 /* ============================================================
-   Scmlds – Main JavaScript
+   VerlustRück – Main JavaScript
    Bootstrap 5.3 · Canvas animations · Live ticker · 60s modal
    ============================================================ */
 
@@ -487,11 +487,11 @@
         let shown = false;
 
         function isAlreadyEngaged() {
-            return sessionStorage.getItem('scmlds_engaged') === '1';
+            return sessionStorage.getItem('verlustrueck_engaged') === '1';
         }
 
         function markEngaged() {
-            sessionStorage.setItem('scmlds_engaged', '1');
+            sessionStorage.setItem('verlustrueck_engaged', '1');
         }
 
         function showEngModal() {

@@ -1,9 +1,9 @@
 -- ============================================================
--- Scmlds - Fund Recovery Service Database Schema
+-- VerlustRück – Fund Recovery Service Database Schema
 -- ============================================================
 -- IMPORTANT: Change the default admin password immediately after first login!
 -- Default credentials: username=admin / password=password
--- Run: UPDATE admin_users SET password_hash=PASSWORD_HASH WHERE username='admin';
+-- Run: php -r "echo password_hash('YourNewPassword', PASSWORD_DEFAULT);"
 -- ============================================================
 
 CREATE DATABASE IF NOT EXISTS scmlds CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
@@ -36,6 +36,8 @@ CREATE TABLE IF NOT EXISTS leads (
     last_name VARCHAR(100) NOT NULL,
     email VARCHAR(255) NOT NULL,
     phone VARCHAR(50),
+    country VARCHAR(100),
+    year_lost SMALLINT UNSIGNED,
     amount_lost DECIMAL(15, 2),
     platform_category VARCHAR(100),
     case_description TEXT,
@@ -64,13 +66,18 @@ CREATE TABLE IF NOT EXISTS activity_logs (
 -- Default admin user (password: password — CHANGE THIS IMMEDIATELY after first login!)
 -- Generate a new hash: php -r "echo password_hash('YourNewPassword', PASSWORD_DEFAULT);"
 INSERT INTO admin_users (username, password_hash, email, full_name) VALUES
-('admin', '$2y$12$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'admin@scmlds.de', 'Administrator');
+('admin', '$2y$12$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'info@verlustrueckholung.de', 'Administrator')
+ON DUPLICATE KEY UPDATE email=VALUES(email);
 
 -- Scam categories
-INSERT INTO scam_categories (name, description) VALUES
+INSERT IGNORE INTO scam_categories (name, description) VALUES
 ('Krypto-Betrug', 'Betrügerische Kryptowährungs-Investitionsplattformen'),
 ('Forex-Betrug', 'Gefälschte Forex-Handelsplattformen und Broker'),
 ('Fake-Broker', 'Unregulierte und betrügerische Investment-Broker'),
 ('Romance-Scam mit Investitionsbetrug', 'Romantik-Betrug kombiniert mit gefälschten Investitionen'),
 ('Binäre Optionen', 'Binäre Optionen und Online-Trading-Betrug'),
 ('Andere', 'Sonstige Anlage- und Investitionsbetrug');
+
+-- Migration: add country and year_lost if upgrading from older schema
+ALTER TABLE leads ADD COLUMN IF NOT EXISTS country VARCHAR(100) AFTER phone;
+ALTER TABLE leads ADD COLUMN IF NOT EXISTS year_lost SMALLINT UNSIGNED AFTER country;

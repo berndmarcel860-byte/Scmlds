@@ -14,7 +14,7 @@ $filters = [
 log_activity('export', 'CSV export with filters: ' . json_encode($filters));
 
 header('Content-Type: text/csv; charset=utf-8');
-header('Content-Disposition: attachment; filename="scmlds_leads_' . date('Ymd_His') . '.csv"');
+header('Content-Disposition: attachment; filename="verlustrueck_leads_' . date('Ymd_His') . '.csv"');
 
 $output = fopen('php://output', 'w');
 // BOM for Excel UTF-8 compatibility

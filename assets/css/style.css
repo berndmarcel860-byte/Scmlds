@@ -1,5 +1,5 @@
 /* ============================================================
-   Scmlds – Custom Styles
+   VerlustRück – Custom Styles
    Bootstrap 5.3 base
    ============================================================ */
 
@@ -649,3 +649,167 @@ body {
     #mainNav { top: 30px; }
     .hero-section { padding-top: 110px; }
 }
+
+/* ============================================================
+   FALL PRÜFEN MODAL – Professional Redesign
+   ============================================================ */
+
+/* Override modal-xl width for centered beauty */
+#fallPruefenModal .modal-xl { max-width: 900px; }
+
+.fall-modal-content {
+    border: none;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 24px 80px rgba(0,0,0,0.22);
+}
+
+/* Modal header: gradient bar */
+.fall-modal-header-inner {
+    background: linear-gradient(135deg, #060e1f 0%, #0d2b5e 55%, #1a4a9e 100%);
+}
+
+/* Trust badge strip inside header */
+.fall-badges-strip {
+    display: flex;
+    gap: 0;
+    border-top: 1px solid rgba(255,255,255,0.1);
+}
+
+.fall-badge {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 10px 8px;
+    font-size: 0.78rem;
+    color: rgba(255,255,255,0.85);
+    border-right: 1px solid rgba(255,255,255,0.1);
+    transition: background 0.2s ease;
+}
+
+.fall-badge:last-child { border-right: none; }
+
+.fall-badge i {
+    font-size: 1rem;
+    color: var(--accent);
+    flex-shrink: 0;
+}
+
+.fall-badge strong { color: #fff; }
+
+/* Left sidebar */
+.fall-modal-sidebar {
+    background: linear-gradient(160deg, #0a1628 0%, #0f2248 100%);
+    border-right: 1px solid rgba(255,255,255,0.07);
+}
+
+.fall-sidebar-list {
+    margin: 0;
+    padding: 0;
+}
+
+.fall-sidebar-list li {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    color: rgba(255,255,255,0.82);
+    font-size: 0.85rem;
+    margin-bottom: 12px;
+    line-height: 1.4;
+}
+
+.fall-sidebar-list li i {
+    font-size: 0.9rem;
+    margin-top: 1px;
+    flex-shrink: 0;
+}
+
+.fall-stat-mini {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 10px;
+    padding: 10px 14px;
+}
+
+.fall-stat-val {
+    font-size: 1.4rem;
+    font-weight: 800;
+    color: var(--accent);
+    line-height: 1;
+}
+
+.fall-stat-lbl {
+    font-size: 0.72rem;
+    color: rgba(255,255,255,0.5);
+    margin-top: 3px;
+}
+
+/* Form sections */
+.fall-form-section {
+    background: #f8faff;
+    border: 1px solid #e8edf5;
+    border-radius: 12px;
+    padding: 20px;
+}
+
+.fall-form-section-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 700;
+    font-size: 0.9rem;
+    color: #1a202c;
+    margin-bottom: 16px;
+}
+
+.fall-section-num {
+    width: 26px;
+    height: 26px;
+    min-width: 26px;
+    background: var(--primary);
+    color: #fff;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    font-weight: 800;
+}
+
+/* Input group icon styling */
+.fall-form-section .input-group-text {
+    border-color: #dee2e6;
+    color: #6c757d;
+}
+
+.fall-form-section .form-control,
+.fall-form-section .form-select {
+    border-color: #dee2e6;
+}
+
+.fall-form-section .form-control:focus,
+.fall-form-section .form-select:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 0.2rem rgba(245,166,35,0.18);
+}
+
+/* Submit button */
+.fall-submit-btn {
+    background: linear-gradient(135deg, #f5a623 0%, #e69420 100%) !important;
+    border: none !important;
+    border-radius: 12px !important;
+    font-size: 1.05rem;
+    letter-spacing: 0.02em;
+    box-shadow: 0 6px 20px rgba(245,166,35,0.35);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.fall-submit-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 28px rgba(245,166,35,0.45);
+}
+
+/* letter-spacing utility */
+.letter-spacing { letter-spacing: 0.08em; }

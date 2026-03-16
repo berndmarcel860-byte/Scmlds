@@ -28,7 +28,7 @@ if (!empty($_SESSION['admin_logged_in'])) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Login – Scmlds</title>
+    <title>Admin Login – VerlustRück</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
@@ -40,7 +40,7 @@ if (!empty($_SESSION['admin_logged_in'])) {
             <div class="login-logo mb-3">
                 <i class="bi bi-shield-check text-warning fs-1"></i>
             </div>
-            <h4 class="fw-bold">Scmlds Admin</h4>
+            <h4 class="fw-bold">VerlustRück Admin</h4>
             <p class="text-muted small">Bitte melden Sie sich an</p>
         </div>
 
