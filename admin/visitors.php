@@ -145,8 +145,8 @@ $stats = get_visitor_stats();
                                     if ($ref === '') {
                                         echo '<span class="text-muted">Direkt</span>';
                                     } else {
-                                        $parsed = parse_url($ref);
-                                        $display = $parsed['host'] ?? $ref;
+                                        $parsed  = parse_url($ref);
+                                        $display = ($parsed !== false && isset($parsed['host'])) ? $parsed['host'] : $ref;
                                         echo '<span title="' . htmlspecialchars($ref, ENT_QUOTES, 'UTF-8') . '">'
                                            . htmlspecialchars($display, ENT_QUOTES, 'UTF-8') . '</span>';
                                     }

@@ -35,7 +35,7 @@ if ($is_engagement) {
         $case_description = 'Über Engagement-Modal eingereicht.';
     }
     if (empty($amount_lost) || !is_numeric($amount_lost)) {
-        $amount_lost = '0';
+        $amount_lost = null;
     }
     if (empty($platform_category)) {
         $platform_category = 'Andere';

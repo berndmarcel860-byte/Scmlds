@@ -19,6 +19,9 @@ define('BRAND_DOMAIN','verlustrueckholung.de');
 define('SITE_NAME', 'VerlustRückholung – KI-gestützte Kapitalrückholung bei Anlagebetrug');
 define('SITE_URL',  'https://verlustrueckholung.de'); // Use https:// in production
 
+// Earliest year a client can have lost funds (used in lead forms)
+define('MIN_YEAR_LOST', 2015);
+
 define('ADMIN_EMAIL', 'info@verlustrueckholung.de');
 define('FROM_EMAIL',  'noreply@verlustrueckholung.de');
 define('FROM_NAME',   'VerlustRückholung');

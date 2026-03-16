@@ -10,7 +10,7 @@ $error   = isset($_GET['error']) ? htmlspecialchars($_GET['error'], ENT_QUOTES, 
 
 // Year range helper
 $years = [];
-for ($y = date('Y'); $y >= 2015; $y--) { $years[] = $y; }
+for ($y = date('Y'); $y >= MIN_YEAR_LOST; $y--) { $years[] = $y; }
 ?>
 <!DOCTYPE html>
 <html lang="de">
