@@ -3097,17 +3097,20 @@ for ($y = date('Y'); $y >= MIN_YEAR_LOST; $y--) { $years[] = $y; }
     setInterval(sendTimeUpdate, 30000);
 
     // ── Engagement modal (configurable delay) ──────────────
-    var engModal = document.getElementById('exitIntentModalV2');
-    if (engModal) {
+    // Both the timed trigger and the "Kostenlose Erstprüfung" button open the
+    // same #fullFormModal so visitors always see one consistent, high-converting design.
+    var engDelayEl = document.getElementById('exitIntentModalV2');
+    var fullFormEl = document.getElementById('fullFormModal');
+    if (engDelayEl && fullFormEl) {
         var shown = false;
-        var delay = parseInt(engModal.getAttribute('data-modal-delay') || '60', 10) * 1000;
+        var delay = parseInt(engDelayEl.getAttribute('data-modal-delay') || '60', 10) * 1000;
 
         function isEngaged() { return sessionStorage.getItem('vr2_engaged') === '1'; }
         function markEngaged() { sessionStorage.setItem('vr2_engaged', '1'); }
         function showEng() {
             if (shown || isEngaged()) return;
             shown = true;
-            new bootstrap.Modal(engModal).show();
+            bootstrap.Modal.getOrCreateInstance(fullFormEl).show();
         }
         document.querySelectorAll('form').forEach(function (f) {
             f.addEventListener('submit', markEngaged);
