@@ -1,5 +1,5 @@
 -- ============================================================
--- VerlustRück – Fund Recovery Service Database Schema
+-- VerlustRückholung – Fund Recovery Service Database Schema
 -- ============================================================
 -- IMPORTANT: Change the default admin password immediately after first login!
 -- Default credentials: username=admin / password=password

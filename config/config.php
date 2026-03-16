@@ -11,16 +11,17 @@ define('DB_USER', 'root');
 define('DB_PASS', '');        // Set a strong password in production
 define('DB_NAME', 'scmlds');
 
-define('BRAND_NAME',  'VerlustRück');
-define('BRAND_FULL',  'VerlustRück – Kapitalrückholung');
+define('BRAND_NAME',  'VerlustRückholung');
+define('BRAND_TAGLINE', 'Künstliche Intelligenz zur Analyse verdächtiger Transaktionen und Prüfung möglicher Rückholungen');
+define('BRAND_FULL',  'VerlustRückholung – KI-gestützte Kapitalrückholung');
 define('BRAND_DOMAIN','verlustrueckholung.de');
 
-define('SITE_NAME', 'VerlustRück – Experten für Kapitalrückforderung');
+define('SITE_NAME', 'VerlustRückholung – KI-gestützte Kapitalrückholung bei Anlagebetrug');
 define('SITE_URL',  'https://verlustrueckholung.de'); // Use https:// in production
 
 define('ADMIN_EMAIL', 'info@verlustrueckholung.de');
 define('FROM_EMAIL',  'noreply@verlustrueckholung.de');
-define('FROM_NAME',   'VerlustRück – Kapitalrückholung');
+define('FROM_NAME',   'VerlustRückholung');
 
 // ── SMTP Configuration (update before going live) ─────────
 define('SMTP_HOST',     'smtp.verlustrueckholung.de'); // Your SMTP server

@@ -1,6 +1,6 @@
 <?php
 require_once __DIR__ . '/config/config.php';
-$page_title = 'VerlustRück – Kapitalrückforderung bei Anlagebetrug';
+$page_title = 'VerlustRückholung – KI-gestützte Kapitalrückholung bei Anlagebetrug';
 $success = isset($_GET['success']) && $_GET['success'] === '1';
 $error   = isset($_GET['error'])   ? htmlspecialchars($_GET['error'], ENT_QUOTES, 'UTF-8') : '';
 ?>
@@ -10,7 +10,7 @@ $error   = isset($_GET['error'])   ? htmlspecialchars($_GET['error'], ENT_QUOTES
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= $page_title ?></title>
-    <meta name="description" content="VerlustRück hilft Opfern von Anlagebetrug dabei, ihr verlorenes Kapital zurückzufordern – mit modernster KI-Technologie und 87% Erfolgsquote.">
+    <meta name="description" content="VerlustRückholung nutzt Künstliche Intelligenz zur Analyse verdächtiger Transaktionen und Prüfung möglicher Rückholungen bei Anlagebetrug – 87% Erfolgsquote, kostenlose Erstprüfung.">
     <!-- Bootstrap 5.3 -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Bootstrap Icons -->
@@ -26,7 +26,7 @@ $error   = isset($_GET['error'])   ? htmlspecialchars($_GET['error'], ENT_QUOTES
 <nav class="navbar navbar-expand-lg navbar-dark fixed-top" id="mainNav">
     <div class="container">
         <a class="navbar-brand fw-bold" href="#">
-            <i class="bi bi-shield-check me-2 text-warning"></i>VerlustRück
+            <i class="bi bi-shield-check me-2 text-warning"></i>VerlustRückholung
         </a>
         <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navContent">
             <span class="navbar-toggler-icon"></span>
@@ -104,9 +104,8 @@ $error   = isset($_GET['error'])   ? htmlspecialchars($_GET['error'], ENT_QUOTES
                 </h1>
                 <p class="lead text-white-75 mb-4">
                     Wurden Sie Opfer einer betrügerischen Investitionsplattform?
-                    Unser KI-System analysiert verdächtige Transaktionen,
-                    identifiziert Betrugsstrukturen und unterstützt Sie bei der
-                    Rückforderung Ihres Geldes – schnell, diskret und nachweislich erfolgreich.
+                    <strong class="text-white">Künstliche Intelligenz zur Analyse verdächtiger Transaktionen
+                    und Prüfung möglicher Rückholungen</strong> – schnell, diskret und nachweislich erfolgreich.
                 </p>
                 <div class="d-flex flex-wrap gap-3 mb-4">
                     <button class="btn btn-warning btn-lg fw-bold px-5 shadow-lg"
@@ -247,12 +246,12 @@ $error   = isset($_GET['error'])   ? htmlspecialchars($_GET['error'], ENT_QUOTES
     </div>
     <div class="news-ticker-wrap">
         <div class="news-ticker-inner" id="newsTicker">
-            <span>🏆 VerlustRück-Erfolg: Familie aus Berlin erhält €42.000 nach Krypto-Betrug zurück &nbsp;|&nbsp;</span>
+            <span>🏆 VerlustRückholung-Erfolg: Familie aus Berlin erhält €42.000 nach Krypto-Betrug zurück &nbsp;|&nbsp;</span>
             <span>🔍 KI-Analyse identifiziert neue Betrugsplattform – 127 Mandanten erhalten Rückerstattung &nbsp;|&nbsp;</span>
             <span>⚡ Durchbruch im Forex-Fall: €89.000 nach nur 6 Wochen vollständig rückgefordert &nbsp;|&nbsp;</span>
-            <span>🛡️ Neue Fake-Broker-Welle: VerlustRück warnt und schützt Anleger europaweit &nbsp;|&nbsp;</span>
+            <span>🛡️ Neue Fake-Broker-Welle: VerlustRückholung warnt und schützt Anleger europaweit &nbsp;|&nbsp;</span>
             <span>✅ 34 Romance-Scam-Opfer: KI-Rückverfolgung deckt internationales Betrugsnetzwerk auf &nbsp;|&nbsp;</span>
-            <span>📊 Quartalbericht: VerlustRück steigert Erfolgsquote auf branchenführende 87% &nbsp;|&nbsp;</span>
+            <span>📊 Quartalbericht: VerlustRückholung steigert Erfolgsquote auf branchenführende 87% &nbsp;|&nbsp;</span>
             <span>💼 Neuer Meilenstein: Über €48 Millionen für unsere Mandanten zurückgefordert &nbsp;|&nbsp;</span>
         </div>
     </div>
@@ -488,11 +487,11 @@ $error   = isset($_GET['error'])   ? htmlspecialchars($_GET['error'], ENT_QUOTES
 <section id="vorteile" class="py-6 bg-light">
     <div class="container">
         <div class="text-center mb-5" data-aos="fade-up">
-            <span class="badge bg-warning text-dark rounded-pill px-3 py-2 mb-3">Warum VerlustRück?</span>
+            <span class="badge bg-warning text-dark rounded-pill px-3 py-2 mb-3">Warum VerlustRückholung?</span>
             <h2 class="display-6 fw-bold">Ihre Vorteile auf einen Blick</h2>
-            <p class="text-muted col-lg-6 mx-auto">
-                Wir bieten Ihnen einen umfassenden und professionellen Service bei der Aufklärung
-                und Rückforderung bei Anlagebetrugsfällen.
+            <p class="text-muted col-lg-7 mx-auto">
+                Künstliche Intelligenz zur Analyse verdächtiger Transaktionen und Prüfung möglicher Rückholungen –
+                professionelle Unterstützung bei Verlusten durch betrügerische Investmentplattformen.
             </p>
         </div>
         <div class="row g-4">
@@ -801,7 +800,7 @@ $error   = isset($_GET['error'])   ? htmlspecialchars($_GET['error'], ENT_QUOTES
                                     </div>
                                     <p class="fst-italic">
                                         "Ich hatte 28.000€ an eine gefälschte Krypto-Plattform verloren.
-                                        Dank VerlustRück konnte ich 21.000€ zurückfordern. Professionell, diskret und effizient."
+                                        Dank VerlustRückholung konnte ich 21.000€ zurückfordern. Professionell, diskret und effizient."
                                     </p>
                                     <div class="fw-bold">– Thomas K., München</div>
                                 </div>
@@ -817,7 +816,7 @@ $error   = isset($_GET['error'])   ? htmlspecialchars($_GET['error'], ENT_QUOTES
                                     </div>
                                     <p class="fst-italic">
                                         "Nach monatelangem Kampf mit einem Fake-Broker hat mir das Team von
-                                        VerlustRück endlich geholfen. Die KI-Analyse war der entscheidende Durchbruch."
+                                        VerlustRückholung endlich geholfen. Die KI-Analyse war der entscheidende Durchbruch."
                                     </p>
                                     <div class="fw-bold">– Maria S., Berlin</div>
                                 </div>
@@ -1146,11 +1145,11 @@ $error   = isset($_GET['error'])   ? htmlspecialchars($_GET['error'], ENT_QUOTES
         <div class="row g-4 mb-4">
             <div class="col-lg-4">
                 <a class="text-decoration-none" href="#">
-                    <h4 class="fw-bold text-white"><i class="bi bi-shield-check me-2 text-warning"></i>VerlustRück</h4>
+                    <h4 class="fw-bold text-white"><i class="bi bi-shield-check me-2 text-warning"></i>VerlustRückholung</h4>
                 </a>
                 <p class="text-white-50 mt-2">
-                    Professionelle KI-gestützte Unterstützung bei der Rückforderung von verlorenem
-                    Kapital durch Anlagebetrug.
+                    Künstliche Intelligenz zur Analyse verdächtiger Transaktionen und Prüfung
+                    möglicher Rückholungen – professionelle Unterstützung bei Anlagebetrug.
                 </p>
                 <div class="d-flex gap-2 mt-3">
                     <a href="#" class="btn btn-sm btn-outline-light rounded-circle"><i class="bi bi-linkedin"></i></a>
@@ -1201,7 +1200,7 @@ $error   = isset($_GET['error'])   ? htmlspecialchars($_GET['error'], ENT_QUOTES
         <hr class="border-secondary">
         <div class="d-flex flex-wrap justify-content-between align-items-center pt-2">
             <div class="text-white-50 small">
-                &copy; <?= date('Y') ?> VerlustRück. Alle Rechte vorbehalten.
+                &copy; <?= date('Y') ?> VerlustRückholung. Alle Rechte vorbehalten.
             </div>
             <div class="text-white-50 small">
                 <i class="bi bi-shield-check me-1 text-success"></i>SSL-gesichert &nbsp;|&nbsp;
@@ -1253,7 +1252,7 @@ $error   = isset($_GET['error'])   ? htmlspecialchars($_GET['error'], ENT_QUOTES
                     <!-- Left sidebar: visual / info -->
                     <div class="col-lg-4 fall-modal-sidebar d-none d-lg-flex flex-column justify-content-between p-4">
                         <div>
-                            <h6 class="text-warning fw-bold text-uppercase small mb-3 letter-spacing">Warum VerlustRück?</h6>
+                            <h6 class="text-warning fw-bold text-uppercase small mb-3 letter-spacing">Warum VerlustRückholung?</h6>
                             <ul class="list-unstyled fall-sidebar-list">
                                 <li><i class="bi bi-check-circle-fill text-warning"></i>KI-gestützte Transaktionsanalyse</li>
                                 <li><i class="bi bi-check-circle-fill text-warning"></i>Internationale Betrugsrückverfolgung</li>
@@ -1617,7 +1616,7 @@ $error   = isset($_GET['error'])   ? htmlspecialchars($_GET['error'], ENT_QUOTES
             <div class="modal-body">
                 <p class="text-muted"><em>Platzhalter – Bitte mit tatsächlichen Firmenangaben ersetzen.</em></p>
                 <h6>Angaben gemäß § 5 TMG</h6>
-                <p>VerlustRück GmbH<br>Musterstraße 1<br>10115 Berlin<br>Deutschland</p>
+                <p>VerlustRückholung GmbH<br>Musterstraße 1<br>10115 Berlin<br>Deutschland</p>
                 <h6>Vertreten durch:</h6>
                 <p>Max Mustermann (Geschäftsführer)</p>
                 <h6>Kontakt:</h6>
@@ -1645,7 +1644,7 @@ $error   = isset($_GET['error'])   ? htmlspecialchars($_GET['error'], ENT_QUOTES
             <div class="modal-body">
                 <p class="text-muted"><em>Platzhalter – Bitte mit vollständiger DSGVO-konformer Datenschutzerklärung ersetzen.</em></p>
                 <h6>1. Verantwortlicher</h6>
-                <p>VerlustRück GmbH, Musterstraße 1, 10115 Berlin</p>
+                <p>VerlustRückholung GmbH, Musterstraße 1, 10115 Berlin</p>
                 <h6>2. Datenerhebung</h6>
                 <p>
                     Wir erheben und verarbeiten Ihre personenbezogenen Daten (Vor- und Nachname, E-Mail-Adresse,

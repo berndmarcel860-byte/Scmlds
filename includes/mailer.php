@@ -1,6 +1,6 @@
 <?php
 /**
- * VerlustRück – PHPMailer wrapper
+ * VerlustRückholung – PHPMailer wrapper
  *
  * Provides two functions:
  *   send_confirmation_email(array $data) – confirmation to the user
@@ -56,7 +56,7 @@ function send_confirmation_email(array $data): bool
         $mail->send();
         return true;
     } catch (Exception $e) {
-        error_log('[VerlustRück Mailer] Confirmation email failed: ' . $e->getMessage());
+        error_log('[VerlustRückholung Mailer] Confirmation email failed: ' . $e->getMessage());
         return false;
     }
 }
@@ -81,7 +81,7 @@ function send_admin_notification(array $data): bool
         $mail->send();
         return true;
     } catch (Exception $e) {
-        error_log('[VerlustRück Mailer] Admin notification failed: ' . $e->getMessage());
+        error_log('[VerlustRückholung Mailer] Admin notification failed: ' . $e->getMessage());
         return false;
     }
 }

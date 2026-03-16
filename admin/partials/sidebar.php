@@ -1,7 +1,7 @@
 <aside class="admin-sidebar d-flex flex-column" id="adminSidebar">
     <div class="sidebar-brand p-3 d-flex align-items-center gap-2">
         <i class="bi bi-shield-check text-warning fs-4"></i>
-        <span class="fw-bold text-white fs-5">VerlustRück</span>
+        <span class="fw-bold text-white fs-5">VerlustRückholung</span>
     </div>
     <nav class="flex-grow-1 mt-2">
         <ul class="nav flex-column px-2">

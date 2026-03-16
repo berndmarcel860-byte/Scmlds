@@ -109,7 +109,7 @@ try {
         ':ip' => $_SERVER['REMOTE_ADDR'] ?? '',
     ]);
 } catch (PDOException $e) {
-    error_log('[VerlustRück] DB error: ' . $e->getMessage());
+    error_log('[VerlustRückholung] DB error: ' . $e->getMessage());
     header('Location: index.php?error=' . urlencode('Datenbankfehler. Bitte versuchen Sie es später erneut.'));
     exit;
 }

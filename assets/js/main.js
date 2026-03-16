@@ -1,5 +1,5 @@
 /* ============================================================
-   VerlustRück – Main JavaScript
+   VerlustRückholung – Main JavaScript
    Bootstrap 5.3 · Canvas animations · Live ticker · 60s modal
    ============================================================ */
 
