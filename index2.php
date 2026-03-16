@@ -673,6 +673,59 @@ for ($y = date('Y'); $y >= MIN_YEAR_LOST; $y--) { $years[] = $y; }
         background: rgba(0,0,0,0.15); border-radius: 50%; opacity: 0.7;
     }
     .engagement-close:hover { opacity: 1; }
+
+    /* ===== TRUST BANNER ===== */
+    .trust-banner { background: #fff; border-bottom: 1px solid #e9ecef; box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
+
+    /* ===== NEWS TICKER ===== */
+    .news-ticker-bar { background: linear-gradient(90deg, #0d2b5e 0%, #1a4a9e 100%); padding: 0; display: flex; align-items: center; height: 40px; overflow: hidden; }
+    .news-ticker-label { flex-shrink: 0; background: var(--accent); color: #000; font-weight: 700; font-size: 0.75rem; padding: 0 14px; height: 100%; display: flex; align-items: center; text-transform: uppercase; letter-spacing: 0.05em; }
+    .news-ticker-wrap { overflow: hidden; flex: 1; }
+    .news-ticker-inner { display: inline-block; white-space: nowrap; font-size: 0.82rem; color: rgba(255,255,255,0.88); padding-left: 100%; animation: newsScroll 60s linear infinite; }
+    .news-ticker-inner span { margin: 0 8px; }
+    @keyframes newsScroll { 0% { transform: translateX(0); } 100% { transform: translateX(-100%); } }
+
+    /* ===== AI 3D CANVAS SECTION ===== */
+    .ai-section-3d { background: linear-gradient(135deg, #060e1f 0%, #0d2b5e 60%, #0f1e3d 100%); position: relative; overflow: hidden; }
+    .ai-section-3d::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse at 70% 50%, rgba(245,166,35,0.06) 0%, transparent 60%); pointer-events: none; }
+    .ai-canvas-wrap { position: relative; border-radius: 20px; overflow: hidden; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); aspect-ratio: 4/3; }
+    .ai-canvas-wrap canvas { width: 100%; height: 100%; display: block; }
+    .ai-canvas-hud { position: absolute; bottom: 0; left: 0; right: 0; background: rgba(6,14,31,0.85); backdrop-filter: blur(8px); padding: 12px 16px; border-top: 1px solid rgba(255,255,255,0.08); display: grid; grid-template-columns: 1fr 1fr; gap: 6px 16px; }
+    .ai-hud-row { display: flex; justify-content: space-between; align-items: center; }
+    .ai-hud-label { font-size: 0.72rem; color: rgba(255,255,255,0.5); }
+    .ai-hud-val { font-size: 0.82rem; font-weight: 700; font-family: monospace; }
+    .ai-steps-3d { display: flex; flex-direction: column; gap: 1.25rem; }
+    .ai-step-item-3d { display: flex; align-items: flex-start; gap: 1rem; padding: 1rem; border-radius: 12px; border: 1px solid rgba(255,255,255,0.06); background: rgba(255,255,255,0.03); transition: all 0.4s ease; }
+    .ai-step-item-3d.active, .ai-step-item-3d:hover { background: rgba(255,255,255,0.07); border-color: rgba(245,166,35,0.3); }
+    .ai-step-icon-3d { width: 44px; height: 44px; min-width: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; }
+
+    /* ===== ADVANTAGE CARDS ===== */
+    .advantage-card { transition: transform 0.3s ease, box-shadow 0.3s ease; border: 1px solid transparent; }
+    .advantage-card:hover { transform: translateY(-6px); box-shadow: 0 12px 40px rgba(0,0,0,0.12) !important; border-color: var(--accent); }
+    .advantage-icon { width: 70px; height: 70px; display: flex; align-items: center; justify-content: center; }
+
+    /* ===== SCAM CARDS rich ===== */
+    .scam-card { transition: all 0.3s ease; cursor: pointer; background: #fff; }
+    .scam-card:hover { transform: translateY(-4px); box-shadow: 0 8px 30px rgba(0,0,0,0.12); border-color: #1a4a9e !important; }
+    .scam-icon { width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+
+    /* ===== STATISTICS SECTION ===== */
+    .stats-section { background: linear-gradient(135deg, #0d2b5e 0%, #1a4a9e 100%); position: relative; overflow: hidden; }
+    .stats-section::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse at center, rgba(245,166,35,0.08) 0%, transparent 70%); pointer-events: none; }
+    .stat-card { background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.1); transition: transform 0.3s ease; }
+    .stat-card:hover { transform: translateY(-4px); background: rgba(255,255,255,0.12); }
+    .stat-number { line-height: 1; display: inline-block; }
+    .stat-unit { display: inline-block; vertical-align: top; margin-top: 0.5rem; }
+    .carousel-control-prev, .carousel-control-next { width: 2.5rem; background: rgba(255,255,255,0.1); border-radius: 50%; height: 2.5rem; top: 50%; transform: translateY(-50%); opacity: 0.8; }
+
+    /* ===== FORM SIDEBAR ===== */
+    .form-sidebar { background: linear-gradient(135deg, #0d2b5e 0%, #1a4a9e 100%); padding: 2.5rem 2rem; }
+
+    /* ===== STEP TIMELINE ===== */
+    .step-timeline { position: relative; padding-left: 0; }
+    .step-item-timeline { display: flex; align-items: flex-start; gap: 1rem; margin-bottom: 1.25rem; position: relative; }
+    .step-item-timeline:not(:last-child)::before { content: ''; position: absolute; left: 18px; top: 36px; bottom: -10px; width: 2px; background: linear-gradient(to bottom, #f5a623, transparent); }
+    .step-num { width: 36px; height: 36px; min-width: 36px; background: #f5a623; color: #000; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.9rem; }
     </style>
 </head>
 <body>
@@ -941,6 +994,68 @@ for ($y = date('Y'); $y >= MIN_YEAR_LOST; $y--) { $years[] = $y; }
     </div>
 </div>
 
+<!-- ===== TRUST BANNER ===== -->
+<div class="trust-banner py-3">
+    <div class="container">
+        <div class="row g-3 text-center text-md-start align-items-center">
+            <div class="col-6 col-md-3">
+                <div class="d-flex align-items-center justify-content-center justify-content-md-start gap-2">
+                    <i class="bi bi-award-fill text-warning fs-4"></i>
+                    <div>
+                        <div class="fw-semibold">87% Erfolgsquote</div>
+                        <div class="small text-muted">Nachgewiesene Ergebnisse</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="d-flex align-items-center justify-content-center justify-content-md-start gap-2">
+                    <i class="bi bi-lock-fill text-warning fs-4"></i>
+                    <div>
+                        <div class="fw-semibold">Sichere Verarbeitung</div>
+                        <div class="small text-muted">SSL-verschlüsselt</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="d-flex align-items-center justify-content-center justify-content-md-start gap-2">
+                    <i class="bi bi-chat-dots-fill text-warning fs-4"></i>
+                    <div>
+                        <div class="fw-semibold">Kostenlose Beratung</div>
+                        <div class="small text-muted">Keine Vorauszahlung</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="d-flex align-items-center justify-content-center justify-content-md-start gap-2">
+                    <i class="bi bi-cpu-fill text-warning fs-4"></i>
+                    <div>
+                        <div class="fw-semibold">KI-Technologie</div>
+                        <div class="small text-muted">Modernste Analyse</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ===== NEWS TICKER ===== -->
+<div class="news-ticker-bar">
+    <div class="news-ticker-label">
+        <i class="bi bi-broadcast-pin me-1"></i>Aktuell
+    </div>
+    <div class="news-ticker-wrap">
+        <div class="news-ticker-inner" id="newsTicker2">
+            <span>🏆 VerlustRückholung-Erfolg: Familie aus Berlin erhält €42.000 nach Krypto-Betrug zurück &nbsp;|&nbsp;</span>
+            <span>🔍 KI-Analyse identifiziert neue Betrugsplattform – 127 Mandanten erhalten Rückerstattung &nbsp;|&nbsp;</span>
+            <span>⚡ Durchbruch im Forex-Fall: €89.000 nach nur 6 Wochen vollständig rückgefordert &nbsp;|&nbsp;</span>
+            <span>🛡️ Neue Fake-Broker-Welle: VerlustRückholung warnt und schützt Anleger europaweit &nbsp;|&nbsp;</span>
+            <span>✅ 34 Romance-Scam-Opfer: KI-Rückverfolgung deckt internationales Betrugsnetzwerk auf &nbsp;|&nbsp;</span>
+            <span>📊 Quartalbericht: VerlustRückholung steigert Erfolgsquote auf branchenführende 87% &nbsp;|&nbsp;</span>
+            <span>💼 Neuer Meilenstein: Über €48 Millionen für unsere Mandanten zurückgefordert &nbsp;|&nbsp;</span>
+        </div>
+    </div>
+</div>
+
 <!-- ===== AI ANALYSIS DEMO SECTION ===== -->
 <section class="ai-demo-section" id="ki-analyse">
     <div class="container position-relative z-1">
@@ -1014,6 +1129,105 @@ for ($y = date('Y'); $y >= MIN_YEAR_LOST; $y--) { $years[] = $y; }
     </div>
 </section>
 
+<!-- ===== AI 3D VISUALIZATION SECTION ===== -->
+<section id="ai-visual-3d" class="ai-section-3d py-6">
+    <div class="container">
+        <div class="text-center mb-5">
+            <span class="badge bg-warning text-dark rounded-pill px-3 py-2 mb-3">KI-Technologie</span>
+            <h2 class="display-6 fw-bold text-white">
+                Unser KI-Algorithmus <span class="text-warning">arbeitet für Sie</span>
+            </h2>
+            <p class="text-white-50 col-lg-7 mx-auto">
+                In Echtzeit analysiert unser proprietärer Algorithmus Millionen von Transaktionsdaten,
+                rekonstruiert Zahlungsströme und identifiziert die Verantwortlichen hinter Betrugsplattformen.
+            </p>
+        </div>
+        <div class="row align-items-center g-5">
+            <div class="col-lg-6 order-lg-2" data-aos="fade-left">
+                <div class="ai-canvas-wrap">
+                    <canvas id="aiNetworkCanvas2"></canvas>
+                    <div class="ai-canvas-hud">
+                        <div class="ai-hud-row">
+                            <span class="ai-hud-label">Knoten analysiert</span>
+                            <span class="ai-hud-val text-warning" id="aiNodes2">0</span>
+                        </div>
+                        <div class="ai-hud-row">
+                            <span class="ai-hud-label">Verbindungen geprüft</span>
+                            <span class="ai-hud-val text-info" id="aiEdges2">0</span>
+                        </div>
+                        <div class="ai-hud-row">
+                            <span class="ai-hud-label">Betrug erkannt</span>
+                            <span class="ai-hud-val text-danger" id="aiScams2">0</span>
+                        </div>
+                        <div class="ai-hud-row">
+                            <span class="ai-hud-label">Kapital gesichert</span>
+                            <span class="ai-hud-val text-success" id="aiRecovered2">€0</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-6 order-lg-1" data-aos="fade-right">
+                <div class="ai-steps-3d">
+                    <div class="ai-step-item-3d active" id="aiStep1b">
+                        <div class="ai-step-icon-3d bg-primary">
+                            <i class="bi bi-cloud-upload text-white"></i>
+                        </div>
+                        <div class="ai-step-content">
+                            <h6 class="fw-bold text-white mb-1">01 · Dateneingabe &amp; Verarbeitung</h6>
+                            <p class="text-white-50 small mb-0">
+                                Ihre Falldaten werden sicher erfasst und in unser verschlüsseltes
+                                KI-System eingespeist. Der Algorithmus beginnt sofort mit der Analyse.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="ai-step-item-3d" id="aiStep2b">
+                        <div class="ai-step-icon-3d bg-warning">
+                            <i class="bi bi-diagram-3 text-dark"></i>
+                        </div>
+                        <div class="ai-step-content">
+                            <h6 class="fw-bold text-white mb-1">02 · Transaktionsgraph-Analyse</h6>
+                            <p class="text-white-50 small mb-0">
+                                Unsere KI erstellt einen vollständigen Blockchain-Transaktionsgraphen
+                                und verknüpft alle relevanten Wallet-Adressen und Zahlungsströme.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="ai-step-item-3d" id="aiStep3b">
+                        <div class="ai-step-icon-3d bg-danger">
+                            <i class="bi bi-shield-exclamation text-white"></i>
+                        </div>
+                        <div class="ai-step-content">
+                            <h6 class="fw-bold text-white mb-1">03 · Betrugsstruktur-Erkennung</h6>
+                            <p class="text-white-50 small mb-0">
+                                Durch maschinelles Lernen erkennt unser System bekannte Betrugsmuster
+                                und identifiziert die verantwortlichen Akteure im Netzwerk.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="ai-step-item-3d" id="aiStep4b">
+                        <div class="ai-step-icon-3d bg-success">
+                            <i class="bi bi-cash-coin text-white"></i>
+                        </div>
+                        <div class="ai-step-content">
+                            <h6 class="fw-bold text-white mb-1">04 · Rückforderungsplan &amp; Umsetzung</h6>
+                            <p class="text-white-50 small mb-0">
+                                Sie erhalten einen individualisierten Aktionsplan. Unser Team begleitet
+                                Sie Schritt für Schritt durch den gesamten Rückforderungsprozess.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-4">
+                    <button class="btn btn-warning btn-lg fw-bold px-5"
+                            data-bs-toggle="modal" data-bs-target="#fullFormModal">
+                        <i class="bi bi-arrow-right-circle me-2"></i>Jetzt kostenlos starten
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
 <!-- ===== HOW IT WORKS ===== -->
 <section id="wie-es-funktioniert" class="py-6 bg-white">
     <div class="container">
@@ -1048,34 +1262,247 @@ for ($y = date('Y'); $y >= MIN_YEAR_LOST; $y--) { $years[] = $y; }
     </div>
 </section>
 
+<!-- ===== LEISTUNGEN SECTION ===== -->
+<section id="leistungen" class="py-6">
+    <div class="container">
+        <div class="row align-items-center g-5">
+            <div class="col-lg-6" data-aos="fade-right">
+                <span class="badge bg-primary-subtle text-primary rounded-pill px-3 py-2 mb-3">Unsere Leistungen</span>
+                <h2 class="display-6 fw-bold mb-4">
+                    Wie unsere <span class="text-primary">KI-Technologie</span> Ihnen hilft
+                </h2>
+                <p class="text-muted mb-4">
+                    Unser fortschrittliches KI-System wurde speziell entwickelt, um betrügerische
+                    Transaktionsnetzwerke zu identifizieren und aufzudecken. Durch die Analyse
+                    komplexer Zahlungsströme können wir Verbindungen zu bekannten Betrugsplattformen
+                    aufdecken und Ihnen dabei helfen, Ihr verlorenes Kapital zurückzufordern.
+                </p>
+                <div class="row g-3">
+                    <div class="col-12">
+                        <div class="d-flex gap-3 p-3 bg-light rounded-3">
+                            <div class="bg-primary rounded-3 p-2 flex-shrink-0">
+                                <i class="bi bi-graph-up-arrow text-white fs-5"></i>
+                            </div>
+                            <div>
+                                <h6 class="fw-bold mb-1">Transaktionsanalyse</h6>
+                                <p class="text-muted small mb-0">
+                                    Unsere KI analysiert verdächtige Transaktionsmuster und identifiziert
+                                    Verbindungen zu bekannten Betrugsstrukturen.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <div class="d-flex gap-3 p-3 bg-light rounded-3">
+                            <div class="bg-warning rounded-3 p-2 flex-shrink-0">
+                                <i class="bi bi-search text-dark fs-5"></i>
+                            </div>
+                            <div>
+                                <h6 class="fw-bold mb-1">Plattformidentifikation</h6>
+                                <p class="text-muted small mb-0">
+                                    Wir identifizieren die verantwortlichen Betreiberstrukturen hinter
+                                    den Betrugsplattformen durch forensische Blockchain-Analyse.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <div class="d-flex gap-3 p-3 bg-light rounded-3">
+                            <div class="bg-success rounded-3 p-2 flex-shrink-0">
+                                <i class="bi bi-cash-coin text-white fs-5"></i>
+                            </div>
+                            <div>
+                                <h6 class="fw-bold mb-1">Kapitalrückforderung</h6>
+                                <p class="text-muted small mb-0">
+                                    Auf Basis unserer Analyse unterstützen wir Sie bei der Geltendmachung
+                                    Ihrer Rückforderungsansprüche gegenüber zuständigen Stellen.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-6" data-aos="fade-left">
+                <div class="position-relative">
+                    <div class="bg-primary rounded-4 p-4 text-white mb-3">
+                        <h5 class="fw-bold mb-3"><i class="bi bi-cpu me-2"></i>KI-Analysemodell</h5>
+                        <div class="row g-3">
+                            <div class="col-6">
+                                <div class="bg-white bg-opacity-10 rounded-3 p-3 text-center">
+                                    <i class="bi bi-diagram-3 fs-2 text-warning mb-2 d-block"></i>
+                                    <div class="small">Netzwerkanalyse</div>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="bg-white bg-opacity-10 rounded-3 p-3 text-center">
+                                    <i class="bi bi-currency-bitcoin fs-2 text-warning mb-2 d-block"></i>
+                                    <div class="small">Blockchain-Forensik</div>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="bg-white bg-opacity-10 rounded-3 p-3 text-center">
+                                    <i class="bi bi-fingerprint fs-2 text-warning mb-2 d-block"></i>
+                                    <div class="small">Betrugsidentifikation</div>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="bg-white bg-opacity-10 rounded-3 p-3 text-center">
+                                    <i class="bi bi-file-earmark-text fs-2 text-warning mb-2 d-block"></i>
+                                    <div class="small">Fallbericht</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="step-timeline">
+                        <div class="step-item-timeline">
+                            <div class="step-num">1</div>
+                            <div>
+                                <strong>Falleinreichung</strong>
+                                <p class="small text-muted mb-0">Sie schildern Ihren Fall kostenlos über unser Formular</p>
+                            </div>
+                        </div>
+                        <div class="step-item-timeline">
+                            <div class="step-num">2</div>
+                            <div>
+                                <strong>KI-Analyse</strong>
+                                <p class="small text-muted mb-0">Unser System analysiert Transaktionen und Plattformstrukturen</p>
+                            </div>
+                        </div>
+                        <div class="step-item-timeline">
+                            <div class="step-num">3</div>
+                            <div>
+                                <strong>Ergebnisbericht</strong>
+                                <p class="small text-muted mb-0">Sie erhalten einen detaillierten Bericht mit Handlungsempfehlungen</p>
+                            </div>
+                        </div>
+                        <div class="step-item-timeline">
+                            <div class="step-num">4</div>
+                            <div>
+                                <strong>Rückforderung</strong>
+                                <p class="small text-muted mb-0">Wir begleiten Sie durch den gesamten Rückforderungsprozess</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
 <!-- ===== FRAUD TYPES ===== -->
 <section id="betrugsarten" class="py-6" style="background:var(--bg-light)">
     <div class="container">
         <div class="text-center mb-5" data-aos="fade-up">
-            <div class="section-eyebrow">Betrugsarten</div>
-            <h2 class="fw-bold display-6">Bei diesen Betrugsformen helfen wir</h2>
-            <p class="text-muted">Wir haben Erfahrung mit allen gängigen Formen von Anlagebetrug.</p>
+            <span class="badge bg-danger text-white rounded-pill px-3 py-2 mb-3">Betrugsarten</span>
+            <h2 class="display-6 fw-bold">Welche Betrugsformen wir aufdecken</h2>
+            <p class="text-muted col-lg-6 mx-auto">
+                Unser System ist spezialisiert auf die Identifikation verschiedener
+                Betrugsplattformen und -strukturen.
+            </p>
         </div>
-        <?php $cases = [
-            ['icon'=>'₿','name'=>'Krypto-Betrug','desc'=>'Betrügerische Kryptowährungs-Investitionsplattformen versprechen überdurchschnittliche Renditen und locken Anleger mit gefälschten Trading-Ergebnissen. Unsere KI identifiziert die Wallet-Adressen und Transaktionsflüsse dieser Plattformen.'],
-            ['icon'=>'📈','name'=>'Forex-Betrug','desc'=>'Betrügerische Forex-Broker manipulieren Kurse, verweigern Auszahlungen und arbeiten ohne gültige Regulierung. Unser System verknüpft Zahlungsströme mit bekannten Betrugsstrukturen.'],
-            ['icon'=>'🏢','name'=>'Fake-Broker','desc'=>'Betrügerische Investment-Broker täuschen mit professionellen Websites und gefälschten Regulierungsnachweisen. Sie kassieren Einlagen, zahlen aber nie Gewinne aus.'],
-            ['icon'=>'💔','name'=>'Romance-Scam','desc'=>'Bei Romance-Scams werden emotionale Beziehungen aufgebaut, um Vertrauen zu gewinnen – anschließend werden Opfer zu Investitionen überredet. Wir unterstützen Opfer diskret bei der Aufarbeitung und Rückforderung.'],
-            ['icon'=>'📊','name'=>'Binäre Optionen','desc'=>'Binäre Optionen und Online-Trading-Plattformen sind oft als Wettangebote mit manipulierten Kursen strukturiert. Verluste sind systembedingt einprogrammiert.'],
-            ['icon'=>'🔒','name'=>'Andere Betrugsformen','desc'=>'Weitere Betrugsformen im Anlagebereich umfassen Ponzi-Systeme, Multi-Level-Marketing-Betrug, gefälschte ICOs und andere Kapitalanlage-Betrügereien. Sprechen Sie uns an – wir prüfen jeden Fall individuell.'],
-        ]; ?>
         <div class="row g-3">
-            <?php foreach ($cases as $i => $c): ?>
-            <div class="col-6 col-md-4 col-lg-2" data-aos="zoom-in" data-aos-delay="<?= $i * 80 ?>">
-                <div class="case-card" data-bs-toggle="modal" data-bs-target="#scamModalV2"
-                     data-scam-type="<?= htmlspecialchars($c['name'], ENT_QUOTES, 'UTF-8') ?>"
-                     data-scam-desc="<?= htmlspecialchars($c['desc'], ENT_QUOTES, 'UTF-8') ?>">
-                    <div class="case-icon"><?= $c['icon'] ?></div>
-                    <div class="fw-bold small"><?= $c['name'] ?></div>
-                    <div class="text-muted" style="font-size:.75rem;margin-top:.35rem;"><?= $c['desc'] ?></div>
+            <div class="col-md-6 col-lg-4" data-aos="zoom-in" data-aos-delay="100">
+                <div class="scam-card p-4 rounded-4 border h-100 cursor-pointer"
+                     data-bs-toggle="modal" data-bs-target="#scamModalV2"
+                     data-scam-type="Krypto-Betrug"
+                     data-scam-desc="Betrügerische Kryptowährungs-Investitionsplattformen versprechen überdurchschnittliche Renditen und locken Anleger mit gefälschten Trading-Ergebnissen. Oft werden auch bekannte Persönlichkeiten als angebliche Befürworter missbraucht. Unsere KI identifiziert die Wallet-Adressen und Transaktionsflüsse dieser Plattformen.">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="scam-icon bg-warning-subtle rounded-3 p-2 me-3">
+                            <i class="bi bi-currency-bitcoin text-warning fs-4"></i>
+                        </div>
+                        <h6 class="fw-bold mb-0">Krypto-Betrug</h6>
+                    </div>
+                    <p class="text-muted small mb-2">
+                        Fake-Krypto-Investitionsplattformen, gefälschte Exchanges und Rug-Pull-Projekte.
+                    </p>
+                    <span class="badge bg-warning-subtle text-warning">Mehr erfahren →</span>
                 </div>
             </div>
-            <?php endforeach; ?>
+            <div class="col-md-6 col-lg-4" data-aos="zoom-in" data-aos-delay="200">
+                <div class="scam-card p-4 rounded-4 border h-100 cursor-pointer"
+                     data-bs-toggle="modal" data-bs-target="#scamModalV2"
+                     data-scam-type="Forex-Betrug"
+                     data-scam-desc="Betrügerische Forex-Broker manipulieren Kurse, verweigern Auszahlungen und arbeiten ohne gültige Regulierung. Unser System verknüpft Zahlungsströme mit bekannten Betrugsstrukturen und identifiziert die Verantwortlichen hinter diesen Plattformen.">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="scam-icon bg-primary-subtle rounded-3 p-2 me-3">
+                            <i class="bi bi-currency-exchange text-primary fs-4"></i>
+                        </div>
+                        <h6 class="fw-bold mb-0">Forex-Betrug</h6>
+                    </div>
+                    <p class="text-muted small mb-2">
+                        Unregulierte Forex-Broker, Kursmanipulation und verweigerte Auszahlungen.
+                    </p>
+                    <span class="badge bg-primary-subtle text-primary">Mehr erfahren →</span>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-4" data-aos="zoom-in" data-aos-delay="300">
+                <div class="scam-card p-4 rounded-4 border h-100 cursor-pointer"
+                     data-bs-toggle="modal" data-bs-target="#scamModalV2"
+                     data-scam-type="Fake-Broker"
+                     data-scam-desc="Betrügerische Investment-Broker täuschen mit professionellen Websites und gefälschten Regulierungsnachweisen. Sie kassieren Einlagen, zahlen aber nie Gewinne aus. Unsere KI analysiert die Registrierungsdaten, Zahlungsstrukturen und Verbindungen dieser Entitäten.">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="scam-icon bg-danger-subtle rounded-3 p-2 me-3">
+                            <i class="bi bi-building-x text-danger fs-4"></i>
+                        </div>
+                        <h6 class="fw-bold mb-0">Fake Investment-Broker</h6>
+                    </div>
+                    <p class="text-muted small mb-2">
+                        Gefälschte Lizenzen, manipulierte Handelsplattformen und betrügerische Berater.
+                    </p>
+                    <span class="badge bg-danger-subtle text-danger">Mehr erfahren →</span>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-4" data-aos="zoom-in" data-aos-delay="400">
+                <div class="scam-card p-4 rounded-4 border h-100 cursor-pointer"
+                     data-bs-toggle="modal" data-bs-target="#scamModalV2"
+                     data-scam-type="Romance-Scam"
+                     data-scam-desc="Bei Romance-Scams werden emotionale Beziehungen aufgebaut, um Vertrauen zu gewinnen – anschließend werden Opfer zu Investitionen überredet. Diese Kombination aus emotionaler Manipulation und Investitionsbetrug ist besonders perfide. Wir unterstützen Opfer diskret bei der Aufarbeitung und Rückforderung.">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="scam-icon bg-pink-subtle rounded-3 p-2 me-3">
+                            <i class="bi bi-heart-arrow text-danger fs-4"></i>
+                        </div>
+                        <h6 class="fw-bold mb-0">Romance-Scam &amp; Investment</h6>
+                    </div>
+                    <p class="text-muted small mb-2">
+                        Emotionale Manipulation kombiniert mit gefälschten Investmentangeboten.
+                    </p>
+                    <span class="badge bg-danger-subtle text-danger">Mehr erfahren →</span>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-4" data-aos="zoom-in" data-aos-delay="500">
+                <div class="scam-card p-4 rounded-4 border h-100 cursor-pointer"
+                     data-bs-toggle="modal" data-bs-target="#scamModalV2"
+                     data-scam-type="Binäre Optionen"
+                     data-scam-desc="Binäre Optionen und Online-Trading-Plattformen sind oft als Wettangebote mit manipulierten Kursen strukturiert. Verluste sind systembedingt einprogrammiert. Unsere Analyse deckt diese Strukturen auf und identifiziert verantwortliche Betreiber.">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="scam-icon bg-success-subtle rounded-3 p-2 me-3">
+                            <i class="bi bi-bar-chart-line text-success fs-4"></i>
+                        </div>
+                        <h6 class="fw-bold mb-0">Binäre Optionen</h6>
+                    </div>
+                    <p class="text-muted small mb-2">
+                        Manipulierte Online-Trading-Plattformen und Binäre-Optionen-Betrug.
+                    </p>
+                    <span class="badge bg-success-subtle text-success">Mehr erfahren →</span>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-4" data-aos="zoom-in" data-aos-delay="600">
+                <div class="scam-card p-4 rounded-4 border h-100 cursor-pointer"
+                     data-bs-toggle="modal" data-bs-target="#scamModalV2"
+                     data-scam-type="Sonstige Anlagebetrug"
+                     data-scam-desc="Weitere Betrugsformen im Anlagebereich umfassen Ponzi-Systeme, Multi-Level-Marketing-Betrug, gefälschte ICOs und andere Kapitalanlage-Betrügereien. Sprechen Sie uns an – wir prüfen jeden Fall individuell.">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="scam-icon bg-secondary-subtle rounded-3 p-2 me-3">
+                            <i class="bi bi-question-circle text-secondary fs-4"></i>
+                        </div>
+                        <h6 class="fw-bold mb-0">Weitere Betrugsarten</h6>
+                    </div>
+                    <p class="text-muted small mb-2">
+                        Ponzi-Systeme, MLM-Betrug, gefälschte ICOs und andere Anlagebetrügereien.
+                    </p>
+                    <span class="badge bg-secondary-subtle text-secondary">Mehr erfahren →</span>
+                </div>
+            </div>
         </div>
     </div>
 </section>
@@ -1167,6 +1594,94 @@ for ($y = date('Y'); $y >= MIN_YEAR_LOST; $y--) { $years[] = $y; }
     </div>
 </section>
 
+<!-- ===== WHY US 6-CARD GRID ===== -->
+<section id="vorteile-v2" class="py-6 bg-light">
+    <div class="container">
+        <div class="text-center mb-5" data-aos="fade-up">
+            <span class="badge bg-warning text-dark rounded-pill px-3 py-2 mb-3">Warum VerlustRückholung?</span>
+            <h2 class="display-6 fw-bold">Ihre Vorteile auf einen Blick</h2>
+            <p class="text-muted col-lg-7 mx-auto">
+                Künstliche Intelligenz zur Analyse verdächtiger Transaktionen und Prüfung möglicher Rückholungen –
+                professionelle Unterstützung bei Verlusten durch betrügerische Investmentplattformen.
+            </p>
+        </div>
+        <div class="row g-4">
+            <div class="col-md-4" data-aos="fade-up" data-aos-delay="100">
+                <div class="advantage-card h-100 p-4 bg-white rounded-4 shadow-sm text-center">
+                    <div class="advantage-icon mx-auto mb-3 bg-warning-subtle rounded-circle">
+                        <i class="bi bi-trophy-fill text-warning fs-3"></i>
+                    </div>
+                    <h5 class="fw-bold mb-2">87% Erfolgsquote</h5>
+                    <p class="text-muted small">
+                        In 87% aller eingereichten Fälle konnten wir erfolgreich
+                        Betrugsstrukturen identifizieren und die Rückforderung einleiten.
+                    </p>
+                </div>
+            </div>
+            <div class="col-md-4" data-aos="fade-up" data-aos-delay="200">
+                <div class="advantage-card h-100 p-4 bg-white rounded-4 shadow-sm text-center">
+                    <div class="advantage-icon mx-auto mb-3 bg-primary-subtle rounded-circle">
+                        <i class="bi bi-cpu-fill text-primary fs-3"></i>
+                    </div>
+                    <h5 class="fw-bold mb-2">Modernste KI-Technologie</h5>
+                    <p class="text-muted small">
+                        Unser proprietäres KI-System analysiert in Echtzeit Millionen von
+                        Transaktionsdaten und erkennt Betrugsstrukturen zuverlässig.
+                    </p>
+                </div>
+            </div>
+            <div class="col-md-4" data-aos="fade-up" data-aos-delay="300">
+                <div class="advantage-card h-100 p-4 bg-white rounded-4 shadow-sm text-center">
+                    <div class="advantage-icon mx-auto mb-3 bg-success-subtle rounded-circle">
+                        <i class="bi bi-chat-heart-fill text-success fs-3"></i>
+                    </div>
+                    <h5 class="fw-bold mb-2">Kostenlose Erstberatung</h5>
+                    <p class="text-muted small">
+                        Wir prüfen Ihren Fall zunächst vollkommen kostenlos.
+                        Erst wenn wir Ihnen helfen können, besprechen wir weitere Schritte.
+                    </p>
+                </div>
+            </div>
+            <div class="col-md-4" data-aos="fade-up" data-aos-delay="400">
+                <div class="advantage-card h-100 p-4 bg-white rounded-4 shadow-sm text-center">
+                    <div class="advantage-icon mx-auto mb-3 bg-info-subtle rounded-circle">
+                        <i class="bi bi-shield-lock-fill text-info fs-3"></i>
+                    </div>
+                    <h5 class="fw-bold mb-2">Diskrete &amp; sichere Bearbeitung</h5>
+                    <p class="text-muted small">
+                        Alle Ihre Daten werden streng vertraulich und nach aktuellen
+                        DSGVO-Richtlinien verarbeitet und gespeichert.
+                    </p>
+                </div>
+            </div>
+            <div class="col-md-4" data-aos="fade-up" data-aos-delay="500">
+                <div class="advantage-card h-100 p-4 bg-white rounded-4 shadow-sm text-center">
+                    <div class="advantage-icon mx-auto mb-3 bg-danger-subtle rounded-circle">
+                        <i class="bi bi-lightning-fill text-danger fs-3"></i>
+                    </div>
+                    <h5 class="fw-bold mb-2">Schnelle Fallprüfung</h5>
+                    <p class="text-muted small">
+                        Innerhalb von 48 Stunden erhalten Sie eine erste Einschätzung
+                        zu Ihrem Fall und den möglichen Handlungsoptionen.
+                    </p>
+                </div>
+            </div>
+            <div class="col-md-4" data-aos="fade-up" data-aos-delay="600">
+                <div class="advantage-card h-100 p-4 bg-white rounded-4 shadow-sm text-center">
+                    <div class="advantage-icon mx-auto mb-3 bg-secondary-subtle rounded-circle">
+                        <i class="bi bi-globe2 text-secondary fs-3"></i>
+                    </div>
+                    <h5 class="fw-bold mb-2">Internationale Fälle</h5>
+                    <p class="text-muted small">
+                        Wir bearbeiten Fälle aus über 18 Ländern und verfügen über
+                        ein weitreichendes Netzwerk an internationalen Partnern.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
 <!-- ===== TESTIMONIALS ===== -->
 <section id="erfahrungsberichte" class="py-6" style="background:var(--bg-light)">
     <div class="container">
@@ -1205,6 +1720,168 @@ for ($y = date('Y'); $y >= MIN_YEAR_LOST; $y--) { $years[] = $y; }
                 </div>
             </div>
             <?php endforeach; ?>
+        </div>
+    </div>
+</section>
+
+<!-- ===== STATISTICS SECTION ===== -->
+<section id="statistiken" class="py-6 stats-section">
+    <div class="container">
+        <div class="text-center mb-5" data-aos="fade-up">
+            <span class="badge bg-light text-dark rounded-pill px-3 py-2 mb-3">Unsere Ergebnisse</span>
+            <h2 class="display-6 fw-bold text-white">Zahlen, die für sich sprechen</h2>
+            <p class="text-white-50 col-lg-6 mx-auto">
+                Unsere Erfolgsbilanz belegt die Wirksamkeit unserer KI-gestützten Analysemethoden.
+            </p>
+        </div>
+        <div class="row g-4 text-center mb-5">
+            <div class="col-6 col-md-3" data-aos="zoom-in" data-aos-delay="100">
+                <div class="stat-card p-4 rounded-4">
+                    <div class="stat-number display-4 fw-bold text-warning" data-counter="87">0</div>
+                    <div class="stat-unit text-warning fw-bold fs-4">%</div>
+                    <div class="text-white mt-2 fw-semibold">Erfolgsquote</div>
+                    <div class="text-white-50 small">bei identifizierten Fällen</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3" data-aos="zoom-in" data-aos-delay="200">
+                <div class="stat-card p-4 rounded-4">
+                    <div class="stat-number display-4 fw-bold text-warning" data-counter="2400">0</div>
+                    <div class="stat-unit text-warning fw-bold fs-4">+</div>
+                    <div class="text-white mt-2 fw-semibold">Fälle geprüft</div>
+                    <div class="text-white-50 small">seit Gründung</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3" data-aos="zoom-in" data-aos-delay="300">
+                <div class="stat-card p-4 rounded-4">
+                    <div class="stat-number display-4 fw-bold text-warning" data-counter="48">0</div>
+                    <div class="stat-unit text-warning fw-bold fs-4">M €+</div>
+                    <div class="text-white mt-2 fw-semibold">Kapital rückgefordert</div>
+                    <div class="text-white-50 small">für unsere Mandanten</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3" data-aos="zoom-in" data-aos-delay="400">
+                <div class="stat-card p-4 rounded-4">
+                    <div class="stat-number display-4 fw-bold text-warning" data-counter="150">0</div>
+                    <div class="stat-unit text-warning fw-bold fs-4">K+</div>
+                    <div class="text-white mt-2 fw-semibold">Transaktionen analysiert</div>
+                    <div class="text-white-50 small">durch unser KI-System</div>
+                </div>
+            </div>
+        </div>
+        <div class="row g-4">
+            <div class="col-lg-6" data-aos="fade-right">
+                <div class="bg-white bg-opacity-10 rounded-4 p-4">
+                    <h5 class="text-white fw-bold mb-4">Häufigste Betrugsarten</h5>
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between text-white mb-1">
+                            <span><i class="bi bi-currency-bitcoin me-2 text-warning"></i>Krypto-Betrug</span>
+                            <span>42%</span>
+                        </div>
+                        <div class="progress" style="height: 10px;">
+                            <div class="progress-bar bg-warning" style="width: 42%"></div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between text-white mb-1">
+                            <span><i class="bi bi-currency-exchange me-2 text-info"></i>Forex-Betrug</span>
+                            <span>28%</span>
+                        </div>
+                        <div class="progress" style="height: 10px;">
+                            <div class="progress-bar bg-info" style="width: 28%"></div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between text-white mb-1">
+                            <span><i class="bi bi-building-x me-2 text-danger"></i>Fake-Broker</span>
+                            <span>18%</span>
+                        </div>
+                        <div class="progress" style="height: 10px;">
+                            <div class="progress-bar bg-danger" style="width: 18%"></div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between text-white mb-1">
+                            <span><i class="bi bi-heart-arrow me-2"></i>Romance-Scam</span>
+                            <span>8%</span>
+                        </div>
+                        <div class="progress" style="height: 10px;">
+                            <div class="progress-bar" style="width: 8%; background-color: #ff69b4 !important;"></div>
+                        </div>
+                    </div>
+                    <div class="mb-0">
+                        <div class="d-flex justify-content-between text-white mb-1">
+                            <span><i class="bi bi-three-dots me-2 text-secondary"></i>Sonstige</span>
+                            <span>4%</span>
+                        </div>
+                        <div class="progress" style="height: 10px;">
+                            <div class="progress-bar bg-secondary" style="width: 4%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-6" data-aos="fade-left">
+                <div class="bg-white bg-opacity-10 rounded-4 p-4 h-100">
+                    <h5 class="text-white fw-bold mb-4">Kundenfeedback</h5>
+                    <div id="testimonialCarousel" class="carousel slide" data-bs-ride="carousel">
+                        <div class="carousel-inner">
+                            <div class="carousel-item active">
+                                <div class="text-white">
+                                    <div class="mb-3">
+                                        <i class="bi bi-star-fill text-warning"></i>
+                                        <i class="bi bi-star-fill text-warning"></i>
+                                        <i class="bi bi-star-fill text-warning"></i>
+                                        <i class="bi bi-star-fill text-warning"></i>
+                                        <i class="bi bi-star-fill text-warning"></i>
+                                    </div>
+                                    <p class="fst-italic">
+                                        "Ich hatte 28.000€ an eine gefälschte Krypto-Plattform verloren.
+                                        Dank VerlustRückholung konnte ich 21.000€ zurückfordern. Professionell, diskret und effizient."
+                                    </p>
+                                    <div class="fw-bold">– Thomas K., München</div>
+                                </div>
+                            </div>
+                            <div class="carousel-item">
+                                <div class="text-white">
+                                    <div class="mb-3">
+                                        <i class="bi bi-star-fill text-warning"></i>
+                                        <i class="bi bi-star-fill text-warning"></i>
+                                        <i class="bi bi-star-fill text-warning"></i>
+                                        <i class="bi bi-star-fill text-warning"></i>
+                                        <i class="bi bi-star-fill text-warning"></i>
+                                    </div>
+                                    <p class="fst-italic">
+                                        "Nach monatelangem Kampf mit einem Fake-Broker hat mir das Team von
+                                        VerlustRückholung endlich geholfen. Die KI-Analyse war der entscheidende Durchbruch."
+                                    </p>
+                                    <div class="fw-bold">– Maria S., Berlin</div>
+                                </div>
+                            </div>
+                            <div class="carousel-item">
+                                <div class="text-white">
+                                    <div class="mb-3">
+                                        <i class="bi bi-star-fill text-warning"></i>
+                                        <i class="bi bi-star-fill text-warning"></i>
+                                        <i class="bi bi-star-fill text-warning"></i>
+                                        <i class="bi bi-star-fill text-warning"></i>
+                                        <i class="bi bi-star-half text-warning"></i>
+                                    </div>
+                                    <p class="fst-italic">
+                                        "Die kostenlose Erstberatung hat mich überzeugt. Innerhalb von 48 Stunden
+                                        hatte ich bereits eine Einschätzung meines Falles. Sehr empfehlenswert!"
+                                    </p>
+                                    <div class="fw-bold">– Andreas M., Hamburg</div>
+                                </div>
+                            </div>
+                        </div>
+                        <button class="carousel-control-prev" type="button" data-bs-target="#testimonialCarousel" data-bs-slide="prev">
+                            <i class="bi bi-chevron-left text-warning fs-4"></i>
+                        </button>
+                        <button class="carousel-control-next" type="button" data-bs-target="#testimonialCarousel" data-bs-slide="next">
+                            <i class="bi bi-chevron-right text-warning fs-4"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </section>
@@ -2435,6 +3112,143 @@ for ($y = date('Y'); $y >= MIN_YEAR_LOST; $y--) { $years[] = $y; }
             }
         });
     });
+
+    // ── AI Network Canvas Animation (aiNetworkCanvas2) ─────
+    (function () {
+        var canvas = document.getElementById('aiNetworkCanvas2');
+        if (!canvas) return;
+        var ctx = canvas.getContext('2d');
+        var W, H, nodes, edges, animId;
+        var hudNodes = document.getElementById('aiNodes2');
+        var hudEdges = document.getElementById('aiEdges2');
+        var hudScams = document.getElementById('aiScams2');
+        var hudRec   = document.getElementById('aiRecovered2');
+        var stepEls  = ['aiStep1b','aiStep2b','aiStep3b','aiStep4b'].map(function(id){ return document.getElementById(id); });
+        var activeStep = 0;
+        var nodeCount = 0, edgeCount = 0, scamCount = 0, recAmt = 0;
+
+        function resize() {
+            var wrap = canvas.parentElement;
+            W = canvas.width  = wrap.offsetWidth;
+            H = canvas.height = wrap.offsetHeight - 80;
+            if (H < 100) H = canvas.height = 200;
+        }
+
+        function makeNodes(n) {
+            var arr = [];
+            for (var i = 0; i < n; i++) {
+                var r = 4 + Math.random() * 5;
+                arr.push({
+                    x: r + Math.random() * (W - r * 2),
+                    y: r + Math.random() * (H - r * 2),
+                    vx: (Math.random() - 0.5) * 0.6,
+                    vy: (Math.random() - 0.5) * 0.6,
+                    r: r,
+                    type: Math.random() < 0.15 ? 'scam' : (Math.random() < 0.3 ? 'hub' : 'normal'),
+                    pulse: Math.random() * Math.PI * 2
+                });
+            }
+            return arr;
+        }
+
+        function init() {
+            resize();
+            nodes = makeNodes(28);
+            edges = [];
+            for (var i = 0; i < nodes.length; i++) {
+                for (var j = i + 1; j < nodes.length; j++) {
+                    var dx = nodes[i].x - nodes[j].x;
+                    var dy = nodes[i].y - nodes[j].y;
+                    if (Math.sqrt(dx*dx + dy*dy) < W * 0.28) {
+                        edges.push({a: i, b: j});
+                    }
+                }
+            }
+        }
+
+        function draw(ts) {
+            ctx.clearRect(0, 0, W, H);
+            // edges
+            edges.forEach(function(e) {
+                var a = nodes[e.a], b = nodes[e.b];
+                var alpha = (a.type === 'scam' || b.type === 'scam') ? 0.5 : 0.15;
+                var color = (a.type === 'scam' || b.type === 'scam') ? '245,82,82' : '255,255,255';
+                ctx.beginPath();
+                ctx.moveTo(a.x, a.y);
+                ctx.lineTo(b.x, b.y);
+                ctx.strokeStyle = 'rgba(' + color + ',' + alpha + ')';
+                ctx.lineWidth = (a.type === 'scam' || b.type === 'scam') ? 1.5 : 0.7;
+                ctx.stroke();
+            });
+            // nodes
+            nodes.forEach(function(n) {
+                n.pulse += 0.04;
+                var pulse = Math.sin(n.pulse) * 0.3 + 0.7;
+                var r = n.r;
+                var color = n.type === 'scam' ? '#f55252' : (n.type === 'hub' ? '#f5a623' : '#4d9fff');
+                // glow
+                var grd = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, r * 2.5);
+                grd.addColorStop(0, color.replace('#','rgba(').replace(/(..)(..)(..)/, function(m,r,g,b){
+                    return parseInt(r,16)+','+parseInt(g,16)+','+parseInt(b,16)+',';
+                }) + (0.25 * pulse) + ')');
+                grd.addColorStop(1, 'rgba(0,0,0,0)');
+                ctx.beginPath();
+                ctx.arc(n.x, n.y, r * 2.5, 0, Math.PI * 2);
+                ctx.fillStyle = grd;
+                ctx.fill();
+                // core
+                ctx.beginPath();
+                ctx.arc(n.x, n.y, r * pulse, 0, Math.PI * 2);
+                ctx.fillStyle = color;
+                ctx.fill();
+                // move
+                n.x += n.vx; n.y += n.vy;
+                if (n.x < n.r || n.x > W - n.r) n.vx *= -1;
+                if (n.y < n.r || n.y > H - n.r) n.vy *= -1;
+            });
+            animId = requestAnimationFrame(draw);
+        }
+
+        // HUD counters
+        var hudInterval = setInterval(function() {
+            nodeCount = Math.min(nodeCount + Math.floor(Math.random()*12+3), 847);
+            edgeCount = Math.min(edgeCount + Math.floor(Math.random()*18+5), 2341);
+            scamCount = Math.min(scamCount + (Math.random()<0.3?1:0), 34);
+            recAmt    = Math.min(recAmt + Math.floor(Math.random()*4000+500), 1240000);
+            if (hudNodes) hudNodes.textContent = nodeCount;
+            if (hudEdges) hudEdges.textContent = edgeCount;
+            if (hudScams) hudScams.textContent = scamCount;
+            if (hudRec)   hudRec.textContent   = '€' + (recAmt >= 1000 ? (recAmt/1000).toFixed(1) + 'K' : recAmt);
+            // step cycling
+            if (stepEls[0]) {
+                var newStep = Math.floor(Date.now() / 3000) % 4;
+                if (newStep !== activeStep) {
+                    if (stepEls[activeStep]) stepEls[activeStep].classList.remove('active');
+                    activeStep = newStep;
+                    if (stepEls[activeStep]) stepEls[activeStep].classList.add('active');
+                }
+            }
+        }, 400);
+
+        // start when visible
+        var obs = new IntersectionObserver(function(entries) {
+            entries.forEach(function(entry) {
+                if (entry.isIntersecting) {
+                    init();
+                    animId = requestAnimationFrame(draw);
+                } else {
+                    if (animId) cancelAnimationFrame(animId);
+                }
+            });
+        }, { threshold: 0.1 });
+        obs.observe(canvas.parentElement);
+
+        window.addEventListener('resize', function() {
+            if (animId) cancelAnimationFrame(animId);
+            init();
+            animId = requestAnimationFrame(draw);
+        });
+    })();
 
 })();
 </script>
