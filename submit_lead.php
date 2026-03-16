@@ -4,6 +4,25 @@ require_once __DIR__ . '/includes/db.php';
 require_once __DIR__ . '/includes/functions.php';
 require_once __DIR__ . '/includes/mailer.php';
 
+// ── AJAX detection ──────────────────────────────────────────
+$is_ajax = !empty($_POST['_ajax']);
+
+// Helper: send response (JSON for AJAX, redirect for regular POST)
+function send_response(bool $success, string $message, array $extra = []): never
+{
+    global $is_ajax;
+    if ($is_ajax) {
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode(array_merge(['success' => $success, 'message' => $message], $extra));
+        exit;
+    }
+    // Regular POST: redirect back with query string flag
+    $param = $success ? 'success=1' : ('error=' . urlencode($message));
+    $back  = (isset($_POST['_source']) && $_POST['_source'] === 'index2') ? 'index2.php' : 'index.php';
+    header('Location: ' . $back . '?' . $param . ($success ? '#fallform' : ''));
+    exit;
+}
+
 // ── CSRF validation ────────────────────────────────────────
 if (
     empty($_POST['csrf_token']) ||
@@ -12,8 +31,7 @@ if (
 ) {
     // Regenerate token so a page-refresh always has a fresh one
     $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
-    header('Location: index.php?error=' . urlencode('Sitzung abgelaufen. Bitte versuchen Sie es erneut.'));
-    exit;
+    send_response(false, 'Sitzung abgelaufen. Bitte versuchen Sie es erneut.');
 }
 
 // ── Collect & sanitize input ───────────────────────────────
@@ -68,8 +86,7 @@ if ($year_lost !== '') {
 }
 
 if (!empty($errors)) {
-    header('Location: index.php?error=' . urlencode(implode(' ', $errors)));
-    exit;
+    send_response(false, implode(' ', $errors));
 }
 
 // ── Allowed categories ─────────────────────────────────────
@@ -124,8 +141,7 @@ try {
     unset($_SESSION['visit_id']);
 } catch (PDOException $e) {
     error_log('[VerlustRückholung] DB error: ' . $e->getMessage());
-    header('Location: index.php?error=' . urlencode('Datenbankfehler. Bitte versuchen Sie es später erneut.'));
-    exit;
+    send_response(false, 'Datenbankfehler. Bitte versuchen Sie es später erneut.');
 }
 
 // ── Send emails (non-blocking; failures are only logged) ───
@@ -154,5 +170,6 @@ if (get_setting('send_email_on_submission', '1') === '1') {
 // ── Regenerate CSRF token after successful submission ──────
 $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 
-header('Location: index.php?success=1#fallform');
-exit;
+send_response(true, 'Vielen Dank! Ihr Fall wurde eingereicht. Wir melden uns innerhalb von 48 Stunden.', [
+    'csrf_token' => $_SESSION['csrf_token'],
+]);

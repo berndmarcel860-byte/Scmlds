@@ -589,7 +589,7 @@ for ($y = date('Y'); $y >= MIN_YEAR_LOST; $y--) { $years[] = $y; }
             <a href="#erfahrungsberichte"  class="nav-link-v2">Erfahrungen</a>
             <a href="#kontakt"             class="nav-link-v2">Kontakt</a>
         </div>
-        <a href="#fallformular" class="btn-cta-nav">
+        <a href="#" class="btn-cta-nav" data-bs-toggle="modal" data-bs-target="#fullFormModal">
             <i class="bi bi-shield-check me-1"></i>Kostenlos prüfen
         </a>
     </div>
@@ -672,8 +672,9 @@ for ($y = date('Y'); $y >= MIN_YEAR_LOST; $y--) { $years[] = $y; }
                     <div class="trust-item"><i class="bi bi-lightning-charge-fill"></i>Antwort in 48h</div>
                 </div>
                 <div class="d-flex flex-wrap gap-3 mt-4">
-                    <a href="#fallformular" class="btn btn-warning btn-lg fw-bold px-4 py-3"
-                       style="border-radius:12px;box-shadow:0 8px 24px rgba(245,166,35,.4);">
+                    <a href="#" class="btn btn-warning btn-lg fw-bold px-4 py-3"
+                       style="border-radius:12px;box-shadow:0 8px 24px rgba(245,166,35,.4);"
+                       data-bs-toggle="modal" data-bs-target="#fullFormModal">
                         <i class="bi bi-shield-check me-2"></i>Kostenlose Erstprüfung
                     </a>
                     <a href="#wie-es-funktioniert" class="btn btn-outline-light btn-lg px-4 py-3"
@@ -1035,7 +1036,8 @@ for ($y = date('Y'); $y >= MIN_YEAR_LOST; $y--) { $years[] = $y; }
                         <div><strong>DSGVO-konform</strong> – Ihre Daten sind bei uns sicher und geschützt.</div>
                     </div>
                 </div>
-                <a href="#fallformular" class="btn btn-primary btn-lg mt-4" style="border-radius:12px;">
+                <a href="#" class="btn btn-primary btn-lg mt-4" style="border-radius:12px;"
+                   data-bs-toggle="modal" data-bs-target="#fullFormModal">
                     <i class="bi bi-arrow-right me-1"></i>Jetzt Fall prüfen
                 </a>
             </div>
@@ -1377,7 +1379,8 @@ for ($y = date('Y'); $y >= MIN_YEAR_LOST; $y--) { $years[] = $y; }
                     <i class="bi bi-envelope me-2"></i>info@verlustrueckholung.de<br>
                     <i class="bi bi-globe me-2 mt-2 d-inline-block"></i>verlustrueckholung.de
                 </p>
-                <a href="#fallformular" class="btn btn-warning btn-sm fw-bold mt-2">
+                <a href="#" class="btn btn-warning btn-sm fw-bold mt-2"
+                   data-bs-toggle="modal" data-bs-target="#fullFormModal">
                     <i class="bi bi-shield-check me-1"></i>Kostenlos prüfen lassen
                 </a>
             </div>
@@ -1661,13 +1664,91 @@ for ($y = date('Y'); $y >= MIN_YEAR_LOST; $y--) { $years[] = $y; }
         nav.classList.toggle('scrolled', window.scrollY > 40);
     });
 
-    // ── Form validation ────────────────────────────────────
-    document.querySelectorAll('form[novalidate]').forEach(function (form) {
-        form.addEventListener('submit', function (e) {
-            if (!form.checkValidity()) { e.preventDefault(); e.stopPropagation(); }
-            form.classList.add('was-validated');
+    // ── AJAX Form submission ────────────────────────────────
+    (function () {
+        // IDs and their success-display strategies
+        var formDefs = [
+            { id: 'heroForm',    type: 'inline' },
+            { id: 'mainFormV2', type: 'inline' },
+            { id: 'modalFormV2', type: 'modal'  },
+            { id: 'engFormV2',   type: 'modal'  },
+        ];
+
+        function showAlert(container, success, message) {
+            var cls  = success ? 'alert-success' : 'alert-danger';
+            var icon = success ? 'bi-check-circle-fill' : 'bi-exclamation-triangle-fill';
+            var div  = document.createElement('div');
+            div.className = 'alert ' + cls + ' d-flex align-items-start gap-2 my-3';
+            div.innerHTML = '<i class="bi ' + icon + ' flex-shrink-0 mt-1"></i><div>' + message + '</div>';
+            // Remove any existing alert first
+            var old = container.querySelector('.ajax-form-alert');
+            if (old) old.remove();
+            div.classList.add('ajax-form-alert');
+            container.insertBefore(div, container.firstChild);
+        }
+
+        formDefs.forEach(function (def) {
+            var form = document.getElementById(def.id);
+            if (!form) return;
+
+            form.addEventListener('submit', function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+
+                if (!form.checkValidity()) {
+                    form.classList.add('was-validated');
+                    return;
+                }
+                form.classList.add('was-validated');
+
+                var btn = form.querySelector('[type="submit"]');
+                var origHtml = btn ? btn.innerHTML : '';
+                if (btn) {
+                    btn.disabled = true;
+                    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Wird geprüft...';
+                }
+
+                var fd = new FormData(form);
+                fd.append('_ajax', '1');
+                fd.append('_source', 'index2');
+
+                fetch('submit_lead.php', { method: 'POST', body: fd })
+                    .then(function (r) { return r.json(); })
+                    .then(function (data) {
+                        // Update CSRF tokens in all forms on the page
+                        if (data.csrf_token) {
+                            document.querySelectorAll('input[name="csrf_token"]').forEach(function (el) {
+                                el.value = data.csrf_token;
+                            });
+                        }
+                        if (data.success) {
+                            if (def.type === 'inline') {
+                                // Replace form with success message
+                                var msg = document.createElement('div');
+                                msg.className = 'alert alert-success d-flex align-items-start gap-2';
+                                msg.innerHTML = '<i class="bi bi-check-circle-fill flex-shrink-0 mt-1 fs-5 text-success"></i>' +
+                                    '<div><strong>Vielen Dank!</strong> ' + data.message + '</div>';
+                                form.parentNode.insertBefore(msg, form);
+                                form.style.display = 'none';
+                            } else {
+                                // Show success inside modal body, hide the form
+                                showAlert(form.parentNode, true, '<strong>Vielen Dank!</strong> ' + data.message);
+                                form.style.display = 'none';
+                            }
+                            // Mark as engaged so engagement modal won't re-appear
+                            sessionStorage.setItem('vr2_engaged', '1');
+                        } else {
+                            showAlert(form, false, data.message || 'Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut.');
+                            if (btn) { btn.disabled = false; btn.innerHTML = origHtml; }
+                        }
+                    })
+                    .catch(function () {
+                        showAlert(form, false, 'Netzwerkfehler. Bitte versuchen Sie es erneut.');
+                        if (btn) { btn.disabled = false; btn.innerHTML = origHtml; }
+                    });
+            });
         });
-    });
+    })();
 
     // ────────────────────────────────────────────────────────
     //  HERO CANVAS – animated AI neural-network particle field
@@ -1921,8 +2002,16 @@ for ($y = date('Y'); $y >= MIN_YEAR_LOST; $y--) { $years[] = $y; }
         if (navigator.sendBeacon) { navigator.sendBeacon('track.php', blob); }
         else { fetch('track.php', { method: 'POST', body: blob, keepalive: true }).catch(function () {}); }
     }
+    // Fire on tab close / browser close (pagehide is most reliable cross-browser)
     window.addEventListener('pagehide', sendTimeUpdate);
+    // Fallback: beforeunload covers cases pagehide misses
     window.addEventListener('beforeunload', sendTimeUpdate);
+    // visibilitychange fires reliably on tab close in Chrome; avoids 0s issue
+    document.addEventListener('visibilitychange', function () {
+        if (document.visibilityState === 'hidden') { sendTimeUpdate(); }
+    });
+    // Periodic beacon every 30 s so the DB is updated even if unload events are missed
+    setInterval(sendTimeUpdate, 30000);
 
     // ── Engagement modal (configurable delay) ──────────────
     var engModal = document.getElementById('exitIntentModalV2');
