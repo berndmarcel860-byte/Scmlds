@@ -182,7 +182,7 @@ footer .footer-bottom{border-top:1px solid rgba(255,255,255,.08);margin-top:2rem
       <a href="#leistungen" class="nav-link-custom">Leistungen</a>
       <a href="#stats-section" class="nav-link-custom">Ergebnisse</a>
       <a href="#faq" class="nav-link-custom">FAQ</a>
-      <a href="#mainForm" class="nav-link-custom nav-cta ms-2">Kostenlos prüfen</a>
+      <a href="#" class="nav-link-custom nav-cta ms-2" data-bs-toggle="modal" data-bs-target="#contactModal">Kostenlos prüfen</a>
     </div>
     <button class="d-lg-none btn btn-sm" style="background:var(--accent);color:#fff;border-radius:6px;font-size:.82rem;font-weight:600;" onclick="document.getElementById('engModal')&&new bootstrap.Modal(document.getElementById('engModal')).show()">Jetzt starten</button>
   </div>
@@ -201,7 +201,7 @@ footer .footer-bottom{border-top:1px solid rgba(255,255,255,.08);margin-top:2rem
         </h1>
         <p class="hero-sub">Unser KI-Betrugsradar arbeitet 24/7. Lassen Sie uns Ihren Fall sofort analysieren – kostenlos und ohne Risiko.</p>
         <div class="d-flex flex-wrap gap-3 mb-4">
-          <a href="#mainForm" class="hero-cta">Sofort analysieren lassen →</a>
+          <a href="#" class="hero-cta" data-bs-toggle="modal" data-bs-target="#contactModal">Sofort analysieren lassen →</a>
           <a href="#ai-section" class="btn btn-outline-light" style="border-radius:8px;font-weight:600;padding:.85rem 1.8rem;">KI-Radar ansehen</a>
         </div>
         <div class="d-flex flex-wrap gap-3 stat-pills">
@@ -984,6 +984,7 @@ function setupForm(formId,design){
 }
 setupForm('mainForm','design5');
 setupForm('engForm','design5_modal');
+setupForm('contactModalForm','contact_modal');
 
 /* AOS */
 AOS.init({duration:700,once:true,offset:60});
@@ -1014,5 +1015,117 @@ document.addEventListener('visibilitychange',function(){if(document.visibilitySt
 setInterval(sendTime,30000);
 })();
 </script>
+<!-- ===== CONTACT MODAL ===== -->
+<div class="modal fade" id="contactModal" tabindex="-1" aria-labelledby="contactModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg modal-fullscreen-sm-down">
+    <div class="modal-content border-0 shadow-xl" style="border-radius:16px;overflow:hidden;">
+      <div class="modal-header text-white py-3 px-4" style="background:linear-gradient(135deg,#dc2626,#b91c1c);border:none;">
+        <div>
+          <div class="small fw-semibold opacity-75 mb-1"><i class="bi bi-robot me-1"></i>KI-gestützte Fallanalyse · Kostenlos &amp; Unverbindlich</div>
+          <h5 class="modal-title fw-bold mb-0" id="contactModalLabel">Kostenlose Erstprüfung – Ihr Fall in 72h analysiert</h5>
+        </div>
+        <button type="button" class="btn-close btn-close-white ms-auto" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body p-0">
+        <div class="row g-0">
+          <div class="col-lg-4 d-none d-lg-flex flex-column justify-content-between p-4" style="background:#f8faff;border-right:1px solid #e2e8f0;">
+            <div>
+              <div class="fw-bold text-dark mb-3">Warum VerlustRückholung?</div>
+              <ul class="list-unstyled small text-muted">
+                <li class="mb-3 d-flex gap-2"><i class="bi bi-check-circle-fill mt-1" style="color:#dc2626;flex-shrink:0"></i><span><strong class="text-dark">87% Erfolgsquote</strong> – verifiziert über 2.400 Mandate</span></li>
+                <li class="mb-3 d-flex gap-2"><i class="bi bi-check-circle-fill mt-1" style="color:#dc2626;flex-shrink:0"></i><span><strong class="text-dark">€0 Vorauszahlung</strong> – Sie zahlen nur bei Erfolg</span></li>
+                <li class="mb-3 d-flex gap-2"><i class="bi bi-check-circle-fill mt-1" style="color:#dc2626;flex-shrink:0"></i><span><strong class="text-dark">72h Erstantwort</strong> – KI prüft Ihren Fall sofort</span></li>
+                <li class="mb-3 d-flex gap-2"><i class="bi bi-check-circle-fill mt-1" style="color:#dc2626;flex-shrink:0"></i><span><strong class="text-dark">40+ Länder</strong> – Internationales Expertennetzwerk</span></li>
+                <li class="d-flex gap-2"><i class="bi bi-check-circle-fill mt-1" style="color:#dc2626;flex-shrink:0"></i><span><strong class="text-dark">DSGVO-konform</strong> – Höchste Datensicherheit</span></li>
+              </ul>
+            </div>
+            <div style="background:white;border:1px solid #e2e8f0;border-radius:12px;padding:1rem;">
+              <div class="small text-muted mb-2">Zuletzt erfolgreich zurückgeholt:</div>
+              <div class="fw-bold text-dark">€ 127.400</div>
+              <div class="small text-muted">Krypto-Betrug · München · vor 2h</div>
+              <hr class="my-2">
+              <div class="fw-bold text-dark">€ 84.900</div>
+              <div class="small text-muted">Forex-Broker · Wien · vor 5h</div>
+            </div>
+          </div>
+          <div class="col-lg-8 p-4">
+            <?php if (isset($_GET['success']) && $_GET['success'] === '1'): ?>
+            <div class="alert alert-success"><i class="bi bi-check-circle me-2"></i><strong>Vielen Dank!</strong> Wir melden uns innerhalb von 24 Stunden.</div>
+            <?php endif; ?>
+            <form action="../submit_lead.php" method="POST" id="contactModalForm" novalidate>
+              <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
+              <input type="hidden" name="lead_source" value="contact_modal">
+              <input type="hidden" name="visit_id" data-visit-id value="">
+              <div class="row g-3">
+                <div class="col-sm-6">
+                  <label class="form-label fw-semibold small">Vorname *</label>
+                  <input type="text" name="first_name" class="form-control" placeholder="Max" required>
+                  <div class="invalid-feedback">Bitte eingeben.</div>
+                </div>
+                <div class="col-sm-6">
+                  <label class="form-label fw-semibold small">Nachname *</label>
+                  <input type="text" name="last_name" class="form-control" placeholder="Mustermann" required>
+                  <div class="invalid-feedback">Bitte eingeben.</div>
+                </div>
+                <div class="col-sm-6">
+                  <label class="form-label fw-semibold small">E-Mail *</label>
+                  <input type="email" name="email" class="form-control" placeholder="max@example.de" required>
+                  <div class="invalid-feedback">Gültige E-Mail erforderlich.</div>
+                </div>
+                <div class="col-sm-6">
+                  <label class="form-label fw-semibold small">Telefon (optional)</label>
+                  <input type="tel" name="phone" class="form-control" placeholder="+49 123 456789">
+                </div>
+                <div class="col-sm-6">
+                  <label class="form-label fw-semibold small">Land *</label>
+                  <select name="country" class="form-select" required>
+                    <option value="">Land auswählen...</option>
+                    <option>🇩🇪 Deutschland</option><option>🇦🇹 Österreich</option><option>🇨🇭 Schweiz</option>
+                    <option>🇺🇸 USA</option><option>🇬🇧 Vereinigtes Königreich</option><option>🌍 Anderes Land</option>
+                  </select>
+                  <div class="invalid-feedback">Bitte Land wählen.</div>
+                </div>
+                <div class="col-sm-6">
+                  <label class="form-label fw-semibold small">Geschätzter Verlust (€) *</label>
+                  <input type="number" name="amount_lost" class="form-control" placeholder="10000" min="1" required>
+                  <div class="invalid-feedback">Bitte Betrag eingeben.</div>
+                </div>
+                <div class="col-12">
+                  <label class="form-label fw-semibold small">Betrugsart *</label>
+                  <select name="platform_category" class="form-select" required>
+                    <option value="">Betrugsart wählen...</option>
+                    <option>Krypto-Betrug</option><option>Forex-Betrug</option><option>Fake-Broker</option>
+                    <option>Romance-Scam</option><option>Binäre Optionen</option><option>Andere</option>
+                  </select>
+                  <div class="invalid-feedback">Bitte Betrugsart wählen.</div>
+                </div>
+                <div class="col-12">
+                  <label class="form-label fw-semibold small">Kurze Fallbeschreibung *</label>
+                  <textarea name="case_description" class="form-control" rows="3" placeholder="Bitte beschreiben Sie kurz, was passiert ist..." required></textarea>
+                  <div class="invalid-feedback">Bitte kurz beschreiben.</div>
+                </div>
+                <div class="col-12">
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" name="privacy" id="privacyContactModal" required>
+                    <label class="form-check-label small text-muted" for="privacyContactModal">
+                      Ich stimme der <a href="#" style="color:#dc2626">Datenschutzerklärung</a> zu und bin einverstanden, dass meine Daten zur Fallbearbeitung verwendet werden. *
+                    </label>
+                    <div class="invalid-feedback">Bitte Datenschutz bestätigen.</div>
+                  </div>
+                </div>
+                <div class="col-12">
+                  <button type="submit" class="btn w-100 fw-bold py-3" style="background:#dc2626;color:#fff;font-size:1rem;border:none;border-radius:10px;">
+                    <i class="bi bi-send-fill me-2"></i>Kostenlose Analyse anfordern →
+                  </button>
+                  <p class="text-center text-muted mt-2 mb-0" style="font-size:.75rem;"><i class="bi bi-lock-fill me-1"></i>SSL-gesichert · DSGVO-konform · Keine Vorauszahlung</p>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 </body>
 </html>
