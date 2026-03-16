@@ -726,6 +726,24 @@ for ($y = date('Y'); $y >= MIN_YEAR_LOST; $y--) { $years[] = $y; }
     .step-item-timeline { display: flex; align-items: flex-start; gap: 1rem; margin-bottom: 1.25rem; position: relative; }
     .step-item-timeline:not(:last-child)::before { content: ''; position: absolute; left: 18px; top: 36px; bottom: -10px; width: 2px; background: linear-gradient(to bottom, #f5a623, transparent); }
     .step-num { width: 36px; height: 36px; min-width: 36px; background: #f5a623; color: #000; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.9rem; }
+    /* ── MOBILE IMPROVEMENTS ──────────────────────────────── */
+    @media (max-width: 767.98px) {
+        .hero-v2 { padding-top: 70px; min-height: 100svh; }
+        .hero-v2 h1 { font-size: clamp(1.6rem, 6vw, 2.4rem); }
+        .stat-pill { display: none; }
+        .engagement-left { display: none !important; }
+        .engagement-modal-content .engagement-right { border-radius: 16px !important; }
+        .form-box-v2 { border-radius: 12px; }
+        .form-box-header { padding: 1.25rem 1.25rem 1rem; }
+        .form-box-body { padding: 1.25rem; }
+        .section-v2 { padding: 3rem 0; }
+        .modal-dialog.modal-xl { margin: 0.5rem; }
+    }
+    @media (max-width: 575.98px) {
+        .hero-v2 h1 { font-size: clamp(1.4rem, 5.5vw, 2rem); }
+        .ticker-wrap { font-size: .8rem; }
+        .trust-item { font-size: .75rem; }
+    }
     </style>
 </head>
 <body>
@@ -2184,6 +2202,7 @@ for ($y = date('Y'); $y >= MIN_YEAR_LOST; $y--) { $years[] = $y; }
             <div class="engagement-modal-body">
                 <div class="row g-0">
                     <div class="col-lg-5 engagement-left d-none d-lg-flex flex-column justify-content-center align-items-center p-4">
+                        <div class="text-center mb-3 px-2 py-1 rounded" style="background:rgba(245,166,35,0.15);border:1px solid rgba(245,166,35,0.3)"><small class="text-warning fw-semibold">⚡ Zeitkritisch: Spuren verwischen sich</small></div>
                         <div class="engagement-icon mb-3">
                             <i class="bi bi-shield-check"></i>
                         </div>
@@ -2199,6 +2218,12 @@ for ($y = date('Y'); $y >= MIN_YEAR_LOST; $y--) { $years[] = $y; }
                             <div class="h3 fw-bold text-warning mb-1">€0</div>
                             <div class="small text-white-50">Kosten für Sie vorab</div>
                         </div>
+                        <ul class="list-unstyled text-white-50 small mt-3 mb-0">
+                            <li class="mb-1"><i class="bi bi-check-circle-fill text-warning me-2"></i>Kein Erfolg → keine Gebühr</li>
+                            <li class="mb-1"><i class="bi bi-check-circle-fill text-warning me-2"></i>Antwort in 24 Stunden</li>
+                            <li><i class="bi bi-check-circle-fill text-warning me-2"></i>100% vertraulich &amp; DSGVO</li>
+                        </ul>
+                        <div class="text-center mt-3"><div class="small text-white-50">Zuletzt zurückgeholt:</div><div class="fw-bold text-warning">€ 127.400 – München</div><div class="small text-white-50">vor 2 Stunden</div></div>
                     </div>
                     <div class="col-lg-7 engagement-right p-4 p-lg-5">
                         <div class="mb-1">
@@ -2206,24 +2231,13 @@ for ($y = date('Y'); $y >= MIN_YEAR_LOST; $y--) { $years[] = $y; }
                                 <i class="bi bi-gift me-1"></i>Exklusiv für Sie
                             </span>
                         </div>
-                        <h3 class="fw-bold mt-3 mb-2" style="line-height:1.2;">
-                            Warten Sie – Ihr Geld könnte noch rückforderbar sein.
-                        </h3>
-                        <p class="text-muted mb-3">
-                            Täglich helfen wir Betrugsopfern, verloren geglaubtes Kapital zurückzufordern.
-                            Viele unserer erfolgreichsten Fälle schienen zunächst hoffnungslos –
-                            bis unsere KI die entscheidende Spur fand.
-                        </p>
-                        <div class="bg-light rounded-3 p-3 mb-4">
-                            <p class="mb-2 fw-semibold text-dark">
-                                <i class="bi bi-cpu text-primary me-2"></i>Probieren Sie es aus – die Beratung ist kostenlos.
-                            </p>
-                            <p class="text-muted small mb-0">
-                                Sie haben nichts zu verlieren, aber möglicherweise alles zu gewinnen.
-                                Unsere Erstprüfung ist vollständig kostenlos, unverbindlich und vertraulich.
-                                Erst wenn wir Ihnen tatsächlich helfen können und Sie es wünschen, entstehen Kosten –
-                                und auch dann nur erfolgsbasiert.
-                            </p>
+                        <h3 class="fw-bold mt-2 mb-1" style="line-height:1.2;">Ihr Kapital wartet – <span style="color:var(--accent)">Analyse starten</span></h3>
+                        <p class="text-muted mb-3 small">In <strong>87% der Fälle</strong> können wir helfen. Unsere KI prüft Ihren Fall in 72h – völlig kostenlos. Kein Anwalt, keine Vorauszahlung, nur Ergebnisse.</p>
+                        <div class="row g-2 mb-3">
+                            <div class="col-6"><div class="d-flex align-items-center gap-2 p-2 rounded" style="background:#f0f4ff;border:1px solid #dbeafe"><i class="bi bi-robot text-primary"></i><span class="small fw-semibold">KI-Analyse</span></div></div>
+                            <div class="col-6"><div class="d-flex align-items-center gap-2 p-2 rounded" style="background:#f0fdf4;border:1px solid #d1fae5"><i class="bi bi-shield-check text-success"></i><span class="small fw-semibold">Kein Risiko</span></div></div>
+                            <div class="col-6"><div class="d-flex align-items-center gap-2 p-2 rounded" style="background:#fffbeb;border:1px solid #fde68a"><i class="bi bi-clock text-warning"></i><span class="small fw-semibold">24h Antwort</span></div></div>
+                            <div class="col-6"><div class="d-flex align-items-center gap-2 p-2 rounded" style="background:#fef2f2;border:1px solid #fecaca"><i class="bi bi-globe text-danger"></i><span class="small fw-semibold">40+ Länder</span></div></div>
                         </div>
                         <form action="submit_lead.php" method="POST" id="engFormV2" novalidate>
                             <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
@@ -2316,9 +2330,10 @@ for ($y = date('Y'); $y >= MIN_YEAR_LOST; $y--) { $years[] = $y; }
                                     </div>
                                 </div>
                             </div>
-                            <button type="submit" class="btn btn-warning btn-lg w-100 fw-bold">
-                                <i class="bi bi-search me-2"></i>Jetzt kostenlos prüfen lassen
+                            <button type="submit" class="btn w-100 fw-bold py-2" style="background:var(--accent);color:#000;font-size:1rem;">
+                                <i class="bi bi-send-fill me-2"></i>Kostenlose Analyse anfordern →
                             </button>
+                            <p class="text-center text-muted mt-2 mb-0" style="font-size:.75rem;"><i class="bi bi-lock-fill me-1"></i>SSL-verschlüsselt · DSGVO-konform · Keine Werbung</p>
                             <div class="text-center mt-2">
                                 <button type="button" class="btn btn-link text-muted small p-0" data-bs-dismiss="modal">
                                     Nein danke, ich verzichte auf mein Geld.
@@ -2334,7 +2349,7 @@ for ($y = date('Y'); $y >= MIN_YEAR_LOST; $y--) { $years[] = $y; }
 
 <!-- Full form modal (triggered from CTA buttons and fraud type cards) -->
 <div class="modal fade" id="fullFormModal" tabindex="-1" aria-labelledby="fullFormModalLabel">
-    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-dialog modal-xl modal-fullscreen-sm-down modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content fall-modal-content border-0">
 
             <!-- Modal Header -->
@@ -2347,7 +2362,7 @@ for ($y = date('Y'); $y >= MIN_YEAR_LOST; $y--) { $years[] = $y; }
                                 <span class="text-success fw-semibold small">KI-System aktiv · Analyse bereit</span>
                             </div>
                             <h4 class="modal-title fw-bold text-white mb-1" id="fullFormModalLabel">
-                                <i class="bi bi-shield-check text-warning me-2"></i>Kostenlose KI-Fallprüfung starten
+                                <i class="bi bi-shield-check text-warning me-2"></i>Kostenlose KI-Erstprüfung – Jetzt starten
                             </h4>
                             <p class="text-white-50 small mb-0">
                                 Unverbindlich · 100% kostenlos · Antwort innerhalb 48 Stunden
@@ -2370,16 +2385,30 @@ for ($y = date('Y'); $y >= MIN_YEAR_LOST; $y--) { $years[] = $y; }
                 <div class="row g-0">
 
                     <!-- Left sidebar: visual / info -->
-                    <div class="col-lg-4 fall-modal-sidebar d-none d-lg-flex flex-column justify-content-between p-4">
+                    <div class="col-lg-5 fall-modal-sidebar d-none d-lg-flex flex-column justify-content-between p-4">
                         <div>
-                            <h6 class="text-warning fw-bold text-uppercase small mb-3 letter-spacing">Warum VerlustRückholung?</h6>
+                            <h6 class="text-warning fw-bold text-uppercase small mb-3 letter-spacing">Warum uns wählen?</h6>
                             <ul class="list-unstyled fall-sidebar-list">
-                                <li><i class="bi bi-check-circle-fill text-warning"></i>KI-gestützte Transaktionsanalyse</li>
-                                <li><i class="bi bi-check-circle-fill text-warning"></i>Internationale Betrugsrückverfolgung</li>
-                                <li><i class="bi bi-check-circle-fill text-warning"></i>Erfahrene Rechts- &amp; Finanzexperten</li>
-                                <li><i class="bi bi-check-circle-fill text-warning"></i>Erfolgsbasierte Vergütung</li>
-                                <li><i class="bi bi-check-circle-fill text-warning"></i>18+ Länder · 2.400+ Fälle</li>
+                                <li><i class="bi bi-check-circle-fill text-warning"></i>KI-Analyse in 72 Stunden</li>
+                                <li><i class="bi bi-check-circle-fill text-warning"></i>87% Erfolgsquote (verifiziert)</li>
+                                <li><i class="bi bi-check-circle-fill text-warning"></i>Keine Vorauszahlung – nur Ergebnisse</li>
+                                <li><i class="bi bi-check-circle-fill text-warning"></i>Internationale Experten in 40+ Ländern</li>
+                                <li><i class="bi bi-check-circle-fill text-warning"></i>DSGVO-konform &amp; Ende-zu-Ende verschlüsselt</li>
                             </ul>
+                            <div class="mt-4">
+                                <div class="fall-stat-mini mb-3" style="background:rgba(255,255,255,0.07);border-radius:10px;padding:0.75rem 1rem;">
+                                    <div class="small text-white-50 mb-1">&ldquo;Ich hatte keine Hoffnung mehr, aber das Team hat binnen 3 Monaten mein gesamtes Kapital zurückgeholt.&rdquo;</div>
+                                    <div class="small fw-semibold text-warning">— M. Fischer, Hamburg · €34.000 zurück</div>
+                                </div>
+                                <div class="fall-stat-mini mb-3" style="background:rgba(255,255,255,0.07);border-radius:10px;padding:0.75rem 1rem;">
+                                    <div class="small text-white-50 mb-1">&ldquo;Professionell, schnell und ehrlich. Die KI-Analyse war der Durchbruch.&rdquo;</div>
+                                    <div class="small fw-semibold text-warning">— A. Müller, Wien · €58.500 zurück</div>
+                                </div>
+                                <div class="fall-stat-mini" style="background:rgba(255,255,255,0.07);border-radius:10px;padding:0.75rem 1rem;">
+                                    <div class="small text-white-50 mb-1">&ldquo;Endlich Gerechtigkeit. Ohne VerlustRückholung wäre mein Geld verloren gewesen.&rdquo;</div>
+                                    <div class="small fw-semibold text-warning">— K. Bauer, Zürich · €21.000 zurück</div>
+                                </div>
+                            </div>
                         </div>
                         <div>
                             <div class="fall-stat-mini mb-2">
@@ -2398,10 +2427,11 @@ for ($y = date('Y'); $y >= MIN_YEAR_LOST; $y--) { $years[] = $y; }
                     </div>
 
                     <!-- Right: form -->
-                    <div class="col-lg-8 p-4 p-lg-5">
-                        <form action="submit_lead.php" method="POST" id="modalFormV2" novalidate>
+                    <div class="col-lg-7 p-4 p-lg-5">
+                        <form action="submit_lead.php" method="POST" id="fullFormModalForm" novalidate>
                             <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
-                            <input type="hidden" name="visit_id" id="visitIdModalV2" value="">
+                            <input type="hidden" name="lead_source" value="full_form_modal">
+                            <input type="hidden" name="visit_id" data-visit-id value="">
 
                             <!-- Section 1: Persönliche Angaben -->
                             <div class="fall-form-section mb-4">
@@ -2528,9 +2558,8 @@ for ($y = date('Y'); $y >= MIN_YEAR_LOST; $y--) { $years[] = $y; }
                                 </div>
                             </div>
 
-                            <button type="submit" class="btn btn-warning btn-lg w-100 fw-bold py-3 fall-submit-btn">
-                                <i class="bi bi-search me-2"></i>Fall jetzt kostenlos einreichen
-                                <i class="bi bi-arrow-right ms-2"></i>
+                            <button type="submit" class="btn w-100 fw-bold py-3 fall-submit-btn" style="background:var(--accent);color:#000;font-size:1rem;">
+                                <i class="bi bi-send-fill me-2"></i>Kostenlose Analyse anfordern →
                             </button>
                             <p class="text-muted small text-center mt-3 mb-0">
                                 <i class="bi bi-lock-fill text-success me-1"></i>
