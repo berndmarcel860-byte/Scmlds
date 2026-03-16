@@ -46,11 +46,53 @@ $error   = isset($_GET['error'])   ? htmlspecialchars($_GET['error'], ENT_QUOTES
     </div>
 </nav>
 
+<!-- ===== CRYPTO TICKER STRIP ===== -->
+<div class="ticker-strip" id="cryptoTickerStrip">
+    <div class="ticker-label-box">
+        <span class="live-dot-sm"></span>Live
+    </div>
+    <div class="ticker-track-wrap">
+        <div class="ticker-track" id="tickerTrack">
+            <!-- filled by JS -->
+        </div>
+    </div>
+</div>
+
 <!-- ===== HERO SECTION ===== -->
 <section id="hero" class="hero-section d-flex align-items-center">
+    <!-- Animated canvas background -->
+    <canvas id="heroBg" class="hero-canvas"></canvas>
     <div class="hero-overlay"></div>
+
+    <!-- Floating price tags -->
+    <div class="hero-price-tags" id="heroPriceTags">
+        <div class="price-tag" id="ptBTC" style="top:18%;left:2%">
+            <i class="bi bi-currency-bitcoin text-warning"></i>
+            <span class="pt-sym">BTC</span>
+            <span class="pt-val" data-base="67241.50">67,241.50</span>
+            <span class="pt-chg up">+2.4%</span>
+        </div>
+        <div class="price-tag d-none d-xl-flex" id="ptETH" style="top:55%;left:1%">
+            <i class="bi bi-currency-exchange text-info"></i>
+            <span class="pt-sym">ETH</span>
+            <span class="pt-val" data-base="3541.20">3,541.20</span>
+            <span class="pt-chg up">+1.8%</span>
+        </div>
+        <div class="price-tag d-none d-lg-flex" id="ptEURUSD" style="top:75%;right:2%">
+            <span class="pt-sym">EUR/USD</span>
+            <span class="pt-val" data-base="1.0842">1.0842</span>
+            <span class="pt-chg down">-0.3%</span>
+        </div>
+        <div class="price-tag d-none d-xl-flex" id="ptXRP" style="top:30%;right:1%">
+            <span class="pt-sym">XRP</span>
+            <span class="pt-val" data-base="0.5312">0.5312</span>
+            <span class="pt-chg up">+4.1%</span>
+        </div>
+    </div>
+
     <div class="container position-relative z-1">
         <div class="row align-items-center g-5">
+            <!-- Left column -->
             <div class="col-lg-7" data-aos="fade-right">
                 <div class="badge bg-warning text-dark mb-3 px-3 py-2 rounded-pill fs-6">
                     <i class="bi bi-cpu me-1"></i>KI-gestützte Transaktionsanalyse
@@ -63,88 +105,89 @@ $error   = isset($_GET['error'])   ? htmlspecialchars($_GET['error'], ENT_QUOTES
                 <p class="lead text-white-75 mb-4">
                     Wurden Sie Opfer einer betrügerischen Investitionsplattform?
                     Unser KI-System analysiert verdächtige Transaktionen,
-                    identifiziert Betrugsstrukturen und unterstützt Sie bei der Rückforderung Ihres Geldes.
+                    identifiziert Betrugsstrukturen und unterstützt Sie bei der
+                    Rückforderung Ihres Geldes – schnell, diskret und nachweislich erfolgreich.
                 </p>
-                <div class="d-flex flex-wrap gap-3 mb-5">
-                    <a href="#fallform" class="btn btn-warning btn-lg fw-bold px-5 shadow-lg">
-                        <i class="bi bi-arrow-right-circle me-2"></i>Jetzt Fall prüfen lassen
-                    </a>
-                    <button class="btn btn-outline-light btn-lg px-4" data-bs-toggle="modal" data-bs-target="#infoModal">
+                <div class="d-flex flex-wrap gap-3 mb-4">
+                    <button class="btn btn-warning btn-lg fw-bold px-5 shadow-lg"
+                            data-bs-toggle="modal" data-bs-target="#fallPruefenModal">
+                        <i class="bi bi-search me-2"></i>Jetzt Fall überprüfen
+                    </button>
+                    <button class="btn btn-outline-light btn-lg px-4"
+                            data-bs-toggle="modal" data-bs-target="#infoModal">
                         <i class="bi bi-play-circle me-2"></i>Wie es funktioniert
                     </button>
                 </div>
-                <div class="row g-3">
-                    <div class="col-auto">
-                        <div class="d-flex align-items-center text-white">
-                            <i class="bi bi-check-circle-fill text-warning me-2 fs-5"></i>
-                            <span>87% Erfolgsquote</span>
-                        </div>
+                <div class="d-flex flex-wrap gap-4">
+                    <div class="d-flex align-items-center text-white gap-2">
+                        <i class="bi bi-check-circle-fill text-warning fs-5"></i>
+                        <span>87% Erfolgsquote</span>
                     </div>
-                    <div class="col-auto">
-                        <div class="d-flex align-items-center text-white">
-                            <i class="bi bi-check-circle-fill text-warning me-2 fs-5"></i>
-                            <span>Kostenlose Erstberatung</span>
-                        </div>
+                    <div class="d-flex align-items-center text-white gap-2">
+                        <i class="bi bi-check-circle-fill text-warning fs-5"></i>
+                        <span>Kostenlose Erstberatung</span>
                     </div>
-                    <div class="col-auto">
-                        <div class="d-flex align-items-center text-white">
-                            <i class="bi bi-check-circle-fill text-warning me-2 fs-5"></i>
-                            <span>100% Diskret</span>
-                        </div>
+                    <div class="d-flex align-items-center text-white gap-2">
+                        <i class="bi bi-check-circle-fill text-warning fs-5"></i>
+                        <span>100% Diskret</span>
                     </div>
                 </div>
             </div>
+
+            <!-- Right column: Quick capture form -->
             <div class="col-lg-5" data-aos="fade-left">
-                <div class="hero-card p-4 rounded-4 shadow-lg">
-                    <div class="d-flex align-items-center mb-3">
-                        <div class="bg-success rounded-circle p-2 me-3">
-                            <i class="bi bi-shield-check text-white fs-4"></i>
+                <div class="hero-form-card">
+                    <div class="hero-form-header">
+                        <div class="d-flex align-items-center gap-2 mb-2">
+                            <span class="live-dot"></span>
+                            <span class="text-success small fw-semibold">KI-System aktiv</span>
                         </div>
-                        <div>
-                            <div class="fw-bold text-white">KI-Analyse aktiv</div>
-                            <div class="small text-success-emphasis">System bereit</div>
+                        <h4 class="fw-bold text-white mb-1">Kostenlose Fallprüfung</h4>
+                        <p class="text-white-50 small mb-0">
+                            In 48 Stunden erfahren Sie, ob wir helfen können.
+                        </p>
+                    </div>
+                    <div class="hero-form-body">
+                        <div class="mb-3">
+                            <input type="text" class="form-control hero-input" id="heroName"
+                                   placeholder="Ihr vollständiger Name" autocomplete="name">
+                        </div>
+                        <div class="mb-3">
+                            <input type="email" class="form-control hero-input" id="heroEmail"
+                                   placeholder="Ihre E-Mail-Adresse" autocomplete="email">
+                        </div>
+                        <div class="mb-3">
+                            <div class="input-group">
+                                <span class="input-group-text hero-input-prefix">€</span>
+                                <input type="number" class="form-control hero-input" id="heroAmount"
+                                       placeholder="Ca. verlorener Betrag" min="0">
+                            </div>
+                        </div>
+                        <button class="btn btn-warning w-100 fw-bold py-3 btn-hero-submit"
+                                data-bs-toggle="modal" data-bs-target="#fallPruefenModal">
+                            <i class="bi bi-arrow-right-circle me-2"></i>Jetzt Fall überprüfen
+                        </button>
+                        <div class="text-center mt-2">
+                            <span class="text-white-50 small">
+                                <i class="bi bi-shield-lock me-1 text-success"></i>
+                                100% kostenlos &amp; unverbindlich · DSGVO-konform
+                            </span>
                         </div>
                     </div>
-                    <div class="mb-3">
-                        <div class="d-flex justify-content-between small text-muted mb-1">
-                            <span class="text-white-50">Transaktionsanalyse</span>
-                            <span class="text-warning">87%</span>
-                        </div>
-                        <div class="progress" style="height: 8px;">
-                            <div class="progress-bar bg-warning" style="width: 87%"></div>
-                        </div>
-                    </div>
-                    <div class="mb-3">
-                        <div class="d-flex justify-content-between small text-muted mb-1">
-                            <span class="text-white-50">Betrugsidentifikation</span>
-                            <span class="text-info">94%</span>
-                        </div>
-                        <div class="progress" style="height: 8px;">
-                            <div class="progress-bar bg-info" style="width: 94%"></div>
-                        </div>
-                    </div>
-                    <div class="mb-3">
-                        <div class="d-flex justify-content-between small text-muted mb-1">
-                            <span class="text-white-50">Kapitalrückverfolgung</span>
-                            <span class="text-success">79%</span>
-                        </div>
-                        <div class="progress" style="height: 8px;">
-                            <div class="progress-bar bg-success" style="width: 79%"></div>
-                        </div>
-                    </div>
-                    <hr class="border-secondary">
-                    <div class="row g-2 text-center">
-                        <div class="col-4">
-                            <div class="text-warning fw-bold fs-5">2.400+</div>
-                            <div class="small text-white-50">Fälle geprüft</div>
-                        </div>
-                        <div class="col-4">
-                            <div class="text-warning fw-bold fs-5">€48M+</div>
-                            <div class="small text-white-50">Rückgefordert</div>
-                        </div>
-                        <div class="col-4">
-                            <div class="text-warning fw-bold fs-5">18+</div>
-                            <div class="small text-white-50">Länder</div>
+                    <div class="hero-form-footer">
+                        <div class="row g-0 text-center">
+                            <div class="col-4 border-end border-secondary">
+                                <div class="text-warning fw-bold">2.400+</div>
+                                <div class="text-white-50 small">Fälle geprüft</div>
+                            </div>
+                            <div class="col-4 border-end border-secondary">
+                                <div class="text-warning fw-bold">€48M+</div>
+                                <div class="text-white-50 small">Rückgefordert</div>
+                            </div>
+                            <div class="col-4">
+                                <div class="text-warning fw-bold">87%</div>
+                                <div class="text-white-50 small">Erfolgsquote</div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -197,7 +240,124 @@ $error   = isset($_GET['error'])   ? htmlspecialchars($_GET['error'], ENT_QUOTES
     </div>
 </div>
 
-<!-- ===== ABOUT SECTION ===== -->
+<!-- ===== NEWS TICKER ===== -->
+<div class="news-ticker-bar">
+    <div class="news-ticker-label">
+        <i class="bi bi-broadcast-pin me-1"></i>Aktuell
+    </div>
+    <div class="news-ticker-wrap">
+        <div class="news-ticker-inner" id="newsTicker">
+            <span>🏆 Scmlds-Erfolg: Familie aus Berlin erhält €42.000 nach Krypto-Betrug zurück &nbsp;|&nbsp;</span>
+            <span>🔍 KI-Analyse identifiziert neue Betrugsplattform – 127 Mandanten erhalten Rückerstattung &nbsp;|&nbsp;</span>
+            <span>⚡ Durchbruch im Forex-Fall: €89.000 nach nur 6 Wochen vollständig rückgefordert &nbsp;|&nbsp;</span>
+            <span>🛡️ Neue Fake-Broker-Welle: Scmlds warnt und schützt Anleger europaweit &nbsp;|&nbsp;</span>
+            <span>✅ 34 Romance-Scam-Opfer: KI-Rückverfolgung deckt internationales Betrugsnetzwerk auf &nbsp;|&nbsp;</span>
+            <span>📊 Quartalbericht: Scmlds steigert Erfolgsquote auf branchenführende 87% &nbsp;|&nbsp;</span>
+            <span>💼 Neuer Meilenstein: Über €48 Millionen für unsere Mandanten zurückgefordert &nbsp;|&nbsp;</span>
+        </div>
+    </div>
+</div>
+
+<!-- ===== AI 3D VISUALIZATION SECTION ===== -->
+<section id="ai-visual" class="ai-section py-6">
+    <div class="container">
+        <div class="text-center mb-5">
+            <span class="badge bg-warning text-dark rounded-pill px-3 py-2 mb-3">KI-Technologie</span>
+            <h2 class="display-6 fw-bold text-white">
+                Unser KI-Algorithmus <span class="text-warning">arbeitet für Sie</span>
+            </h2>
+            <p class="text-white-50 col-lg-7 mx-auto">
+                In Echtzeit analysiert unser proprietärer Algorithmus Millionen von Transaktionsdaten,
+                rekonstruiert Zahlungsströme und identifiziert die Verantwortlichen hinter Betrugsplattformen.
+            </p>
+        </div>
+        <div class="row align-items-center g-5">
+            <div class="col-lg-6 order-lg-2" data-aos="fade-left">
+                <div class="ai-canvas-wrap">
+                    <canvas id="aiNetworkCanvas"></canvas>
+                    <div class="ai-canvas-hud">
+                        <div class="ai-hud-row">
+                            <span class="ai-hud-label">Knoten analysiert</span>
+                            <span class="ai-hud-val text-warning" id="aiNodes">0</span>
+                        </div>
+                        <div class="ai-hud-row">
+                            <span class="ai-hud-label">Verbindungen geprüft</span>
+                            <span class="ai-hud-val text-info" id="aiEdges">0</span>
+                        </div>
+                        <div class="ai-hud-row">
+                            <span class="ai-hud-label">Betrug erkannt</span>
+                            <span class="ai-hud-val text-danger" id="aiScams">0</span>
+                        </div>
+                        <div class="ai-hud-row">
+                            <span class="ai-hud-label">Kapital gesichert</span>
+                            <span class="ai-hud-val text-success" id="aiRecovered">€0</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-6 order-lg-1" data-aos="fade-right">
+                <div class="ai-steps">
+                    <div class="ai-step-item" id="aiStep1">
+                        <div class="ai-step-icon bg-primary">
+                            <i class="bi bi-cloud-upload text-white"></i>
+                        </div>
+                        <div class="ai-step-content">
+                            <h6 class="fw-bold text-white mb-1">01 · Dateneingabe &amp; Verarbeitung</h6>
+                            <p class="text-white-50 small mb-0">
+                                Ihre Falldaten werden sicher erfasst und in unser verschlüsseltes
+                                KI-System eingespeist. Der Algorithmus beginnt sofort mit der Analyse.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="ai-step-item" id="aiStep2">
+                        <div class="ai-step-icon bg-warning">
+                            <i class="bi bi-diagram-3 text-dark"></i>
+                        </div>
+                        <div class="ai-step-content">
+                            <h6 class="fw-bold text-white mb-1">02 · Transaktionsgraph-Analyse</h6>
+                            <p class="text-white-50 small mb-0">
+                                Unsere KI erstellt einen vollständigen Blockchain-Transaktionsgraphen
+                                und verknüpft alle relevanten Wallet-Adressen und Zahlungsströme.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="ai-step-item" id="aiStep3">
+                        <div class="ai-step-icon bg-danger">
+                            <i class="bi bi-shield-exclamation text-white"></i>
+                        </div>
+                        <div class="ai-step-content">
+                            <h6 class="fw-bold text-white mb-1">03 · Betrugsstruktur-Erkennung</h6>
+                            <p class="text-white-50 small mb-0">
+                                Durch maschinelles Lernen erkennt unser System bekannte Betrugsmuster
+                                und identifiziert die verantwortlichen Akteure im Netzwerk.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="ai-step-item" id="aiStep4">
+                        <div class="ai-step-icon bg-success">
+                            <i class="bi bi-cash-coin text-white"></i>
+                        </div>
+                        <div class="ai-step-content">
+                            <h6 class="fw-bold text-white mb-1">04 · Rückforderungsplan &amp; Umsetzung</h6>
+                            <p class="text-white-50 small mb-0">
+                                Sie erhalten einen individualisierten Aktionsplan. Unser Team begleitet
+                                Sie Schritt für Schritt durch den gesamten Rückforderungsprozess.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-4">
+                    <button class="btn btn-warning btn-lg fw-bold px-5"
+                            data-bs-toggle="modal" data-bs-target="#fallPruefenModal">
+                        <i class="bi bi-arrow-right-circle me-2"></i>Jetzt kostenlos starten
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+
 <section id="leistungen" class="py-6">
     <div class="container">
         <div class="row align-items-center g-5">
@@ -1005,7 +1165,212 @@ $error   = isset($_GET['error'])   ? htmlspecialchars($_GET['error'], ENT_QUOTES
 
 <!-- ===== MODALS ===== -->
 
-<!-- Info Modal: How it works -->
+<!-- Fall Prüfen Modal: Full Lead Form -->
+<div class="modal fade" id="fallPruefenModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content fall-modal-content">
+            <div class="modal-header fall-modal-header border-0 text-white">
+                <div>
+                    <div class="d-flex align-items-center gap-2 mb-1">
+                        <span class="live-dot-sm"></span>
+                        <span class="small text-success fw-semibold">KI-System bereit</span>
+                    </div>
+                    <h4 class="modal-title fw-bold text-white mb-0">
+                        <i class="bi bi-shield-check me-2 text-warning"></i>Kostenlose Fallprüfung starten
+                    </h4>
+                    <p class="text-white-50 small mb-0 mt-1">
+                        Unverbindlich · 100% kostenlos · Antwort innerhalb 48 Stunden
+                    </p>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <div class="fall-trust-item">
+                            <i class="bi bi-trophy-fill text-warning"></i>
+                            <span>87% Erfolgsquote</span>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="fall-trust-item">
+                            <i class="bi bi-lightning-fill text-warning"></i>
+                            <span>Antwort in 48 Stunden</span>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="fall-trust-item">
+                            <i class="bi bi-shield-lock-fill text-warning"></i>
+                            <span>DSGVO-geschützte Daten</span>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="fall-trust-item">
+                            <i class="bi bi-currency-euro text-warning"></i>
+                            <span>Keine Vorauszahlung</span>
+                        </div>
+                    </div>
+                </div>
+                <form action="submit_lead.php" method="POST" id="modalLeadForm" novalidate>
+                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Vorname *</label>
+                            <input type="text" name="first_name" id="modalFirstName" class="form-control" placeholder="Max" required>
+                            <div class="invalid-feedback">Bitte Vorname eingeben.</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Nachname *</label>
+                            <input type="text" name="last_name" id="modalLastName" class="form-control" placeholder="Mustermann" required>
+                            <div class="invalid-feedback">Bitte Nachname eingeben.</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">E-Mail-Adresse *</label>
+                            <input type="email" name="email" id="modalEmail" class="form-control" placeholder="max@example.de" required>
+                            <div class="invalid-feedback">Bitte gültige E-Mail eingeben.</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Telefonnummer</label>
+                            <input type="tel" name="phone" class="form-control" placeholder="+49 123 456789">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Ungefähr verlorener Betrag *</label>
+                            <div class="input-group">
+                                <input type="number" name="amount_lost" id="modalAmount" class="form-control" placeholder="10000" min="1" required>
+                                <span class="input-group-text">€</span>
+                            </div>
+                            <div class="invalid-feedback">Bitte Betrag eingeben.</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Betrugsart / Plattformtyp *</label>
+                            <select name="platform_category" class="form-select" required>
+                                <option value="">Bitte auswählen...</option>
+                                <option value="Krypto-Betrug">Krypto-Betrug</option>
+                                <option value="Forex-Betrug">Forex-Betrug</option>
+                                <option value="Fake-Broker">Fake Investment-Broker</option>
+                                <option value="Romance-Scam mit Investitionsbetrug">Romance-Scam</option>
+                                <option value="Binäre Optionen">Binäre Optionen / Online-Trading</option>
+                                <option value="Andere">Andere / Unbekannt</option>
+                            </select>
+                            <div class="invalid-feedback">Bitte Betrugsart auswählen.</div>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Kurze Fallbeschreibung *</label>
+                            <textarea name="case_description" class="form-control" rows="3"
+                                      placeholder="Beschreiben Sie kurz, was passiert ist und wie Sie die Plattform gefunden haben." required></textarea>
+                            <div class="invalid-feedback">Bitte Fallbeschreibung eingeben.</div>
+                        </div>
+                        <div class="col-12">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="modalPrivacy" required>
+                                <label class="form-check-label small" for="modalPrivacy">
+                                    Ich stimme der <a href="#" data-bs-dismiss="modal" data-bs-toggle="modal" data-bs-target="#privacyModal">Datenschutzerklärung</a> zu und bin damit einverstanden, dass meine Daten zur Fallbearbeitung verwendet werden. *
+                                </label>
+                                <div class="invalid-feedback">Bitte Datenschutzerklärung akzeptieren.</div>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <button type="submit" class="btn btn-warning btn-lg w-100 fw-bold py-3">
+                                <i class="bi bi-search me-2"></i>Fall jetzt kostenlos einreichen
+                            </button>
+                            <p class="text-muted small text-center mt-2 mb-0">
+                                <i class="bi bi-lock me-1"></i>SSL-verschlüsselt · Keine Kosten · Kein Risiko
+                            </p>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Exit Intent / 60-Second Engagement Modal -->
+<div class="modal fade" id="exitIntentModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content engagement-modal-content">
+            <button type="button" class="btn-close engagement-close" data-bs-dismiss="modal" aria-label="Schließen"></button>
+            <div class="engagement-modal-body">
+                <div class="row g-0">
+                    <div class="col-lg-5 engagement-left d-none d-lg-flex flex-column justify-content-center align-items-center p-4">
+                        <div class="engagement-icon mb-3">
+                            <i class="bi bi-shield-check"></i>
+                        </div>
+                        <div class="text-white text-center mb-4">
+                            <div class="h3 fw-bold text-warning mb-1">87%</div>
+                            <div class="small text-white-50">unserer Mandanten erhalten Kapital zurück</div>
+                        </div>
+                        <div class="text-white text-center mb-3">
+                            <div class="h3 fw-bold text-warning mb-1">€48M+</div>
+                            <div class="small text-white-50">bereits zurückgefordert</div>
+                        </div>
+                        <div class="text-white text-center">
+                            <div class="h3 fw-bold text-warning mb-1">€0</div>
+                            <div class="small text-white-50">Kosten für Sie vorab</div>
+                        </div>
+                    </div>
+                    <div class="col-lg-7 engagement-right p-4 p-lg-5">
+                        <div class="mb-1">
+                            <span class="badge bg-warning text-dark px-3 py-2 rounded-pill small fw-semibold">
+                                <i class="bi bi-gift me-1"></i>Exklusiv für Sie
+                            </span>
+                        </div>
+                        <h3 class="fw-bold mt-3 mb-2" style="line-height:1.2;">
+                            Warten Sie – Ihr Geld könnte noch rückforderbar sein.
+                        </h3>
+                        <p class="text-muted mb-3">
+                            Täglich helfen wir Betrugsopfern, verloren geglaubtes Kapital zurückzufordern.
+                            Viele unserer erfolgreichsten Fälle schienen zunächst hoffnungslos –
+                            bis unsere KI die entscheidende Spur fand.
+                        </p>
+                        <div class="bg-light rounded-3 p-3 mb-4">
+                            <p class="mb-2 fw-semibold text-dark">
+                                <i class="bi bi-cpu text-primary me-2"></i>Probieren Sie es aus – die Beratung ist kostenlos.
+                            </p>
+                            <p class="text-muted small mb-0">
+                                Sie haben nichts zu verlieren, aber möglicherweise alles zu gewinnen.
+                                Unsere Erstprüfung ist vollständig kostenlos, unverbindlich und vertraulich.
+                                Erst wenn wir Ihnen tatsächlich helfen können und Sie es wünschen, entstehen Kosten –
+                                und auch dann nur erfolgsbasiert.
+                            </p>
+                        </div>
+                        <form action="submit_lead.php" method="POST" id="engagementForm" novalidate>
+                            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
+                            <input type="hidden" name="lead_source" value="engagement_modal">
+                            <input type="hidden" name="platform_category" value="Andere">
+                            <div class="row g-2 mb-3">
+                                <div class="col-6">
+                                    <input type="text" name="first_name" class="form-control" placeholder="Vorname *" required>
+                                    <div class="invalid-feedback">Bitte eingeben.</div>
+                                </div>
+                                <div class="col-6">
+                                    <input type="text" name="last_name" class="form-control" placeholder="Nachname *" required>
+                                    <div class="invalid-feedback">Bitte eingeben.</div>
+                                </div>
+                                <div class="col-12">
+                                    <input type="email" name="email" class="form-control" placeholder="Ihre E-Mail-Adresse *" required>
+                                    <div class="invalid-feedback">Bitte gültige E-Mail eingeben.</div>
+                                </div>
+                                <div class="col-12">
+                                    <input type="tel" name="phone" class="form-control" placeholder="Telefonnummer (optional)">
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-warning btn-lg w-100 fw-bold">
+                                <i class="bi bi-arrow-right-circle me-2"></i>Jetzt kostenlos prüfen lassen
+                            </button>
+                            <div class="text-center mt-2">
+                                <button type="button" class="btn btn-link text-muted small p-0" data-bs-dismiss="modal">
+                                    Nein danke, ich verzichte auf mein Geld.
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
 <div class="modal fade" id="infoModal" tabindex="-1">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
@@ -1058,9 +1423,10 @@ $error   = isset($_GET['error'])   ? htmlspecialchars($_GET['error'], ENT_QUOTES
             </div>
             <div class="modal-footer border-0">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Schließen</button>
-                <a href="#fallform" class="btn btn-primary fw-bold" data-bs-dismiss="modal">
-                    <i class="bi bi-send me-1"></i>Fall einreichen
-                </a>
+                <button class="btn btn-primary fw-bold" data-bs-dismiss="modal"
+                        data-bs-toggle="modal" data-bs-target="#fallPruefenModal">
+                    <i class="bi bi-search me-1"></i>Fall einreichen
+                </button>
             </div>
         </div>
     </div>
@@ -1084,9 +1450,10 @@ $error   = isset($_GET['error'])   ? htmlspecialchars($_GET['error'], ENT_QUOTES
             </div>
             <div class="modal-footer border-0">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Schließen</button>
-                <a href="#fallform" class="btn btn-warning fw-bold" data-bs-dismiss="modal">
-                    <i class="bi bi-send me-1"></i>Jetzt Fall prüfen lassen
-                </a>
+                <button class="btn btn-warning fw-bold" data-bs-dismiss="modal"
+                        data-bs-toggle="modal" data-bs-target="#fallPruefenModal">
+                    <i class="bi bi-search me-1"></i>Jetzt Fall prüfen lassen
+                </button>
             </div>
         </div>
     </div>

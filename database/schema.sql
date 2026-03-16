@@ -61,7 +61,8 @@ CREATE TABLE IF NOT EXISTS activity_logs (
 -- Seed data
 -- ============================================================
 
--- Default admin user (password: Admin@2024!)
+-- Default admin user (password: password — CHANGE THIS IMMEDIATELY after first login!)
+-- Generate a new hash: php -r "echo password_hash('YourNewPassword', PASSWORD_DEFAULT);"
 INSERT INTO admin_users (username, password_hash, email, full_name) VALUES
 ('admin', '$2y$12$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'admin@scmlds.de', 'Administrator');
 
