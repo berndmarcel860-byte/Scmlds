@@ -67,6 +67,7 @@ if ($action === 'visit') {
         $visit_id = (int) $pdo->lastInsertId();
 
         // Store in session so submit_lead.php can link the row to the lead.
+        // Note: session_start() is called via config/config.php which is required above.
         $_SESSION['visit_id'] = $visit_id;
 
         echo json_encode(['visit_id' => $visit_id]);
