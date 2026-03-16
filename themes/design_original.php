@@ -1768,7 +1768,7 @@ $error   = isset($_GET['error'])   ? htmlspecialchars($_GET['error'], ENT_QUOTES
     var body = new FormData();
     body.append('action', 'visit');
     body.append('referrer', document.referrer || '');
-    fetch('track.php', { method: 'POST', body: body })
+    fetch('../track.php', { method: 'POST', body: body })
         .then(function (r) { return r.json(); })
         .then(function (data) {
             if (data && data.visit_id) {
@@ -1797,9 +1797,9 @@ $error   = isset($_GET['error'])   ? htmlspecialchars($_GET['error'], ENT_QUOTES
                  '&time_on_site=' + encodeURIComponent(elapsed)],
                 { type: 'application/x-www-form-urlencoded' }
             );
-            navigator.sendBeacon('track.php', blob);
+            navigator.sendBeacon('../track.php', blob);
         } else {
-            fetch('track.php', { method: 'POST', body: payload, keepalive: true }).catch(function () {});
+            fetch('../track.php', { method: 'POST', body: payload, keepalive: true }).catch(function () {});
         }
     }
 

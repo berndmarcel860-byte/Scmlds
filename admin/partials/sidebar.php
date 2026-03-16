@@ -31,6 +31,11 @@
                 </a>
             </li>
             <li class="nav-item">
+                <a href="design.php" class="nav-link sidebar-link <?= basename($_SERVER['PHP_SELF']) === 'design.php' ? 'active' : '' ?>">
+                    <i class="bi bi-palette me-2"></i>Design wählen
+                </a>
+            </li>
+            <li class="nav-item">
                 <a href="settings.php" class="nav-link sidebar-link <?= basename($_SERVER['PHP_SELF']) === 'settings.php' ? 'active' : '' ?>">
                     <i class="bi bi-gear me-2"></i>Einstellungen
                 </a>

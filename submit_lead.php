@@ -18,7 +18,7 @@ function send_response(bool $success, string $message, array $extra = []): never
     }
     // Regular POST: redirect back with query string flag
     $param = $success ? 'success=1' : ('error=' . urlencode($message));
-    $back  = (isset($_POST['_source']) && $_POST['_source'] === 'index2') ? 'index2.php' : 'index.php';
+    $back  = 'index.php'; // Always redirect through the router (index.php) which loads the active design
     header('Location: ' . $back . '?' . $param . ($success ? '#fallform' : ''));
     exit;
 }

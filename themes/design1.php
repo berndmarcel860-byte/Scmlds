@@ -15,7 +15,7 @@ for ($y = date('Y'); $y >= MIN_YEAR_LOST; $y--) { $years[] = $y; }
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title><?= htmlspecialchars($page_title, ENT_QUOTES, 'UTF-8') ?></title>
-<meta name="description" content="VerlustRückholung – KI-gestützte Kapitalrückholung bei Anlagebetrug. 92% Rückholquote, kostenlose Erstprüfung.">
+<meta name="description" content="VerlustRückholung – KI-gestützte Kapitalrückholung bei Anlagebetrug. 87% Erfolgsquote, kostenlose Erstprüfung.">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -100,7 +100,7 @@ footer a:hover{color:var(--cyan);}
         <h1 class="neon-title mb-4">Wir holen Ihr Kapital <span class="accent">aus der Dunkelheit</span></h1>
         <p class="lead mb-4" style="color:#aaa;">Betrugsopfer wenden sich an uns, wenn andere gescheitert sind. Unsere KI durchleuchtet jede Transaktion – lückenlos und präzise.</p>
         <div class="mb-4">
-          <span class="stat-mono">92% Rückholquote</span>
+          <span class="stat-mono">87% Erfolgsquote</span>
           <span class="stat-mono">€48M+ zurückgefordert</span>
           <span class="stat-mono">72h Erstanalyse</span>
           <span class="stat-mono">2.400+ Mandanten</span>
@@ -190,7 +190,7 @@ footer a:hover{color:var(--cyan);}
 <div class="stats-strip" id="stats-strip">
   <div class="container">
     <div class="row text-center g-4">
-      <div class="col-6 col-md-3"><div class="fs-2 fw-800" style="color:var(--cyan);font-family:'Courier New',monospace;">92%</div><div class="text-muted small">Erfolgsquote</div></div>
+      <div class="col-6 col-md-3"><div class="fs-2 fw-800" style="color:var(--cyan);font-family:'Courier New',monospace;">87%</div><div class="text-muted small">Erfolgsquote</div></div>
       <div class="col-6 col-md-3"><div class="fs-2 fw-800" style="color:var(--gold);font-family:'Courier New',monospace;">€48M+</div><div class="text-muted small">Zurückgefordert</div></div>
       <div class="col-6 col-md-3"><div class="fs-2 fw-800" style="color:var(--cyan);font-family:'Courier New',monospace;">72h</div><div class="text-muted small">Erstanalyse</div></div>
       <div class="col-6 col-md-3"><div class="fs-2 fw-800" style="color:var(--gold);font-family:'Courier New',monospace;">2.400+</div><div class="text-muted small">Mandanten</div></div>

@@ -87,7 +87,7 @@ if ($action === 'visit') {
     }
 
     // Cap at 6 hours to reject obviously wrong values.
-    $time_on_site = max(0, min($time_on_site, 21600));
+    $time_on_site = max(0, min($time_on_site, 21600)); // cap at 6 hours to guard against stale beacons
 
     try {
         $pdo  = db_connect();
