@@ -111,7 +111,7 @@ function confirmation_email_html(array $d): string
 {
     $name        = htmlspecialchars($d['first_name'] . ' ' . $d['last_name'], ENT_QUOTES, 'UTF-8');
     $email       = htmlspecialchars($d['email'],               ENT_QUOTES, 'UTF-8');
-    $amount      = number_format((float) ($d['amount_lost'] ?? 0), 2, ',', '.') . ' €';
+    $amount      = number_format((float) ($d['amount_lost'] ?? 0), 2, ',', '.') . ' &euro;';
     $category    = htmlspecialchars($d['platform_category']   ?? 'Nicht angegeben', ENT_QUOTES, 'UTF-8');
     $country     = htmlspecialchars($d['country']             ?? 'Nicht angegeben', ENT_QUOTES, 'UTF-8');
     $year        = htmlspecialchars((string) ($d['year_lost'] ?? 'Nicht angegeben'), ENT_QUOTES, 'UTF-8');
@@ -123,132 +123,266 @@ function confirmation_email_html(array $d): string
     $year_now    = date('Y');
 
     return <<<HTML
-<!DOCTYPE html>
-<html lang="de">
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="de">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Ihre Fallprüfung bei {$brand}</title>
-  <style>
-    body{margin:0;padding:0;background:#f0f4f8;font-family:'Segoe UI',Arial,sans-serif;color:#2d3748;}
-    .wrap{max-width:620px;margin:32px auto;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,0.10);}
-    .header{background:linear-gradient(135deg,#0a1628 0%,#0d2b5e 60%,#1a4a9e 100%);padding:40px 32px;text-align:center;}
-    .header-logo{font-size:26px;font-weight:800;color:#fff;letter-spacing:-0.5px;}
-    .header-logo span{color:#f5a623;}
-    .header h1{margin:16px 0 8px;font-size:22px;color:#fff;font-weight:700;}
-    .header p{margin:0;color:rgba(255,255,255,0.7);font-size:14px;}
-    .badge-row{display:flex;justify-content:center;gap:12px;padding:20px 32px;background:#f8faff;border-bottom:1px solid #e8edf5;}
-    .badge{background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:10px 16px;text-align:center;min-width:120px;flex:1;}
-    .badge .val{font-size:18px;font-weight:800;color:#0d2b5e;}
-    .badge .lbl{font-size:11px;color:#718096;margin-top:2px;}
-    .body{padding:32px;}
-    .greeting{font-size:17px;font-weight:600;margin-bottom:8px;color:#1a202c;}
-    .intro{font-size:14px;color:#4a5568;line-height:1.7;margin-bottom:24px;}
-    .section-title{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#f5a623;margin-bottom:12px;}
-    .summary-box{background:#f8faff;border:1px solid #e2e8f0;border-radius:12px;padding:20px;margin-bottom:24px;}
-    .row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #edf2f7;font-size:14px;}
-    .row:last-child{border-bottom:none;}
-    .row-label{color:#718096;font-weight:500;}
-    .row-val{color:#1a202c;font-weight:600;text-align:right;max-width:55%;}
-    .desc-box{background:#fffbf0;border:1px solid #f5a623;border-radius:10px;padding:16px;margin-bottom:24px;font-size:13px;color:#4a5568;line-height:1.7;}
-    .steps{margin-bottom:28px;}
-    .step{display:flex;gap:14px;margin-bottom:16px;}
-    .step-num{width:32px;height:32px;min-width:32px;background:#f5a623;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;color:#000;}
-    .step-text h4{margin:0 0 4px;font-size:14px;font-weight:700;color:#1a202c;}
-    .step-text p{margin:0;font-size:13px;color:#718096;}
-    .cta{text-align:center;margin-bottom:28px;}
-    .cta a{display:inline-block;background:linear-gradient(135deg,#f5a623,#e69420);color:#000;font-weight:800;font-size:15px;padding:14px 36px;border-radius:10px;text-decoration:none;letter-spacing:0.02em;}
-    .guarantee{background:#f0fff4;border:1px solid #9ae6b4;border-radius:10px;padding:16px;text-align:center;margin-bottom:24px;font-size:13px;color:#276749;}
-    .footer{background:#f8faff;border-top:1px solid #e2e8f0;padding:24px 32px;text-align:center;font-size:12px;color:#a0aec0;}
-    .footer a{color:#0d2b5e;text-decoration:none;}
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ihre Fallpr&uuml;fung bei {$brand}</title>
+  <!--[if mso]>
+  <noscript><xml><o:OfficeDocumentSettings><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml></noscript>
+  <![endif]-->
+  <style type="text/css">
+    body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+    table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+    img { -ms-interpolation-mode: bicubic; border: 0; outline: none; text-decoration: none; }
+    body { margin: 0 !important; padding: 0 !important; background-color: #f0f4f8; }
+    a[x-apple-data-detectors] { color: inherit !important; text-decoration: none !important; }
+    @media only screen and (max-width: 620px) {
+      .wrapper { width: 100% !important; }
+      .badge-cell { display: block !important; width: 50% !important; }
+    }
   </style>
 </head>
-<body>
-<div class="wrap">
-  <div class="header">
-    <div class="header-logo">⚖️ <span>{$brand}</span></div>
-    <h1>Ihre Fallprüfung ist bei uns eingegangen</h1>
-    <p>Eingangsbestätigung &amp; nächste Schritte</p>
-  </div>
+<body style="margin:0;padding:0;background-color:#f0f4f8;">
 
-  <div class="badge-row">
-    <div class="badge"><div class="val">87%</div><div class="lbl">Erfolgsquote</div></div>
-    <div class="badge"><div class="val">€48M+</div><div class="lbl">Rückgefordert</div></div>
-    <div class="badge"><div class="val">48h</div><div class="lbl">Erste Antwort</div></div>
-    <div class="badge"><div class="val">€0</div><div class="lbl">Vorab-Kosten</div></div>
-  </div>
+<!-- Outer wrapper -->
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color:#f0f4f8;">
+<tr><td align="center" style="padding:32px 16px;">
 
-  <div class="body">
-    <p class="greeting">Sehr geehrte/r {$name},</p>
-    <p class="intro">
-      vielen Dank, dass Sie sich an <strong>{$brand}</strong> gewandt haben. Wir haben Ihre Fallprüfung
-      erfolgreich entgegengenommen. Unser KI-gestütztes Analysesystem hat bereits begonnen, Ihren Fall
-      zu prüfen. Sie erhalten innerhalb von <strong>48 Stunden</strong> eine detaillierte Rückmeldung
-      von unserem Expertenteam.
-    </p>
+  <!-- Card -->
+  <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="600" class="wrapper" style="background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,0.10);">
 
-    <div class="section-title">📋 Ihre eingereichten Falldaten</div>
-    <div class="summary-box">
-      <div class="row"><span class="row-label">Name</span><span class="row-val">{$name}</span></div>
-      <div class="row"><span class="row-label">E-Mail</span><span class="row-val">{$email}</span></div>
-      <div class="row"><span class="row-label">Land</span><span class="row-val">{$country}</span></div>
-      <div class="row"><span class="row-label">Jahr des Verlusts</span><span class="row-val">{$year}</span></div>
-      <div class="row"><span class="row-label">Verlorener Betrag</span><span class="row-val">{$amount}</span></div>
-      <div class="row"><span class="row-label">Betrugsart</span><span class="row-val">{$category}</span></div>
-    </div>
+    <!-- ── HEADER ── -->
+    <tr>
+      <td bgcolor="#0d2b5e" style="background-color:#0d2b5e;padding:40px 32px;text-align:center;">
+        <p style="margin:0 0 8px;font-family:Arial,sans-serif;font-size:26px;font-weight:bold;color:#ffffff;">
+          &#9878;&#65039; <span style="color:#f5a623;">{$brand}</span>
+        </p>
+        <h1 style="margin:0 0 6px;font-family:Arial,sans-serif;font-size:22px;font-weight:bold;color:#ffffff;line-height:1.3;">
+          Ihre Fallpr&uuml;fung ist bei uns eingegangen
+        </h1>
+        <p style="margin:0;font-family:Arial,sans-serif;font-size:13px;color:rgba(255,255,255,0.75);">
+          Eingangsbestätigung &amp; nächste Schritte
+        </p>
+      </td>
+    </tr>
 
-    <div class="section-title">💬 Ihre Fallbeschreibung</div>
-    <div class="desc-box">{$description}</div>
+    <!-- ── TRUST BADGES ── -->
+    <tr>
+      <td bgcolor="#f8faff" style="background-color:#f8faff;padding:20px 24px;border-bottom:1px solid #e2e8f0;">
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+          <tr>
+            <td align="center" class="badge-cell" style="padding:8px 6px;border-right:1px solid #e2e8f0;">
+              <p style="margin:0;font-family:Arial,sans-serif;font-size:20px;font-weight:bold;color:#0d2b5e;">87%</p>
+              <p style="margin:2px 0 0;font-family:Arial,sans-serif;font-size:11px;color:#718096;">Erfolgsquote</p>
+            </td>
+            <td align="center" class="badge-cell" style="padding:8px 6px;border-right:1px solid #e2e8f0;">
+              <p style="margin:0;font-family:Arial,sans-serif;font-size:20px;font-weight:bold;color:#0d2b5e;">&euro;48M+</p>
+              <p style="margin:2px 0 0;font-family:Arial,sans-serif;font-size:11px;color:#718096;">R&uuml;ckgefordert</p>
+            </td>
+            <td align="center" class="badge-cell" style="padding:8px 6px;border-right:1px solid #e2e8f0;">
+              <p style="margin:0;font-family:Arial,sans-serif;font-size:20px;font-weight:bold;color:#0d2b5e;">48h</p>
+              <p style="margin:2px 0 0;font-family:Arial,sans-serif;font-size:11px;color:#718096;">Erste Antwort</p>
+            </td>
+            <td align="center" class="badge-cell" style="padding:8px 6px;">
+              <p style="margin:0;font-family:Arial,sans-serif;font-size:20px;font-weight:bold;color:#0d2b5e;">&euro;0</p>
+              <p style="margin:2px 0 0;font-family:Arial,sans-serif;font-size:11px;color:#718096;">Vorab-Kosten</p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
 
-    <div class="section-title">🚀 Was passiert als nächstes?</div>
-    <div class="steps">
-      <div class="step">
-        <div class="step-num">1</div>
-        <div class="step-text">
-          <h4>KI-Analyse (jetzt laufend)</h4>
-          <p>Unser System analysiert Transaktionsmuster und bekannte Betrugsstrukturen rund um Ihren Fall.</p>
-        </div>
-      </div>
-      <div class="step">
-        <div class="step-num">2</div>
-        <div class="step-text">
-          <h4>Expertenprüfung (innerhalb 48h)</h4>
-          <p>Unser Expertenteam bewertet den Analysebericht und kontaktiert Sie persönlich.</p>
-        </div>
-      </div>
-      <div class="step">
-        <div class="step-num">3</div>
-        <div class="step-text">
-          <h4>Ergebnisbericht &amp; Strategie</h4>
-          <p>Sie erhalten einen detaillierten Bericht mit konkreten Handlungsempfehlungen und einer Rückforderungsstrategie.</p>
-        </div>
-      </div>
-    </div>
+    <!-- ── BODY ── -->
+    <tr>
+      <td style="padding:32px;">
 
-    <div class="guarantee">
-      ✅ <strong>Unsere Garantie:</strong> Die Erstprüfung ist vollständig kostenlos und unverbindlich.
-      Erst wenn wir Ihnen erfolgreich helfen, entstehen Kosten – und das nur erfolgsbasiert.
-    </div>
+        <!-- Greeting -->
+        <p style="margin:0 0 6px;font-family:Arial,sans-serif;font-size:17px;font-weight:bold;color:#1a202c;">
+          Sehr geehrte/r {$name},
+        </p>
+        <p style="margin:0 0 28px;font-family:Arial,sans-serif;font-size:14px;color:#4a5568;line-height:1.7;">
+          vielen Dank, dass Sie sich an <strong>{$brand}</strong> gewandt haben. Wir haben Ihre Fallpr&uuml;fung
+          erfolgreich entgegengenommen. Unser KI-gest&uuml;tztes Analysesystem hat bereits begonnen, Ihren Fall
+          zu pr&uuml;fen. Sie erhalten innerhalb von <strong>48 Stunden</strong> eine detaillierte R&uuml;ckmeldung
+          von unserem Expertenteam.
+        </p>
 
-    <div class="cta">
-      <a href="{$siteUrl}">Zu unserem Portal →</a>
-    </div>
-  </div>
+        <!-- Case summary heading -->
+        <p style="margin:0 0 12px;font-family:Arial,sans-serif;font-size:12px;font-weight:bold;text-transform:uppercase;letter-spacing:0.06em;color:#f5a623;">
+          &#128203; Ihre eingereichten Falldaten
+        </p>
 
-  <div class="footer">
-    <p style="margin:0 0 8px;">
-      <strong>{$brand}</strong> · <a href="https://{$domain}">{$domain}</a>
-    </p>
-    <p style="margin:0 0 8px;">
-      Bei Fragen antworten Sie einfach auf diese E-Mail oder schreiben Sie uns an
-      <a href="mailto:{$adminEmail}">{$adminEmail}</a>
-    </p>
-    <p style="margin:0;">&copy; {$year_now} {$brand}. Alle Rechte vorbehalten. |
-      <a href="https://{$domain}/datenschutz">Datenschutz</a> |
-      <a href="https://{$domain}/impressum">Impressum</a>
-    </p>
-  </div>
-</div>
+        <!-- Case data table -->
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#f8faff;border:1px solid #e2e8f0;border-radius:12px;margin-bottom:24px;">
+          <tr>
+            <td style="padding:10px 16px;border-bottom:1px solid #edf2f7;">
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"><tr>
+                <td style="font-family:Arial,sans-serif;font-size:13px;color:#718096;font-weight:500;">Name</td>
+                <td align="right" style="font-family:Arial,sans-serif;font-size:13px;color:#1a202c;font-weight:bold;">{$name}</td>
+              </tr></table>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:10px 16px;border-bottom:1px solid #edf2f7;">
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"><tr>
+                <td style="font-family:Arial,sans-serif;font-size:13px;color:#718096;font-weight:500;">E-Mail</td>
+                <td align="right" style="font-family:Arial,sans-serif;font-size:13px;color:#1a202c;font-weight:bold;">{$email}</td>
+              </tr></table>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:10px 16px;border-bottom:1px solid #edf2f7;">
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"><tr>
+                <td style="font-family:Arial,sans-serif;font-size:13px;color:#718096;font-weight:500;">Land</td>
+                <td align="right" style="font-family:Arial,sans-serif;font-size:13px;color:#1a202c;font-weight:bold;">{$country}</td>
+              </tr></table>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:10px 16px;border-bottom:1px solid #edf2f7;">
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"><tr>
+                <td style="font-family:Arial,sans-serif;font-size:13px;color:#718096;font-weight:500;">Jahr des Verlusts</td>
+                <td align="right" style="font-family:Arial,sans-serif;font-size:13px;color:#1a202c;font-weight:bold;">{$year}</td>
+              </tr></table>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:10px 16px;border-bottom:1px solid #edf2f7;">
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"><tr>
+                <td style="font-family:Arial,sans-serif;font-size:13px;color:#718096;font-weight:500;">Verlorener Betrag</td>
+                <td align="right" style="font-family:Arial,sans-serif;font-size:13px;color:#1a202c;font-weight:bold;">{$amount}</td>
+              </tr></table>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:10px 16px;">
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"><tr>
+                <td style="font-family:Arial,sans-serif;font-size:13px;color:#718096;font-weight:500;">Betrugsart</td>
+                <td align="right" style="font-family:Arial,sans-serif;font-size:13px;color:#1a202c;font-weight:bold;">{$category}</td>
+              </tr></table>
+            </td>
+          </tr>
+        </table>
+
+        <!-- Case description -->
+        <p style="margin:0 0 12px;font-family:Arial,sans-serif;font-size:12px;font-weight:bold;text-transform:uppercase;letter-spacing:0.06em;color:#f5a623;">
+          &#128172; Ihre Fallbeschreibung
+        </p>
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom:28px;">
+          <tr>
+            <td style="background:#fffbf0;border:1px solid #f5a623;border-radius:10px;padding:16px;font-family:Arial,sans-serif;font-size:13px;color:#4a5568;line-height:1.7;">
+              {$description}
+            </td>
+          </tr>
+        </table>
+
+        <!-- Next steps -->
+        <p style="margin:0 0 16px;font-family:Arial,sans-serif;font-size:12px;font-weight:bold;text-transform:uppercase;letter-spacing:0.06em;color:#f5a623;">
+          &#128640; Was passiert als n&auml;chstes?
+        </p>
+
+        <!-- Step 1 -->
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom:14px;">
+          <tr>
+            <td width="40" valign="top" style="padding-right:14px;">
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                <tr><td width="36" height="36" align="center" valign="middle" bgcolor="#f5a623" style="background-color:#f5a623;border-radius:50%;font-family:Arial,sans-serif;font-size:14px;font-weight:bold;color:#000000;">1</td></tr>
+              </table>
+            </td>
+            <td valign="top">
+              <p style="margin:0 0 3px;font-family:Arial,sans-serif;font-size:14px;font-weight:bold;color:#1a202c;">KI-Analyse <span style="color:#f5a623;">(jetzt laufend)</span></p>
+              <p style="margin:0;font-family:Arial,sans-serif;font-size:13px;color:#718096;line-height:1.6;">Unser System analysiert Transaktionsmuster und bekannte Betrugsstrukturen rund um Ihren Fall.</p>
+            </td>
+          </tr>
+        </table>
+
+        <!-- Step 2 -->
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom:14px;">
+          <tr>
+            <td width="40" valign="top" style="padding-right:14px;">
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                <tr><td width="36" height="36" align="center" valign="middle" bgcolor="#f5a623" style="background-color:#f5a623;border-radius:50%;font-family:Arial,sans-serif;font-size:14px;font-weight:bold;color:#000000;">2</td></tr>
+              </table>
+            </td>
+            <td valign="top">
+              <p style="margin:0 0 3px;font-family:Arial,sans-serif;font-size:14px;font-weight:bold;color:#1a202c;">Expertenpr&uuml;fung <span style="color:#f5a623;">(innerhalb 48h)</span></p>
+              <p style="margin:0;font-family:Arial,sans-serif;font-size:13px;color:#718096;line-height:1.6;">Unser Expertenteam bewertet den Analysebericht und kontaktiert Sie pers&ouml;nlich.</p>
+            </td>
+          </tr>
+        </table>
+
+        <!-- Step 3 -->
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom:28px;">
+          <tr>
+            <td width="40" valign="top" style="padding-right:14px;">
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                <tr><td width="36" height="36" align="center" valign="middle" bgcolor="#f5a623" style="background-color:#f5a623;border-radius:50%;font-family:Arial,sans-serif;font-size:14px;font-weight:bold;color:#000000;">3</td></tr>
+              </table>
+            </td>
+            <td valign="top">
+              <p style="margin:0 0 3px;font-family:Arial,sans-serif;font-size:14px;font-weight:bold;color:#1a202c;">Ergebnisbericht &amp; Strategie</p>
+              <p style="margin:0;font-family:Arial,sans-serif;font-size:13px;color:#718096;line-height:1.6;">Sie erhalten einen detaillierten Bericht mit konkreten Handlungsempfehlungen und einer R&uuml;ckforderungsstrategie.</p>
+            </td>
+          </tr>
+        </table>
+
+        <!-- Guarantee box -->
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom:28px;">
+          <tr>
+            <td style="background:#f0fff4;border:1px solid #9ae6b4;border-radius:10px;padding:16px;text-align:center;font-family:Arial,sans-serif;font-size:13px;color:#276749;line-height:1.6;">
+              &#9989; <strong>Unsere Garantie:</strong> Die Erstpr&uuml;fung ist vollst&auml;ndig kostenlos und unverbindlich.
+              Erst wenn wir Ihnen erfolgreich helfen, entstehen Kosten &ndash; und das nur erfolgsbasiert.
+            </td>
+          </tr>
+        </table>
+
+        <!-- CTA button -->
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom:8px;">
+          <tr>
+            <td align="center">
+              <!--[if mso]>
+              <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" href="{$siteUrl}" style="height:48px;v-text-anchor:middle;width:220px;" arcsize="20%" fillcolor="#f5a623" stroke="f">
+                <w:anchorlock/>
+                <center style="color:#000000;font-family:Arial,sans-serif;font-size:15px;font-weight:bold;">Zu unserem Portal &rarr;</center>
+              </v:roundrect>
+              <![endif]-->
+              <!--[if !mso]><!-->
+              <a href="{$siteUrl}" style="display:inline-block;background-color:#f5a623;color:#000000;font-family:Arial,sans-serif;font-size:15px;font-weight:bold;padding:14px 36px;border-radius:10px;text-decoration:none;letter-spacing:0.02em;">
+                Zu unserem Portal &rarr;
+              </a>
+              <!--<![endif]-->
+            </td>
+          </tr>
+        </table>
+
+      </td>
+    </tr>
+
+    <!-- ── FOOTER ── -->
+    <tr>
+      <td bgcolor="#f8faff" style="background-color:#f8faff;border-top:1px solid #e2e8f0;padding:24px 32px;text-align:center;">
+        <p style="margin:0 0 8px;font-family:Arial,sans-serif;font-size:13px;color:#4a5568;">
+          <strong>{$brand}</strong> &middot; <a href="https://{$domain}" style="color:#0d2b5e;text-decoration:none;">{$domain}</a>
+        </p>
+        <p style="margin:0 0 8px;font-family:Arial,sans-serif;font-size:12px;color:#718096;">
+          Bei Fragen antworten Sie einfach auf diese E-Mail oder schreiben Sie uns an
+          <a href="mailto:{$adminEmail}" style="color:#0d2b5e;text-decoration:none;">{$adminEmail}</a>
+        </p>
+        <p style="margin:0;font-family:Arial,sans-serif;font-size:11px;color:#a0aec0;">
+          &copy; {$year_now} {$brand}. Alle Rechte vorbehalten. &nbsp;|&nbsp;
+          <a href="https://{$domain}/datenschutz" style="color:#0d2b5e;text-decoration:none;">Datenschutz</a> &nbsp;|&nbsp;
+          <a href="https://{$domain}/impressum" style="color:#0d2b5e;text-decoration:none;">Impressum</a>
+        </p>
+      </td>
+    </tr>
+
+  </table><!-- /Card -->
+
+</td></tr>
+</table><!-- /Outer wrapper -->
+
 </body>
 </html>
 HTML;
