@@ -615,7 +615,7 @@ $error   = isset($_GET['error'])   ? htmlspecialchars($_GET['error'], ENT_QUOTES
                         <h6 class="fw-bold mb-0">Forex-Betrug</h6>
                     </div>
                     <p class="text-muted small mb-2">
-                        Unregulierte Forex-Broker, Kurssmanipulation und verweigerte Auszahlungen.
+                        Unregulierte Forex-Broker, Kursmanipulation und verweigerte Auszahlungen.
                     </p>
                     <span class="badge bg-primary-subtle text-primary">Mehr erfahren →</span>
                 </div>
