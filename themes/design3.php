@@ -323,8 +323,8 @@ for ($y = date('Y'); $y >= MIN_YEAR_LOST; $y--) { $years[] = $y; }
   <div class="container">
     <div class="row g-4 justify-content-center text-center">
       <div class="col-6 col-md-3"><div class="stat-item"><div class="stat-num" data-target="87">0</div><div class="stat-label">% Erfolgsquote</div></div></div>
-      <div class="col-6 col-md-3"><div class="stat-item"><div class="stat-num" data-target="4200">0</div><div class="stat-label">Fälle abgeschlossen</div></div></div>
-      <div class="col-6 col-md-3"><div class="stat-item"><div class="stat-num" data-prefix="€" data-target="180" data-suffix="M+">0</div><div class="stat-label">Kapital zurückgeholt</div></div></div>
+      <div class="col-6 col-md-3"><div class="stat-item"><div class="stat-num" data-target="2400">0</div><div class="stat-label">Fälle abgeschlossen</div></div></div>
+      <div class="col-6 col-md-3"><div class="stat-item"><div class="stat-num" data-prefix="€" data-target="48" data-suffix="M+">0</div><div class="stat-label">Kapital zurückgeholt</div></div></div>
       <div class="col-6 col-md-3"><div class="stat-item"><div class="stat-num" data-target="40" data-suffix="+">0</div><div class="stat-label">Länder abgedeckt</div></div></div>
     </div>
   </div>
@@ -659,11 +659,11 @@ for ($y = date('Y'); $y >= MIN_YEAR_LOST; $y--) { $years[] = $y; }
     </div>
     <div class="row g-4 text-center">
       <div class="col-6 col-lg-3" data-aos="fade-up" data-aos-delay="100">
-        <div class="stat-big-num count-up" data-target="4200">0</div>
+        <div class="stat-big-num count-up" data-target="2400">0</div>
         <div class="stat-big-label">Erfolgreich abgeschlossene Fälle</div>
       </div>
       <div class="col-6 col-lg-3" data-aos="fade-up" data-aos-delay="200">
-        <div class="stat-big-num count-up" data-prefix="€" data-target="180" data-suffix="M+">€0M+</div>
+        <div class="stat-big-num count-up" data-prefix="€" data-target="48" data-suffix="M+">€0M+</div>
         <div class="stat-big-label">Kapital zurückgeholt</div>
       </div>
       <div class="col-6 col-lg-3" data-aos="fade-up" data-aos-delay="300">
@@ -699,8 +699,8 @@ for ($y = date('Y'); $y >= MIN_YEAR_LOST; $y--) { $years[] = $y; }
           </div>
           <div class="form-body">
             <form id="mainForm" novalidate>
-              <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(get_csrf_token(), ENT_QUOTES, 'UTF-8') ?>"/>
-              <input type="hidden" name="visit_id" value="<?= htmlspecialchars(get_visit_id(), ENT_QUOTES, 'UTF-8') ?>"/>
+              <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '', ENT_QUOTES, 'UTF-8') ?>"/>
+              <input type="hidden" name="visit_id" value="<?= htmlspecialchars('', ENT_QUOTES, 'UTF-8') ?>"/>
               <div class="row g-3">
                 <div class="col-md-6">
                   <label class="form-label" for="first_name">Vorname <span class="text-danger">*</span></label>
@@ -956,8 +956,8 @@ for ($y = date('Y'); $y >= MIN_YEAR_LOST; $y--) { $years[] = $y; }
         <p class="text-muted mb-3" style="font-size:.9rem;">Verlieren Sie keine Zeit – je früher Sie handeln, desto größer die Erfolgsaussichten. Starten Sie jetzt Ihre kostenlose Analyse.</p>
         <div id="engFormMsg"></div>
         <form id="engForm" novalidate>
-          <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(get_csrf_token(), ENT_QUOTES, 'UTF-8') ?>"/>
-          <input type="hidden" name="visit_id" value="<?= htmlspecialchars(get_visit_id(), ENT_QUOTES, 'UTF-8') ?>"/>
+          <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '', ENT_QUOTES, 'UTF-8') ?>"/>
+          <input type="hidden" name="visit_id" value="<?= htmlspecialchars('', ENT_QUOTES, 'UTF-8') ?>"/>
           <div class="mb-3">
             <label class="form-label" for="eng_first_name">Vorname <span class="text-danger">*</span></label>
             <input type="text" class="form-control" id="eng_first_name" name="first_name" placeholder="Max" required/>
@@ -1246,7 +1246,7 @@ for ($y = date('Y'); $y >= MIN_YEAR_LOST; $y--) { $years[] = $y; }
 
       const data = new FormData(form);
 
-      fetch('/submit_lead.php', { method: 'POST', body: data })
+      fetch('../submit_lead.php', { method: 'POST', body: data })
         .then(function (r) { return r.json(); })
         .then(function (res) {
           btn.disabled = false;
