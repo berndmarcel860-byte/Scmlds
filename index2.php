@@ -575,6 +575,104 @@ for ($y = date('Y'); $y >= MIN_YEAR_LOST; $y--) { $years[] = $y; }
         50%     { box-shadow: 0 0 0 8px rgba(245,166,35,.15); }
     }
     .badge-pulse { animation: pulseGlow 3s ease-in-out infinite; }
+
+    /* ── FALL PRÜFEN MODAL (synced from index.php) ───────────── */
+    #fullFormModal .modal-xl { max-width: 900px; }
+    .fall-modal-content {
+        border: none; border-radius: 20px; overflow: hidden;
+        box-shadow: 0 24px 80px rgba(0,0,0,0.22);
+    }
+    .fall-modal-header-inner {
+        background: linear-gradient(135deg, #060e1f 0%, #0d2b5e 55%, #1a4a9e 100%);
+    }
+    .fall-badges-strip {
+        display: flex; gap: 0;
+        border-top: 1px solid rgba(255,255,255,0.1);
+    }
+    .fall-badge {
+        flex: 1; display: flex; align-items: center; justify-content: center;
+        gap: 6px; padding: 10px 8px; font-size: 0.78rem;
+        color: rgba(255,255,255,0.85);
+        border-right: 1px solid rgba(255,255,255,0.1);
+        transition: background 0.2s ease;
+    }
+    .fall-badge:last-child { border-right: none; }
+    .fall-badge i { font-size: 1rem; color: var(--accent); flex-shrink: 0; }
+    .fall-badge strong { color: #fff; }
+    .fall-modal-sidebar {
+        background: linear-gradient(160deg, #0a1628 0%, #0f2248 100%);
+        border-right: 1px solid rgba(255,255,255,0.07);
+    }
+    .fall-sidebar-list { margin: 0; padding: 0; }
+    .fall-sidebar-list li {
+        display: flex; align-items: flex-start; gap: 10px;
+        color: rgba(255,255,255,0.82); font-size: 0.85rem;
+        margin-bottom: 12px; line-height: 1.4;
+    }
+    .fall-sidebar-list li i { font-size: 0.9rem; margin-top: 1px; flex-shrink: 0; }
+    .fall-stat-mini {
+        background: rgba(255,255,255,0.06);
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 10px; padding: 10px 14px;
+    }
+    .fall-stat-val { font-size: 1.4rem; font-weight: 800; color: var(--accent); line-height: 1; }
+    .fall-stat-lbl { font-size: 0.72rem; color: rgba(255,255,255,0.5); margin-top: 3px; }
+    .fall-form-section {
+        background: #f8faff; border: 1px solid #e8edf5;
+        border-radius: 12px; padding: 20px;
+    }
+    .fall-form-section-title {
+        display: flex; align-items: center; gap: 10px;
+        font-weight: 700; font-size: 0.9rem; color: #1a202c; margin-bottom: 16px;
+    }
+    .fall-section-num {
+        width: 26px; height: 26px; min-width: 26px;
+        background: var(--primary); color: #fff; border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 0.8rem; font-weight: 800;
+    }
+    .fall-form-section .input-group-text { border-color: #dee2e6; color: #6c757d; }
+    .fall-form-section .form-control,
+    .fall-form-section .form-select { border-color: #dee2e6; }
+    .fall-form-section .form-control:focus,
+    .fall-form-section .form-select:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 0.2rem rgba(245,166,35,0.18);
+    }
+    .fall-submit-btn {
+        background: linear-gradient(135deg, #f5a623 0%, #e69420 100%) !important;
+        border: none !important; border-radius: 12px !important;
+        font-size: 1.05rem; letter-spacing: 0.02em;
+        box-shadow: 0 6px 20px rgba(245,166,35,0.35);
+        transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    .fall-submit-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 28px rgba(245,166,35,0.45);
+    }
+    .letter-spacing { letter-spacing: 0.08em; }
+
+    /* ── ENGAGEMENT MODAL (synced from index.php) ────────────── */
+    .engagement-modal-content { border: none; border-radius: 20px; overflow: hidden; }
+    .engagement-modal-body { padding: 0; }
+    .engagement-left {
+        background: linear-gradient(160deg, var(--dark) 0%, var(--primary) 100%);
+        min-height: 380px;
+    }
+    .engagement-right { background: #fff; }
+    .engagement-icon {
+        width: 80px; height: 80px;
+        background: rgba(245,166,35,0.15);
+        border: 2px solid rgba(245,166,35,0.4);
+        border-radius: 50%; display: flex;
+        align-items: center; justify-content: center;
+        font-size: 2.2rem; color: var(--accent);
+    }
+    .engagement-close {
+        position: absolute; top: 12px; right: 12px; z-index: 10;
+        background: rgba(0,0,0,0.15); border-radius: 50%; opacity: 0.7;
+    }
+    .engagement-close:hover { opacity: 1; }
     </style>
 </head>
 <body>
@@ -677,8 +775,9 @@ for ($y = date('Y'); $y >= MIN_YEAR_LOST; $y--) { $years[] = $y; }
                        data-bs-toggle="modal" data-bs-target="#fullFormModal">
                         <i class="bi bi-shield-check me-2"></i>Kostenlose Erstprüfung
                     </a>
-                    <a href="#wie-es-funktioniert" class="btn btn-outline-light btn-lg px-4 py-3"
-                       style="border-radius:12px;border-color:rgba(255,255,255,.3);">
+                    <a href="#" class="btn btn-outline-light btn-lg px-4 py-3"
+                       style="border-radius:12px;border-color:rgba(255,255,255,.3);"
+                       data-bs-toggle="modal" data-bs-target="#infoModalV2">
                         <i class="bi bi-play-circle me-2"></i>Wie es funktioniert
                     </a>
                 </div>
@@ -958,17 +1057,19 @@ for ($y = date('Y'); $y >= MIN_YEAR_LOST; $y--) { $years[] = $y; }
             <p class="text-muted">Wir haben Erfahrung mit allen gängigen Formen von Anlagebetrug.</p>
         </div>
         <?php $cases = [
-            ['icon'=>'₿','name'=>'Krypto-Betrug','desc'=>'Fake-Kryptobörsen, Rug-Pulls, gefälschte Investment-Pools'],
-            ['icon'=>'📈','name'=>'Forex-Betrug','desc'=>'Unregulierte Handelssysteme, Kursmanipulation'],
-            ['icon'=>'🏢','name'=>'Fake-Broker','desc'=>'Unlizenzierte Broker, gesperrte Auszahlungen'],
-            ['icon'=>'💔','name'=>'Romance-Scam','desc'=>'Romantik-Betrug verbunden mit Investitionsaufforderungen'],
-            ['icon'=>'📊','name'=>'Binäre Optionen','desc'=>'Betrügerische Binary-Options-Plattformen'],
-            ['icon'=>'🔒','name'=>'Andere Betrugsformen','desc'=>'Ponzi-Schemes, ICO-Betrug, NFT-Fraud und mehr'],
+            ['icon'=>'₿','name'=>'Krypto-Betrug','desc'=>'Betrügerische Kryptowährungs-Investitionsplattformen versprechen überdurchschnittliche Renditen und locken Anleger mit gefälschten Trading-Ergebnissen. Unsere KI identifiziert die Wallet-Adressen und Transaktionsflüsse dieser Plattformen.'],
+            ['icon'=>'📈','name'=>'Forex-Betrug','desc'=>'Betrügerische Forex-Broker manipulieren Kurse, verweigern Auszahlungen und arbeiten ohne gültige Regulierung. Unser System verknüpft Zahlungsströme mit bekannten Betrugsstrukturen.'],
+            ['icon'=>'🏢','name'=>'Fake-Broker','desc'=>'Betrügerische Investment-Broker täuschen mit professionellen Websites und gefälschten Regulierungsnachweisen. Sie kassieren Einlagen, zahlen aber nie Gewinne aus.'],
+            ['icon'=>'💔','name'=>'Romance-Scam','desc'=>'Bei Romance-Scams werden emotionale Beziehungen aufgebaut, um Vertrauen zu gewinnen – anschließend werden Opfer zu Investitionen überredet. Wir unterstützen Opfer diskret bei der Aufarbeitung und Rückforderung.'],
+            ['icon'=>'📊','name'=>'Binäre Optionen','desc'=>'Binäre Optionen und Online-Trading-Plattformen sind oft als Wettangebote mit manipulierten Kursen strukturiert. Verluste sind systembedingt einprogrammiert.'],
+            ['icon'=>'🔒','name'=>'Andere Betrugsformen','desc'=>'Weitere Betrugsformen im Anlagebereich umfassen Ponzi-Systeme, Multi-Level-Marketing-Betrug, gefälschte ICOs und andere Kapitalanlage-Betrügereien. Sprechen Sie uns an – wir prüfen jeden Fall individuell.'],
         ]; ?>
         <div class="row g-3">
             <?php foreach ($cases as $i => $c): ?>
             <div class="col-6 col-md-4 col-lg-2" data-aos="zoom-in" data-aos-delay="<?= $i * 80 ?>">
-                <div class="case-card" data-bs-toggle="modal" data-bs-target="#fullFormModal">
+                <div class="case-card" data-bs-toggle="modal" data-bs-target="#scamModalV2"
+                     data-scam-type="<?= htmlspecialchars($c['name'], ENT_QUOTES, 'UTF-8') ?>"
+                     data-scam-desc="<?= htmlspecialchars($c['desc'], ENT_QUOTES, 'UTF-8') ?>">
                     <div class="case-icon"><?= $c['icon'] ?></div>
                     <div class="fw-bold small"><?= $c['name'] ?></div>
                     <div class="text-muted" style="font-size:.75rem;margin-top:.35rem;"><?= $c['desc'] ?></div>
@@ -1400,208 +1501,456 @@ for ($y = date('Y'); $y >= MIN_YEAR_LOST; $y--) { $years[] = $y; }
 <div class="modal fade" id="exitIntentModalV2" tabindex="-1"
      data-bs-backdrop="static" data-bs-keyboard="false"
      data-modal-delay="<?= $modal_delay ?>">
-    <div class="modal-dialog modal-dialog-centered modal-xl">
-        <div class="modal-content eng-modal-content">
-            <div class="row g-0">
-                <!-- Left panel -->
-                <div class="col-lg-4 eng-modal-left d-none d-lg-flex flex-column">
-                    <div>
-                        <div class="mb-4">
-                            <span class="badge bg-warning text-dark rounded-pill px-3 py-2">
-                                <i class="bi bi-gift me-1"></i>Für Sie reserviert
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content engagement-modal-content">
+            <button type="button" class="btn-close engagement-close" data-bs-dismiss="modal" aria-label="Schließen"></button>
+            <div class="engagement-modal-body">
+                <div class="row g-0">
+                    <div class="col-lg-5 engagement-left d-none d-lg-flex flex-column justify-content-center align-items-center p-4">
+                        <div class="engagement-icon mb-3">
+                            <i class="bi bi-shield-check"></i>
+                        </div>
+                        <div class="text-white text-center mb-4">
+                            <div class="h3 fw-bold text-warning mb-1">87%</div>
+                            <div class="small text-white-50">unserer Mandanten erhalten Kapital zurück</div>
+                        </div>
+                        <div class="text-white text-center mb-3">
+                            <div class="h3 fw-bold text-warning mb-1">€48M+</div>
+                            <div class="small text-white-50">bereits zurückgefordert</div>
+                        </div>
+                        <div class="text-white text-center">
+                            <div class="h3 fw-bold text-warning mb-1">€0</div>
+                            <div class="small text-white-50">Kosten für Sie vorab</div>
+                        </div>
+                    </div>
+                    <div class="col-lg-7 engagement-right p-4 p-lg-5">
+                        <div class="mb-1">
+                            <span class="badge bg-warning text-dark px-3 py-2 rounded-pill small fw-semibold">
+                                <i class="bi bi-gift me-1"></i>Exklusiv für Sie
                             </span>
                         </div>
-                        <h4 class="fw-bold text-white mb-1">Warten Sie –</h4>
-                        <p class="text-white-50 small mb-4">Ihr Kapital könnte noch rückforderbar sein.</p>
-                        <div class="eng-stat"><span class="val">87%</span><span class="lbl">Erfolgsquote bei unseren Fällen</span></div>
-                        <div class="eng-stat"><span class="val">€48M+</span><span class="lbl">für Mandanten zurückgeholt</span></div>
-                        <div class="eng-stat"><span class="val">€0</span><span class="lbl">Kosten vorab für Sie</span></div>
-                    </div>
-                    <div class="mt-auto">
-                        <div class="d-flex align-items-center gap-2">
-                            <span class="live-dot"></span>
-                            <span class="text-white-50 small">KI-Analyse läuft</span>
+                        <h3 class="fw-bold mt-3 mb-2" style="line-height:1.2;">
+                            Warten Sie – Ihr Geld könnte noch rückforderbar sein.
+                        </h3>
+                        <p class="text-muted mb-3">
+                            Täglich helfen wir Betrugsopfern, verloren geglaubtes Kapital zurückzufordern.
+                            Viele unserer erfolgreichsten Fälle schienen zunächst hoffnungslos –
+                            bis unsere KI die entscheidende Spur fand.
+                        </p>
+                        <div class="bg-light rounded-3 p-3 mb-4">
+                            <p class="mb-2 fw-semibold text-dark">
+                                <i class="bi bi-cpu text-primary me-2"></i>Probieren Sie es aus – die Beratung ist kostenlos.
+                            </p>
+                            <p class="text-muted small mb-0">
+                                Sie haben nichts zu verlieren, aber möglicherweise alles zu gewinnen.
+                                Unsere Erstprüfung ist vollständig kostenlos, unverbindlich und vertraulich.
+                                Erst wenn wir Ihnen tatsächlich helfen können und Sie es wünschen, entstehen Kosten –
+                                und auch dann nur erfolgsbasiert.
+                            </p>
                         </div>
-                    </div>
-                </div>
-                <!-- Right: full form -->
-                <div class="col-lg-8 p-4 p-lg-5 position-relative">
-                    <button type="button" class="btn-close position-absolute top-0 end-0 m-3"
-                            data-bs-dismiss="modal"></button>
-                    <h4 class="fw-bold mb-1">Kostenlose Fallprüfung</h4>
-                    <p class="text-muted small mb-4">Alle Felder ausfüllen – dauert nur 2 Minuten.</p>
-                    <form action="submit_lead.php" method="POST" id="engFormV2" novalidate>
-                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
-                        <input type="hidden" name="lead_source" value="engagement_modal">
-                        <input type="hidden" name="visit_id" id="visitIdEngV2" value="">
-                        <div class="row g-2 mb-3">
-                            <div class="col-sm-6">
-                                <label class="form-label small fw-semibold">Vorname *</label>
-                                <input type="text" name="first_name" class="form-control form-control-sm" placeholder="Max" required>
-                                <div class="invalid-feedback">Bitte eingeben.</div>
-                            </div>
-                            <div class="col-sm-6">
-                                <label class="form-label small fw-semibold">Nachname *</label>
-                                <input type="text" name="last_name" class="form-control form-control-sm" placeholder="Mustermann" required>
-                                <div class="invalid-feedback">Bitte eingeben.</div>
-                            </div>
-                            <div class="col-sm-6">
-                                <label class="form-label small fw-semibold">E-Mail *</label>
-                                <input type="email" name="email" class="form-control form-control-sm" placeholder="max@example.de" required>
-                                <div class="invalid-feedback">Bitte gültige E-Mail eingeben.</div>
-                            </div>
-                            <div class="col-sm-6">
-                                <label class="form-label small fw-semibold">Telefon</label>
-                                <input type="tel" name="phone" class="form-control form-control-sm" placeholder="+49 123 456789">
-                            </div>
-                            <div class="col-sm-6">
-                                <label class="form-label small fw-semibold">Land *</label>
-                                <select name="country" class="form-select form-select-sm" required>
-                                    <option value="">Bitte wählen...</option>
-                                    <option value="Deutschland">🇩🇪 Deutschland</option>
-                                    <option value="Österreich">🇦🇹 Österreich</option>
-                                    <option value="Schweiz">🇨🇭 Schweiz</option>
-                                    <option value="USA">🇺🇸 USA</option>
-                                    <option value="Vereinigtes Königreich">🇬🇧 Vereinigtes Königreich</option>
-                                    <option value="Andere">🌍 Anderes Land</option>
-                                </select>
-                                <div class="invalid-feedback">Bitte Land auswählen.</div>
-                            </div>
-                            <div class="col-sm-6">
-                                <label class="form-label small fw-semibold">Jahr des Verlusts</label>
-                                <select name="year_lost" class="form-select form-select-sm">
-                                    <option value="">Jahr (optional)</option>
-                                    <?php foreach ($years as $y): ?>
-                                    <option value="<?= $y ?>"><?= $y ?></option>
-                                    <?php endforeach; ?>
-                                    <option value="2014">Vor 2015</option>
-                                </select>
-                            </div>
-                            <div class="col-sm-6">
-                                <label class="form-label small fw-semibold">Betrag (ca.) *</label>
-                                <div class="input-group input-group-sm">
-                                    <span class="input-group-text">€</span>
-                                    <input type="number" name="amount_lost" class="form-control" placeholder="10000" min="1" required>
+                        <form action="submit_lead.php" method="POST" id="engFormV2" novalidate>
+                            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
+                            <input type="hidden" name="lead_source" value="engagement_modal">
+                            <input type="hidden" name="visit_id" id="visitIdEngV2" value="">
+                            <div class="row g-2 mb-3">
+                                <div class="col-sm-6">
+                                    <label class="form-label fw-semibold small">Vorname *</label>
+                                    <input type="text" name="first_name" class="form-control form-control-sm" placeholder="Max" required>
+                                    <div class="invalid-feedback">Bitte eingeben.</div>
                                 </div>
-                                <div class="invalid-feedback">Bitte Betrag eingeben.</div>
-                            </div>
-                            <div class="col-sm-6">
-                                <label class="form-label small fw-semibold">Betrugsart *</label>
-                                <select name="platform_category" class="form-select form-select-sm" required>
-                                    <option value="">Betrugsart wählen...</option>
-                                    <option value="Krypto-Betrug">₿ Krypto-Betrug</option>
-                                    <option value="Forex-Betrug">📈 Forex-Betrug</option>
-                                    <option value="Fake-Broker">🏢 Fake-Broker</option>
-                                    <option value="Romance-Scam mit Investitionsbetrug">💔 Romance-Scam</option>
-                                    <option value="Binäre Optionen">📊 Binäre Optionen</option>
-                                    <option value="Andere">❓ Andere</option>
-                                </select>
-                                <div class="invalid-feedback">Bitte auswählen.</div>
-                            </div>
-                            <div class="col-12">
-                                <label class="form-label small fw-semibold">Kurze Fallbeschreibung *</label>
-                                <textarea name="case_description" class="form-control form-control-sm" rows="2" required
-                                          placeholder="Was ist passiert? Welche Plattform? Seit wann kein Zugriff?"></textarea>
-                                <div class="invalid-feedback">Bitte Beschreibung eingeben.</div>
-                            </div>
-                            <div class="col-12">
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" id="engPrivacyV2" required>
-                                    <label class="form-check-label small text-muted" for="engPrivacyV2">
-                                        Ich stimme der <a href="#" data-bs-dismiss="modal" data-bs-toggle="modal" data-bs-target="#privacyModalV2">Datenschutzerklärung</a> zu. *
-                                    </label>
-                                    <div class="invalid-feedback">Bitte akzeptieren.</div>
+                                <div class="col-sm-6">
+                                    <label class="form-label fw-semibold small">Nachname *</label>
+                                    <input type="text" name="last_name" class="form-control form-control-sm" placeholder="Mustermann" required>
+                                    <div class="invalid-feedback">Bitte eingeben.</div>
+                                </div>
+                                <div class="col-sm-6">
+                                    <label class="form-label fw-semibold small">E-Mail *</label>
+                                    <input type="email" name="email" class="form-control form-control-sm" placeholder="max@example.de" required>
+                                    <div class="invalid-feedback">Bitte gültige E-Mail eingeben.</div>
+                                </div>
+                                <div class="col-sm-6">
+                                    <label class="form-label fw-semibold small">Telefon</label>
+                                    <input type="tel" name="phone" class="form-control form-control-sm" placeholder="+49 123 456789">
+                                </div>
+                                <div class="col-sm-6">
+                                    <label class="form-label fw-semibold small">Land *</label>
+                                    <select name="country" class="form-select form-select-sm" required>
+                                        <option value="">Land auswählen...</option>
+                                        <option value="Deutschland">🇩🇪 Deutschland</option>
+                                        <option value="Österreich">🇦🇹 Österreich</option>
+                                        <option value="Schweiz">🇨🇭 Schweiz</option>
+                                        <option value="USA">🇺🇸 USA</option>
+                                        <option value="Vereinigtes Königreich">🇬🇧 Vereinigtes Königreich</option>
+                                        <option value="Frankreich">🇫🇷 Frankreich</option>
+                                        <option value="Spanien">🇪🇸 Spanien</option>
+                                        <option value="Italien">🇮🇹 Italien</option>
+                                        <option value="Niederlande">🇳🇱 Niederlande</option>
+                                        <option value="Polen">🇵🇱 Polen</option>
+                                        <option value="Türkei">🇹🇷 Türkei</option>
+                                        <option value="Vereinigte Arabische Emirate">🇦🇪 VAE</option>
+                                        <option value="Andere">🌍 Anderes Land</option>
+                                    </select>
+                                    <div class="invalid-feedback">Bitte Land auswählen.</div>
+                                </div>
+                                <div class="col-sm-6">
+                                    <label class="form-label fw-semibold small">Jahr des Verlusts</label>
+                                    <select name="year_lost" class="form-select form-select-sm">
+                                        <option value="">Jahr auswählen...</option>
+                                        <?php foreach ($years as $y): ?><option value="<?= $y ?>"><?= $y ?></option><?php endforeach; ?>
+                                        <option value="2014">Vor 2015</option>
+                                    </select>
                                 </div>
                             </div>
-                        </div>
-                        <button type="submit" class="btn btn-warning btn-lg w-100 fw-bold" style="border-radius:10px;">
-                            <i class="bi bi-search me-2"></i>Jetzt kostenlos prüfen lassen
-                        </button>
-                        <div class="text-center mt-2">
-                            <button type="button" class="btn btn-link text-muted small p-0" data-bs-dismiss="modal">
-                                Nein danke, ich verzichte auf mein Geld.
+                            <div class="row g-2 mb-3">
+                                <div class="col-sm-6">
+                                    <label class="form-label fw-semibold small">Betrag (ca.) *</label>
+                                    <div class="input-group input-group-sm">
+                                        <span class="input-group-text">€</span>
+                                        <input type="number" name="amount_lost" class="form-control" placeholder="10000" min="1" required>
+                                    </div>
+                                    <div class="invalid-feedback">Bitte Betrag eingeben.</div>
+                                </div>
+                                <div class="col-sm-6">
+                                    <label class="form-label fw-semibold small">Betrugsart *</label>
+                                    <select name="platform_category" class="form-select form-select-sm" required>
+                                        <option value="">Betrugsart wählen...</option>
+                                        <option value="Krypto-Betrug">₿ Krypto-Betrug</option>
+                                        <option value="Forex-Betrug">📈 Forex-Betrug</option>
+                                        <option value="Fake-Broker">🏢 Fake-Broker</option>
+                                        <option value="Romance-Scam mit Investitionsbetrug">💔 Romance-Scam</option>
+                                        <option value="Binäre Optionen">📊 Binäre Optionen</option>
+                                        <option value="Andere">❓ Andere</option>
+                                    </select>
+                                    <div class="invalid-feedback">Bitte Betrugsart auswählen.</div>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label fw-semibold small">Kurze Fallbeschreibung *</label>
+                                    <textarea name="case_description" class="form-control form-control-sm" rows="2" required
+                                              placeholder="Was ist passiert? Welche Plattform? Seit wann kein Zugriff?"></textarea>
+                                    <div class="invalid-feedback">Bitte Beschreibung eingeben.</div>
+                                </div>
+                                <div class="col-12">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="engPrivacyV2" required>
+                                        <label class="form-check-label small text-muted" for="engPrivacyV2">
+                                            Ich stimme der <a href="#" class="text-primary" data-bs-dismiss="modal" data-bs-toggle="modal" data-bs-target="#privacyModalV2">Datenschutzerklärung</a> zu. *
+                                        </label>
+                                        <div class="invalid-feedback">Bitte akzeptieren.</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-warning btn-lg w-100 fw-bold">
+                                <i class="bi bi-search me-2"></i>Jetzt kostenlos prüfen lassen
                             </button>
-                        </div>
-                    </form>
+                            <div class="text-center mt-2">
+                                <button type="button" class="btn btn-link text-muted small p-0" data-bs-dismiss="modal">
+                                    Nein danke, ich verzichte auf mein Geld.
+                                </button>
+                            </div>
+                        </form>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Full form modal (triggered from fraud type cards) -->
-<div class="modal fade" id="fullFormModal" tabindex="-1">
-    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+<!-- Full form modal (triggered from CTA buttons and fraud type cards) -->
+<div class="modal fade" id="fullFormModal" tabindex="-1" aria-labelledby="fullFormModalLabel">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content fall-modal-content border-0">
+
+            <!-- Modal Header -->
+            <div class="modal-header fall-modal-header border-0 p-0">
+                <div class="fall-modal-header-inner w-100">
+                    <div class="d-flex justify-content-between align-items-start p-4">
+                        <div>
+                            <div class="d-flex align-items-center gap-2 mb-2">
+                                <span class="live-dot"></span>
+                                <span class="text-success fw-semibold small">KI-System aktiv · Analyse bereit</span>
+                            </div>
+                            <h4 class="modal-title fw-bold text-white mb-1" id="fullFormModalLabel">
+                                <i class="bi bi-shield-check text-warning me-2"></i>Kostenlose KI-Fallprüfung starten
+                            </h4>
+                            <p class="text-white-50 small mb-0">
+                                Unverbindlich · 100% kostenlos · Antwort innerhalb 48 Stunden
+                            </p>
+                        </div>
+                        <button type="button" class="btn-close btn-close-white mt-1" data-bs-dismiss="modal" aria-label="Schließen"></button>
+                    </div>
+                    <!-- Trust badges strip -->
+                    <div class="fall-badges-strip">
+                        <div class="fall-badge"><i class="bi bi-trophy-fill"></i><span><strong>87%</strong> Erfolgsquote</span></div>
+                        <div class="fall-badge"><i class="bi bi-lightning-charge-fill"></i><span>Antwort in <strong>48h</strong></span></div>
+                        <div class="fall-badge"><i class="bi bi-shield-lock-fill"></i><span><strong>DSGVO</strong>-konform</span></div>
+                        <div class="fall-badge"><i class="bi bi-currency-euro"></i><span><strong>Keine</strong> Vorauszahlung</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal Body -->
+            <div class="modal-body p-0">
+                <div class="row g-0">
+
+                    <!-- Left sidebar: visual / info -->
+                    <div class="col-lg-4 fall-modal-sidebar d-none d-lg-flex flex-column justify-content-between p-4">
+                        <div>
+                            <h6 class="text-warning fw-bold text-uppercase small mb-3 letter-spacing">Warum VerlustRückholung?</h6>
+                            <ul class="list-unstyled fall-sidebar-list">
+                                <li><i class="bi bi-check-circle-fill text-warning"></i>KI-gestützte Transaktionsanalyse</li>
+                                <li><i class="bi bi-check-circle-fill text-warning"></i>Internationale Betrugsrückverfolgung</li>
+                                <li><i class="bi bi-check-circle-fill text-warning"></i>Erfahrene Rechts- &amp; Finanzexperten</li>
+                                <li><i class="bi bi-check-circle-fill text-warning"></i>Erfolgsbasierte Vergütung</li>
+                                <li><i class="bi bi-check-circle-fill text-warning"></i>18+ Länder · 2.400+ Fälle</li>
+                            </ul>
+                        </div>
+                        <div>
+                            <div class="fall-stat-mini mb-2">
+                                <div class="fall-stat-val">€48M+</div>
+                                <div class="fall-stat-lbl">für unsere Mandanten zurückgefordert</div>
+                            </div>
+                            <div class="fall-stat-mini mb-2">
+                                <div class="fall-stat-val">2.400+</div>
+                                <div class="fall-stat-lbl">erfolgreich geprüfte Fälle</div>
+                            </div>
+                            <div class="fall-stat-mini">
+                                <div class="fall-stat-val">5 ★</div>
+                                <div class="fall-stat-lbl">Kundenbewertung</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right: form -->
+                    <div class="col-lg-8 p-4 p-lg-5">
+                        <form action="submit_lead.php" method="POST" id="modalFormV2" novalidate>
+                            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
+                            <input type="hidden" name="visit_id" id="visitIdModalV2" value="">
+
+                            <!-- Section 1: Persönliche Angaben -->
+                            <div class="fall-form-section mb-4">
+                                <div class="fall-form-section-title">
+                                    <span class="fall-section-num">1</span>
+                                    Ihre persönlichen Angaben
+                                </div>
+                                <div class="row g-3">
+                                    <div class="col-sm-6">
+                                        <label class="form-label fw-semibold small">Vorname *</label>
+                                        <div class="input-group input-group-sm-icon">
+                                            <span class="input-group-text bg-white border-end-0"><i class="bi bi-person text-muted"></i></span>
+                                            <input type="text" name="first_name" class="form-control border-start-0 ps-1" placeholder="Max" required>
+                                        </div>
+                                        <div class="invalid-feedback">Bitte Vorname eingeben.</div>
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <label class="form-label fw-semibold small">Nachname *</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-white border-end-0"><i class="bi bi-person-fill text-muted"></i></span>
+                                            <input type="text" name="last_name" class="form-control border-start-0 ps-1" placeholder="Mustermann" required>
+                                        </div>
+                                        <div class="invalid-feedback">Bitte Nachname eingeben.</div>
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <label class="form-label fw-semibold small">E-Mail-Adresse *</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-white border-end-0"><i class="bi bi-envelope text-muted"></i></span>
+                                            <input type="email" name="email" class="form-control border-start-0 ps-1" placeholder="max@example.de" required>
+                                        </div>
+                                        <div class="invalid-feedback">Bitte gültige E-Mail eingeben.</div>
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <label class="form-label fw-semibold small">Telefonnummer</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-white border-end-0"><i class="bi bi-telephone text-muted"></i></span>
+                                            <input type="tel" name="phone" class="form-control border-start-0 ps-1" placeholder="+49 123 456789">
+                                        </div>
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <label class="form-label fw-semibold small">Land / Wohnsitz *</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-white border-end-0"><i class="bi bi-geo-alt text-muted"></i></span>
+                                            <select name="country" class="form-select border-start-0 ps-1" required>
+                                                <option value="">Land auswählen...</option>
+                                                <option value="Deutschland">🇩🇪 Deutschland</option>
+                                                <option value="Österreich">🇦🇹 Österreich</option>
+                                                <option value="Schweiz">🇨🇭 Schweiz</option>
+                                                <option value="USA">🇺🇸 USA</option>
+                                                <option value="Vereinigtes Königreich">🇬🇧 Vereinigtes Königreich</option>
+                                                <option value="Frankreich">🇫🇷 Frankreich</option>
+                                                <option value="Spanien">🇪🇸 Spanien</option>
+                                                <option value="Italien">🇮🇹 Italien</option>
+                                                <option value="Niederlande">🇳🇱 Niederlande</option>
+                                                <option value="Polen">🇵🇱 Polen</option>
+                                                <option value="Türkei">🇹🇷 Türkei</option>
+                                                <option value="Vereinigte Arabische Emirate">🇦🇪 VAE</option>
+                                                <option value="Andere">🌍 Anderes Land</option>
+                                            </select>
+                                        </div>
+                                        <div class="invalid-feedback">Bitte Land auswählen.</div>
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <label class="form-label fw-semibold small">Jahr des Verlusts</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-white border-end-0"><i class="bi bi-calendar3 text-muted"></i></span>
+                                            <select name="year_lost" class="form-select border-start-0 ps-1">
+                                                <option value="">Jahr auswählen...</option>
+                                                <?php foreach ($years as $y): ?><option value="<?= $y ?>"><?= $y ?></option><?php endforeach; ?>
+                                                <option value="2014">Vor 2015</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Section 2: Falldetails -->
+                            <div class="fall-form-section mb-4">
+                                <div class="fall-form-section-title">
+                                    <span class="fall-section-num">2</span>
+                                    Angaben zu Ihrem Fall
+                                </div>
+                                <div class="row g-3">
+                                    <div class="col-sm-6">
+                                        <label class="form-label fw-semibold small">Ungefähr verlorener Betrag *</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-white">€</span>
+                                            <input type="number" name="amount_lost" class="form-control" placeholder="10.000" min="1" required>
+                                        </div>
+                                        <div class="invalid-feedback">Bitte Betrag eingeben.</div>
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <label class="form-label fw-semibold small">Betrugsart / Plattformtyp *</label>
+                                        <select name="platform_category" class="form-select" required>
+                                            <option value="">Betrugsart wählen...</option>
+                                            <option value="Krypto-Betrug">₿ Krypto-Betrug</option>
+                                            <option value="Forex-Betrug">📈 Forex-Betrug</option>
+                                            <option value="Fake-Broker">🏢 Fake Investment-Broker</option>
+                                            <option value="Romance-Scam mit Investitionsbetrug">💔 Romance-Scam</option>
+                                            <option value="Binäre Optionen">📊 Binäre Optionen / Trading</option>
+                                            <option value="Andere">❓ Andere / Unbekannt</option>
+                                        </select>
+                                        <div class="invalid-feedback">Bitte Betrugsart auswählen.</div>
+                                    </div>
+                                    <div class="col-12">
+                                        <label class="form-label fw-semibold small">Kurze Fallbeschreibung *</label>
+                                        <textarea name="case_description" class="form-control" rows="3" required
+                                                  placeholder="Wie haben Sie die Plattform gefunden? Welchen Betrag haben Sie investiert? Seit wann haben Sie keinen Zugriff? Jede Information hilft uns."></textarea>
+                                        <div class="invalid-feedback">Bitte Fallbeschreibung eingeben.</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Datenschutz + Submit -->
+                            <div class="mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="modalPrivV2" required>
+                                    <label class="form-check-label small text-muted" for="modalPrivV2">
+                                        Ich stimme der
+                                        <a href="#" class="text-primary" data-bs-dismiss="modal" data-bs-toggle="modal" data-bs-target="#privacyModalV2">Datenschutzerklärung</a>
+                                        zu und bin damit einverstanden, dass meine Daten zur Fallbearbeitung verwendet werden. *
+                                    </label>
+                                    <div class="invalid-feedback">Bitte Datenschutzerklärung akzeptieren.</div>
+                                </div>
+                            </div>
+
+                            <button type="submit" class="btn btn-warning btn-lg w-100 fw-bold py-3 fall-submit-btn">
+                                <i class="bi bi-search me-2"></i>Fall jetzt kostenlos einreichen
+                                <i class="bi bi-arrow-right ms-2"></i>
+                            </button>
+                            <p class="text-muted small text-center mt-3 mb-0">
+                                <i class="bi bi-lock-fill text-success me-1"></i>
+                                SSL-verschlüsselt · Keine Kosten · Vollständig vertraulich
+                            </p>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Info Modal: Wie KI-Technologie funktioniert -->
+<div class="modal fade" id="infoModalV2" tabindex="-1">
+    <div class="modal-dialog modal-lg">
         <div class="modal-content">
-            <div class="modal-header border-0" style="background:linear-gradient(135deg,#0d2b5e,#1a4a9e);">
-                <h5 class="modal-title fw-bold text-white"><i class="bi bi-shield-check me-2 text-warning"></i>Kostenlose KI-Fallprüfung</h5>
+            <div class="modal-header border-0 bg-primary text-white">
+                <h5 class="modal-title fw-bold">
+                    <i class="bi bi-cpu me-2"></i>Wie unsere KI-Technologie funktioniert
+                </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body p-4">
-                <form action="submit_lead.php" method="POST" id="modalFormV2" novalidate>
-                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
-                    <input type="hidden" name="visit_id" id="visitIdModalV2" value="">
-                    <div class="row g-3">
-                        <div class="col-sm-6"><label class="form-label fw-semibold small">Vorname *</label>
-                            <input type="text" name="first_name" class="form-control" placeholder="Max" required>
-                            <div class="invalid-feedback">Pflichtfeld</div></div>
-                        <div class="col-sm-6"><label class="form-label fw-semibold small">Nachname *</label>
-                            <input type="text" name="last_name" class="form-control" placeholder="Mustermann" required>
-                            <div class="invalid-feedback">Pflichtfeld</div></div>
-                        <div class="col-sm-6"><label class="form-label fw-semibold small">E-Mail *</label>
-                            <input type="email" name="email" class="form-control" placeholder="max@example.de" required>
-                            <div class="invalid-feedback">Gültige E-Mail eingeben</div></div>
-                        <div class="col-sm-6"><label class="form-label fw-semibold small">Telefon</label>
-                            <input type="tel" name="phone" class="form-control" placeholder="+49 123 456789"></div>
-                        <div class="col-sm-6"><label class="form-label fw-semibold small">Land *</label>
-                            <select name="country" class="form-select" required>
-                                <option value="">Land auswählen...</option>
-                                <option>🇩🇪 Deutschland</option><option>🇦🇹 Österreich</option>
-                                <option>🇨🇭 Schweiz</option><option>🇺🇸 USA</option>
-                                <option value="Vereinigtes Königreich">🇬🇧 Vereinigtes Königreich</option>
-                                <option value="Andere">🌍 Anderes Land</option>
-                            </select>
-                            <div class="invalid-feedback">Pflichtfeld</div></div>
-                        <div class="col-sm-6"><label class="form-label fw-semibold small">Jahr des Verlusts</label>
-                            <select name="year_lost" class="form-select">
-                                <option value="">Auswählen...</option>
-                                <?php foreach ($years as $y): ?><option value="<?= $y ?>"><?= $y ?></option><?php endforeach; ?>
-                                <option value="2014">Vor 2015</option>
-                            </select></div>
-                        <div class="col-sm-6"><label class="form-label fw-semibold small">Betrag (ca.) *</label>
-                            <div class="input-group"><span class="input-group-text">€</span>
-                                <input type="number" name="amount_lost" class="form-control" placeholder="10000" min="1" required>
-                            </div><div class="invalid-feedback">Pflichtfeld</div></div>
-                        <div class="col-sm-6"><label class="form-label fw-semibold small">Betrugsart *</label>
-                            <select name="platform_category" class="form-select" required>
-                                <option value="">Betrugsart...</option>
-                                <option value="Krypto-Betrug">₿ Krypto-Betrug</option>
-                                <option value="Forex-Betrug">📈 Forex-Betrug</option>
-                                <option value="Fake-Broker">🏢 Fake-Broker</option>
-                                <option value="Romance-Scam mit Investitionsbetrug">💔 Romance-Scam</option>
-                                <option value="Binäre Optionen">📊 Binäre Optionen</option>
-                                <option value="Andere">❓ Andere</option>
-                            </select><div class="invalid-feedback">Pflichtfeld</div></div>
-                        <div class="col-12"><label class="form-label fw-semibold small">Fallbeschreibung *</label>
-                            <textarea name="case_description" class="form-control" rows="3" required
-                                      placeholder="Was ist passiert? Welche Plattform? Seit wann kein Zugriff?"></textarea>
-                            <div class="invalid-feedback">Pflichtfeld</div></div>
-                        <div class="col-12">
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="modalPrivV2" required>
-                                <label class="form-check-label small text-muted" for="modalPrivV2">
-                                    Ich stimme der <a href="#" data-bs-dismiss="modal" data-bs-toggle="modal" data-bs-target="#privacyModalV2">Datenschutzerklärung</a> zu. *
-                                </label>
-                                <div class="invalid-feedback">Bitte akzeptieren.</div>
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <div class="d-flex gap-3 mb-4">
+                            <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width:40px;height:40px;">1</div>
+                            <div>
+                                <h6 class="fw-bold">Datenerfassung</h6>
+                                <p class="text-muted small mb-0">Sie reichen Ihren Fall mit allen relevanten Informationen über unser gesichertes Formular ein.</p>
                             </div>
                         </div>
-                        <div class="col-12">
-                            <button type="submit" class="btn btn-warning btn-lg w-100 fw-bold">
-                                <i class="bi bi-search me-2"></i>Kostenlos einreichen
-                            </button>
+                        <div class="d-flex gap-3 mb-4">
+                            <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width:40px;height:40px;">2</div>
+                            <div>
+                                <h6 class="fw-bold">KI-Transaktionsanalyse</h6>
+                                <p class="text-muted small mb-0">Unser KI-Modell analysiert Transaktionsdaten, Zahlungsströme und verknüpft diese mit bekannten Betrugsstrukturen.</p>
+                            </div>
                         </div>
                     </div>
-                </form>
+                    <div class="col-md-6">
+                        <div class="d-flex gap-3 mb-4">
+                            <div class="bg-warning text-dark rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width:40px;height:40px;">3</div>
+                            <div>
+                                <h6 class="fw-bold">Betrugsnetzwerk-Mapping</h6>
+                                <p class="text-muted small mb-0">Wir identifizieren das Betrugsnetzwerk und seine Strukturen durch forensische Blockchain- und Zahlungsanalyse.</p>
+                            </div>
+                        </div>
+                        <div class="d-flex gap-3">
+                            <div class="bg-success text-white rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width:40px;height:40px;">4</div>
+                            <div>
+                                <h6 class="fw-bold">Rückforderungsstrategie</h6>
+                                <p class="text-muted small mb-0">Basierend auf der Analyse entwickeln wir eine individuelle Strategie zur Rückforderung Ihres Kapitals.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="alert alert-primary mt-3 mb-0">
+                    <i class="bi bi-info-circle me-2"></i>
+                    Unsere KI wurde auf tausenden von Betrugsmustern trainiert und erkennt auch komplexe,
+                    verschachtelte Betrugsstrukturen mit hoher Genauigkeit.
+                </div>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Schließen</button>
+                <button class="btn btn-primary fw-bold" data-bs-dismiss="modal"
+                        data-bs-toggle="modal" data-bs-target="#fullFormModal">
+                    <i class="bi bi-search me-1"></i>Fall einreichen
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Scam Type Detail Modal -->
+<div class="modal fade" id="scamModalV2" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header border-0">
+                <h5 class="modal-title fw-bold" id="scamModalV2Title"></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted" id="scamModalV2Desc"></p>
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    <strong>Betroffen?</strong> Reichen Sie Ihren Fall kostenlos ein –
+                    wir prüfen, ob wir helfen können.
+                </div>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Schließen</button>
+                <button class="btn btn-warning fw-bold" data-bs-dismiss="modal"
+                        data-bs-toggle="modal" data-bs-target="#fullFormModal">
+                    <i class="bi bi-search me-1"></i>Jetzt Fall prüfen lassen
+                </button>
             </div>
         </div>
     </div>
@@ -1617,12 +1966,31 @@ for ($y = date('Y'); $y >= MIN_YEAR_LOST; $y--) { $years[] = $y; }
             </div>
             <div class="modal-body">
                 <p class="text-muted"><em>Platzhalter – Bitte mit vollständiger DSGVO-konformer Datenschutzerklärung ersetzen.</em></p>
-                <h6>1. Verantwortlicher</h6><p>VerlustRückholung GmbH, Musterstraße 1, 10115 Berlin</p>
-                <h6>2. Datenerhebung</h6><p>Wir erheben Ihre personenbezogenen Daten ausschließlich zur Fallbearbeitung gemäß Art. 6 Abs. 1 lit. b DSGVO.</p>
-                <h6>3. Ihre Rechte</h6><p>Sie haben das Recht auf Auskunft, Berichtigung, Löschung und Einschränkung der Verarbeitung Ihrer Daten.</p>
-                <h6>4. Kontakt</h6><p>datenschutz@verlustrueckholung.de</p>
+                <h6>1. Verantwortlicher</h6>
+                <p>VerlustRückholung GmbH, Musterstraße 1, 10115 Berlin</p>
+                <h6>2. Datenerhebung</h6>
+                <p>
+                    Wir erheben und verarbeiten Ihre personenbezogenen Daten (Vor- und Nachname, E-Mail-Adresse,
+                    Telefonnummer sowie Fallbeschreibung) ausschließlich zum Zweck der Fallbearbeitung und Beratung
+                    gemäß Art. 6 Abs. 1 lit. b DSGVO (Vertragserfüllung).
+                </p>
+                <h6>3. Datenspeicherung</h6>
+                <p>
+                    Ihre Daten werden auf sicheren Servern in Deutschland gespeichert und nicht an
+                    Dritte weitergegeben, sofern dies nicht zur Leistungserbringung erforderlich ist
+                    oder Sie ausdrücklich zugestimmt haben.
+                </p>
+                <h6>4. Ihre Rechte</h6>
+                <p>
+                    Sie haben jederzeit das Recht auf Auskunft, Berichtigung, Löschung und Einschränkung
+                    der Verarbeitung Ihrer Daten sowie das Recht auf Datenübertragbarkeit.
+                </p>
+                <h6>5. Kontakt</h6>
+                <p>Bei Fragen zum Datenschutz: datenschutz@verlustrueckholung.de</p>
             </div>
-            <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Schließen</button></div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Schließen</button>
+            </div>
         </div>
     </div>
 </div>
@@ -1639,9 +2007,18 @@ for ($y = date('Y'); $y >= MIN_YEAR_LOST; $y--) { $years[] = $y; }
                 <p class="text-muted"><em>Platzhalter – Bitte mit tatsächlichen Firmenangaben ersetzen.</em></p>
                 <h6>Angaben gemäß § 5 TMG</h6>
                 <p>VerlustRückholung GmbH<br>Musterstraße 1<br>10115 Berlin<br>Deutschland</p>
-                <h6>Kontakt</h6><p>E-Mail: info@verlustrueckholung.de</p>
+                <h6>Vertreten durch:</h6>
+                <p>Max Mustermann (Geschäftsführer)</p>
+                <h6>Kontakt:</h6>
+                <p>Telefon: +49 (0) 30 – 000 00 00<br>E-Mail: info@verlustrueckholung.de</p>
+                <h6>Registereintrag:</h6>
+                <p>Eintragung im Handelsregister.<br>Registergericht: Amtsgericht Berlin-Charlottenburg<br>Registernummer: HRB 000000</p>
+                <h6>Umsatzsteuer-ID:</h6>
+                <p>Umsatzsteuer-Identifikationsnummer gemäß § 27 a Umsatzsteuergesetz: DE 000 000 000</p>
             </div>
-            <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Schließen</button></div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Schließen</button>
+            </div>
         </div>
     </div>
 </div>
@@ -2032,6 +2409,16 @@ for ($y = date('Y'); $y >= MIN_YEAR_LOST; $y--) { $years[] = $y; }
         setTimeout(showEng, delay);
         document.addEventListener('mouseleave', function (e) {
             if (e.clientY < 5 && !shown && !isEngaged()) showEng();
+        });
+    }
+
+    // ── Scam type modal (populates title + description dynamically) ──
+    var scamModalV2El = document.getElementById('scamModalV2');
+    if (scamModalV2El) {
+        scamModalV2El.addEventListener('show.bs.modal', function (e) {
+            var trigger = e.relatedTarget;
+            document.getElementById('scamModalV2Title').textContent = trigger.dataset.scamType || '';
+            document.getElementById('scamModalV2Desc').textContent  = trigger.dataset.scamDesc || '';
         });
     }
 
