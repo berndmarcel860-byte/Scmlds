@@ -108,6 +108,19 @@ try {
         ':st' => 'Neu',
         ':ip' => $_SERVER['REMOTE_ADDR'] ?? '',
     ]);
+    $lead_id = (int) $pdo->lastInsertId();
+
+    // ── Link visitor log to this lead ──────────────────────
+    $visit_id = (int) ($_POST['visit_id'] ?? $_SESSION['visit_id'] ?? 0);
+    if ($visit_id > 0) {
+        $vstmt = $pdo->prepare(
+            'UPDATE visitor_logs
+             SET submitted_lead = 1, lead_id = :lead_id
+             WHERE id = :visit_id'
+        );
+        $vstmt->execute([':lead_id' => $lead_id, ':visit_id' => $visit_id]);
+    }
+    unset($_SESSION['visit_id']);
 } catch (PDOException $e) {
     error_log('[VerlustRückholung] DB error: ' . $e->getMessage());
     header('Location: index.php?error=' . urlencode('Datenbankfehler. Bitte versuchen Sie es später erneut.'));

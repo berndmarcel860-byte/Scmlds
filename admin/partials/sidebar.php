@@ -16,6 +16,16 @@
                 </a>
             </li>
             <li class="nav-item">
+                <a href="visitors.php" class="nav-link sidebar-link <?= basename($_SERVER['PHP_SELF']) === 'visitors.php' ? 'active' : '' ?>">
+                    <i class="bi bi-eye me-2"></i>Besucher-Log
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="statistics.php" class="nav-link sidebar-link <?= basename($_SERVER['PHP_SELF']) === 'statistics.php' ? 'active' : '' ?>">
+                    <i class="bi bi-bar-chart-line me-2"></i>Statistiken
+                </a>
+            </li>
+            <li class="nav-item">
                 <a href="export.php" class="nav-link sidebar-link">
                     <i class="bi bi-download me-2"></i>Export
                 </a>

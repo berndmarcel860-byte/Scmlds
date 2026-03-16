@@ -81,3 +81,17 @@ INSERT IGNORE INTO scam_categories (name, description) VALUES
 -- Migration: add country and year_lost if upgrading from older schema
 ALTER TABLE leads ADD COLUMN IF NOT EXISTS country VARCHAR(100) AFTER phone;
 ALTER TABLE leads ADD COLUMN IF NOT EXISTS year_lost SMALLINT UNSIGNED AFTER country;
+
+-- Visitor tracking logs
+CREATE TABLE IF NOT EXISTS visitor_logs (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    ip_address VARCHAR(45) NOT NULL,
+    referrer VARCHAR(512) DEFAULT '',
+    user_agent VARCHAR(512) DEFAULT '',
+    time_on_site INT UNSIGNED DEFAULT 0,  -- seconds
+    submitted_lead TINYINT(1) NOT NULL DEFAULT 0,
+    lead_id INT DEFAULT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (lead_id) REFERENCES leads(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

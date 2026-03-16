@@ -914,6 +914,7 @@ $error   = isset($_GET['error'])   ? htmlspecialchars($_GET['error'], ENT_QUOTES
                         <h4 class="fw-bold mb-4">Fall einreichen</h4>
                         <form action="submit_lead.php" method="POST" id="leadForm" novalidate>
                             <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
+                            <input type="hidden" name="visit_id" id="visitIdLeadForm" value="">
                             <div class="row g-3">
                                 <div class="col-md-6">
                                     <label class="form-label fw-semibold small">Vorname *</label>
@@ -1281,6 +1282,7 @@ $error   = isset($_GET['error'])   ? htmlspecialchars($_GET['error'], ENT_QUOTES
                     <div class="col-lg-8 p-4 p-lg-5">
                         <form action="submit_lead.php" method="POST" id="modalLeadForm" novalidate>
                             <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
+                            <input type="hidden" name="visit_id" id="visitIdModalForm" value="">
 
                             <!-- Section: Persönliche Angaben -->
                             <div class="fall-form-section mb-4">
@@ -1483,6 +1485,7 @@ $error   = isset($_GET['error'])   ? htmlspecialchars($_GET['error'], ENT_QUOTES
                             <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
                             <input type="hidden" name="lead_source" value="engagement_modal">
                             <input type="hidden" name="platform_category" value="Andere">
+                            <input type="hidden" name="visit_id" id="visitIdEngagementForm" value="">
                             <div class="row g-2 mb-3">
                                 <div class="col-6">
                                     <input type="text" name="first_name" class="form-control" placeholder="Vorname *" required>
@@ -1676,5 +1679,55 @@ $error   = isset($_GET['error'])   ? htmlspecialchars($_GET['error'], ENT_QUOTES
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <!-- Custom JS -->
 <script src="assets/js/main.js"></script>
+<!-- ===== Visitor Tracking ===== -->
+<script>
+(function () {
+    'use strict';
+    var visitId   = null;
+    var startTime = Date.now();
+
+    // Log the visit and get a visit_id back
+    var body = new FormData();
+    body.append('action', 'visit');
+    body.append('referrer', document.referrer || '');
+    fetch('track.php', { method: 'POST', body: body })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+            if (data && data.visit_id) {
+                visitId = data.visit_id;
+                // Populate hidden fields in all lead forms
+                ['visitIdLeadForm', 'visitIdModalForm', 'visitIdEngagementForm'].forEach(function (id) {
+                    var el = document.getElementById(id);
+                    if (el) el.value = visitId;
+                });
+            }
+        })
+        .catch(function () { /* non-critical – silently ignore */ });
+
+    // Send time-on-site when the visitor leaves
+    function sendTimeUpdate() {
+        if (!visitId) return;
+        var elapsed = Math.round((Date.now() - startTime) / 1000);
+        var payload = new FormData();
+        payload.append('action', 'update');
+        payload.append('visit_id', visitId);
+        payload.append('time_on_site', elapsed);
+        if (navigator.sendBeacon) {
+            // Beacon API: works even after page unload
+            var blob = new Blob(
+                ['action=update&visit_id=' + encodeURIComponent(visitId) +
+                 '&time_on_site=' + encodeURIComponent(elapsed)],
+                { type: 'application/x-www-form-urlencoded' }
+            );
+            navigator.sendBeacon('track.php', blob);
+        } else {
+            fetch('track.php', { method: 'POST', body: payload, keepalive: true }).catch(function () {});
+        }
+    }
+
+    window.addEventListener('pagehide', sendTimeUpdate);
+    window.addEventListener('beforeunload', sendTimeUpdate);
+})();
+</script>
 </body>
 </html>
