@@ -150,3 +150,10 @@ CREATE TABLE IF NOT EXISTS visitor_logs (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (lead_id) REFERENCES leads(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ============================================================
+-- Design chooser setting (added for multi-theme support)
+-- ============================================================
+INSERT IGNORE INTO settings (setting_key, setting_value, setting_label, setting_group) VALUES
+('active_design', 'index2', 'Aktives Seitendesign', 'design');
+
