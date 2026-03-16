@@ -104,14 +104,7 @@ for ($y = date('Y'); $y >= MIN_YEAR_LOST; $y--) { $years[] = $y; }
             radial-gradient(ellipse at 80% 20%, rgba(245,166,35,.08) 0%, transparent 50%);
         pointer-events: none;
     }
-    .hero-grid-lines {
-        position: absolute; inset: 0; overflow: hidden; pointer-events: none;
-        background-image:
-            linear-gradient(rgba(255,255,255,.03) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(255,255,255,.03) 1px, transparent 1px);
-        background-size: 60px 60px;
-        opacity: .5;
-    }
+    /* Animated canvas takes full hero background – see #heroCanvas */
     /* Floating shield graphic */
     .hero-shield-wrap {
         position: absolute; right: 5%; top: 50%;
@@ -361,6 +354,226 @@ for ($y = date('Y'); $y >= MIN_YEAR_LOST; $y--) { $years[] = $y; }
         .hero-shield-wrap { display: none; }
         .hero-v2 { min-height: auto; padding-top: 100px; padding-bottom: 2rem; }
     }
+
+    /* ── HERO CANVAS (AI particle network) ───────────────────── */
+    #heroCanvas {
+        position: absolute; inset: 0;
+        width: 100%; height: 100%;
+        pointer-events: none; z-index: 0;
+    }
+
+    /* ── 3D CARD HOVER ───────────────────────────────────────── */
+    .card-3d-wrap { perspective: 1200px; }
+    .card-3d {
+        transition: transform .6s cubic-bezier(.2,.8,.3,1),
+                    box-shadow .6s ease;
+        transform-style: preserve-3d;
+    }
+    .card-3d:hover {
+        transform: rotateY(8deg) rotateX(-4deg) scale(1.03);
+        box-shadow: -12px 20px 40px rgba(13,43,94,.2);
+    }
+
+    /* ── AI TERMINAL ─────────────────────────────────────────── */
+    .ai-terminal {
+        background: #060d1a;
+        border: 1px solid rgba(245,166,35,.25);
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 0 0 1px rgba(245,166,35,.06),
+                    0 32px 64px rgba(0,0,0,.55),
+                    inset 0 0 60px rgba(13,43,94,.25);
+    }
+    .ai-terminal-bar {
+        background: #0d1b2e;
+        padding: .65rem 1rem;
+        display: flex; align-items: center; gap: .45rem;
+        border-bottom: 1px solid rgba(255,255,255,.06);
+    }
+    .ai-dot { width: 10px; height: 10px; border-radius: 50%; }
+    .ai-terminal-body {
+        padding: 1.25rem 1.5rem;
+        font-family: 'Courier New', monospace;
+        font-size: .78rem; line-height: 2;
+        color: rgba(255,255,255,.8);
+        min-height: 280px;
+    }
+    .t-green  { color: #22c55e; }
+    .t-gold   { color: #f5a623; }
+    .t-blue   { color: #60a5fa; }
+    .t-red    { color: #f87171; }
+    .t-muted  { color: rgba(255,255,255,.35); }
+    .ai-cursor {
+        display: inline-block; width: 7px; height: 13px;
+        background: #22c55e; vertical-align: middle; margin-left: 2px;
+        animation: blink .75s step-end infinite;
+        border-radius: 1px;
+    }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+
+    /* ── SCAN LINE ───────────────────────────────────────────── */
+    .scan-wrap { position: relative; overflow: hidden; }
+    .scan-line {
+        position: absolute; left: 0; right: 0; height: 2px;
+        background: linear-gradient(90deg, transparent, rgba(34,197,94,.5), transparent);
+        animation: scanDown 3.5s linear infinite;
+        pointer-events: none; z-index: 2;
+    }
+    @keyframes scanDown {
+        0%   { top: -2px; opacity: 0; }
+        5%   { opacity: 1; }
+        95%  { opacity: 1; }
+        100% { top: 100%; opacity: 0; }
+    }
+
+    /* ── AI DEMO SECTION ─────────────────────────────────────── */
+    .ai-demo-section {
+        background: linear-gradient(180deg, #060d1a 0%, #0a1e36 100%);
+        padding: 6rem 0;
+        position: relative; overflow: hidden;
+    }
+    .ai-demo-section::before {
+        content: '';
+        position: absolute; inset: 0;
+        background: radial-gradient(ellipse at 70% 50%, rgba(245,166,35,.06) 0%, transparent 60%),
+                    radial-gradient(ellipse at 20% 80%, rgba(13,43,94,.5) 0%, transparent 50%);
+        pointer-events: none;
+    }
+
+    /* ── AI PROGRESS BARS ────────────────────────────────────── */
+    .ai-progress-wrap { margin-bottom: 1.1rem; }
+    .ai-progress-track {
+        height: 6px; border-radius: 3px;
+        background: rgba(255,255,255,.08); overflow: hidden; margin-top: .4rem;
+    }
+    .ai-progress-fill {
+        height: 100%; border-radius: 3px;
+        background: linear-gradient(90deg, var(--accent), #ff8c00);
+        width: 0; transition: width 1.6s cubic-bezier(.4,0,.2,1) .2s;
+    }
+    .ai-progress-fill.animated { width: var(--pct, 0%); }
+
+    /* ── FLOATING 3D MINI CARDS ──────────────────────────────── */
+    .float-card {
+        background: rgba(255,255,255,.05);
+        border: 1px solid rgba(255,255,255,.1);
+        border-radius: 14px; padding: 1.1rem;
+        backdrop-filter: blur(10px);
+        animation: floatCard 6s ease-in-out infinite;
+    }
+    .float-card:nth-child(2) { animation-delay: -2s; }
+    .float-card:nth-child(3) { animation-delay: -4s; }
+    @keyframes floatCard {
+        0%,100% { transform: translateY(0) rotate(0deg); }
+        33%     { transform: translateY(-7px) rotate(.4deg); }
+        66%     { transform: translateY(-3px) rotate(-.4deg); }
+    }
+
+    /* ── GLOW ────────────────────────────────────────────────── */
+    .glow-gold { text-shadow: 0 0 20px rgba(245,166,35,.6), 0 0 40px rgba(245,166,35,.3); }
+
+    /* ── LIVE RECOVERY TICKER ────────────────────────────────── */
+    .ticker-wrap {
+        background: #06111e;
+        border-top: 1px solid rgba(255,255,255,.06);
+        border-bottom: 1px solid rgba(255,255,255,.06);
+        padding: .65rem 0; overflow: hidden;
+    }
+    .ticker-track {
+        display: flex; white-space: nowrap;
+        animation: tickerScroll 50s linear infinite;
+    }
+    .ticker-track:hover { animation-play-state: paused; }
+    .ticker-item {
+        display: inline-flex; align-items: center; gap: .6rem;
+        padding: 0 2.5rem; font-size: .82rem;
+        color: rgba(255,255,255,.55); font-weight: 500;
+    }
+    .t-badge-ok {
+        background: rgba(34,197,94,.15); color: #22c55e;
+        font-size: .7rem; padding: .15rem .55rem;
+        border-radius: 4px; font-weight: 700; white-space: nowrap;
+    }
+    .t-amount { color: var(--accent); font-weight: 700; }
+    @keyframes tickerScroll { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
+
+    /* ── SVG SUCCESS RING ────────────────────────────────────── */
+    .ring-wrap { position: relative; width: 130px; height: 130px; margin: 0 auto 1rem; }
+    .ring-svg { transform: rotate(-90deg); }
+    .ring-track { fill: none; stroke: rgba(255,255,255,.1); stroke-width: 9; }
+    .ring-fill  {
+        fill: none; stroke: var(--accent); stroke-width: 9; stroke-linecap: round;
+        stroke-dasharray: 366;        /* 2π × r=58.3 ≈ 366 */
+        stroke-dashoffset: 366;
+        transition: stroke-dashoffset 1.8s cubic-bezier(.4,0,.2,1);
+    }
+    .ring-fill.animated { stroke-dashoffset: 47; } /* 366*(1-0.87)=47.6 */
+    .ring-label {
+        position: absolute; inset: 0;
+        display: flex; flex-direction: column;
+        align-items: center; justify-content: center;
+        font-weight: 900; color: var(--accent); font-size: 1.6rem; line-height: 1;
+    }
+    .ring-label small { font-size: .68rem; color: rgba(255,255,255,.55); font-weight: 500; margin-top: 2px; }
+
+    /* ── ENHANCED STATS BAND ─────────────────────────────────── */
+    .stats-band-v3 {
+        background: linear-gradient(135deg, var(--primary) 0%, #1a4a9e 100%);
+        padding: 3.5rem 0;
+        position: relative; overflow: hidden;
+    }
+    .stats-band-v3::before {
+        content: '';
+        position: absolute; inset: 0;
+        background: radial-gradient(ellipse at 80% 50%, rgba(245,166,35,.08) 0%, transparent 60%);
+        pointer-events: none;
+    }
+    .stat-v3 { text-align: center; }
+    .stat-v3 .n { font-size: 2.5rem; font-weight: 900; color: var(--accent); line-height: 1; }
+    .stat-v3 .l { color: rgba(255,255,255,.65); font-size: .85rem; font-weight: 500; margin-top: .35rem; }
+
+    /* ── TRUST BADGES ────────────────────────────────────────── */
+    .trust-badge-card {
+        display: flex; align-items: flex-start; gap: .85rem;
+        background: #fff; border: 1px solid var(--border);
+        border-radius: 14px; padding: 1.25rem 1.5rem;
+        height: 100%; transition: all .3s;
+    }
+    .trust-badge-card:hover {
+        border-color: var(--primary);
+        box-shadow: 0 6px 20px rgba(13,43,94,.1);
+        transform: translateY(-2px);
+    }
+    .trust-badge-icon {
+        font-size: 1.6rem; flex-shrink: 0;
+        width: 48px; height: 48px;
+        background: linear-gradient(135deg, rgba(13,43,94,.06), rgba(26,74,158,.1));
+        border-radius: 12px;
+        display: flex; align-items: center; justify-content: center;
+    }
+
+    /* ── 3D HERO SHIELD ROTATE ───────────────────────────────── */
+    @keyframes shieldFloat {
+        0%,100% { transform: translateY(-50%) rotate(0deg) scale(1); }
+        25%     { transform: translateY(-52%) rotate(1deg) scale(1.01); }
+        75%     { transform: translateY(-48%) rotate(-1deg) scale(0.99); }
+    }
+    .hero-shield-wrap {
+        position: absolute; right: 5%; top: 50%;
+        transform: translateY(-50%);
+        width: min(480px, 45vw);
+        opacity: .15;
+        pointer-events: none;
+        animation: shieldFloat 8s ease-in-out infinite;
+    }
+    .hero-shield-wrap svg { width: 100%; height: auto; }
+
+    /* ── PARTICLE GLOW PULSE ─────────────────────────────────── */
+    @keyframes pulseGlow {
+        0%,100% { box-shadow: 0 0 0 0 rgba(245,166,35,0); }
+        50%     { box-shadow: 0 0 0 8px rgba(245,166,35,.15); }
+    }
+    .badge-pulse { animation: pulseGlow 3s ease-in-out infinite; }
     </style>
 </head>
 <body>
@@ -383,7 +596,8 @@ for ($y = date('Y'); $y >= MIN_YEAR_LOST; $y--) { $years[] = $y; }
 
 <!-- ===== HERO ===== -->
 <section class="hero-v2" id="hero">
-    <div class="hero-grid-lines"></div>
+    <!-- Animated AI neural-network canvas background -->
+    <canvas id="heroCanvas" aria-hidden="true"></canvas>
 
     <!-- Decorative shield (fund recovery imagery) -->
     <div class="hero-shield-wrap" aria-hidden="true">
@@ -574,40 +788,130 @@ for ($y = date('Y'); $y >= MIN_YEAR_LOST; $y--) { $years[] = $y; }
     </div>
 </section>
 
-<!-- ===== STATS BAND ===== -->
-<div class="stats-band">
-    <div class="container">
-        <div class="row align-items-center g-0">
-            <div class="col-6 col-md-3" data-aos="fade-up">
-                <div class="stat-card-v2">
-                    <div class="num" data-counter="87">87</div>
-                    <div class="lbl">% Erfolgsquote</div>
+<!-- ===== ENHANCED STATS BAND ===== -->
+<div class="stats-band-v3 position-relative">
+    <div class="container position-relative z-1">
+        <div class="row align-items-center g-4 justify-content-center">
+            <!-- Ring: 87% success -->
+            <div class="col-6 col-md-3" data-aos="zoom-in">
+                <div class="ring-wrap" id="ringWrap">
+                    <svg class="ring-svg" viewBox="0 0 130 130" width="130" height="130">
+                        <circle class="ring-track" cx="65" cy="65" r="58"/>
+                        <circle class="ring-fill" id="ringFill" cx="65" cy="65" r="58"/>
+                    </svg>
+                    <div class="ring-label">
+                        <span id="ctr87">87</span>%
+                        <small>Erfolgsquote</small>
+                    </div>
                 </div>
             </div>
-            <div class="col-1 d-none d-md-block"><div class="stat-divider mx-auto" style="height:60px;"></div></div>
-            <div class="col-6 col-md-3" data-aos="fade-up" data-aos-delay="100">
-                <div class="stat-card-v2">
-                    <div class="num">€48M+</div>
-                    <div class="lbl">für Mandanten zurückgefordert</div>
+            <!-- Divider -->
+            <div class="col-1 d-none d-md-block">
+                <div class="stat-divider mx-auto" style="height:80px;background:rgba(255,255,255,.15)"></div>
+            </div>
+            <!-- €48M+ -->
+            <div class="col-6 col-md-2" data-aos="fade-up" data-aos-delay="100">
+                <div class="stat-v3">
+                    <div class="n">€48M+</div>
+                    <div class="l">für Mandanten zurückgefordert</div>
                 </div>
             </div>
-            <div class="col-1 d-none d-md-block"><div class="stat-divider mx-auto" style="height:60px;"></div></div>
+            <div class="col-1 d-none d-md-block">
+                <div class="stat-divider mx-auto" style="height:80px;background:rgba(255,255,255,.15)"></div>
+            </div>
+            <!-- 2400+ cases -->
             <div class="col-6 col-md-2" data-aos="fade-up" data-aos-delay="200">
-                <div class="stat-card-v2">
-                    <div class="num" data-counter="2400">2.400+</div>
-                    <div class="lbl">geprüfte Fälle</div>
+                <div class="stat-v3">
+                    <div class="n"><span data-counter="2400">0</span>+</div>
+                    <div class="l">erfolgreich geprüfte Fälle</div>
                 </div>
             </div>
-            <div class="col-1 d-none d-md-block"><div class="stat-divider mx-auto" style="height:60px;"></div></div>
+            <div class="col-1 d-none d-md-block">
+                <div class="stat-divider mx-auto" style="height:80px;background:rgba(255,255,255,.15)"></div>
+            </div>
+            <!-- 18+ countries -->
             <div class="col-6 col-md-2" data-aos="fade-up" data-aos-delay="300">
-                <div class="stat-card-v2">
-                    <div class="num">18+</div>
-                    <div class="lbl">Länder weltweit</div>
+                <div class="stat-v3">
+                    <div class="n">18+</div>
+                    <div class="l">Länder · internationale Experten</div>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+<!-- ===== AI ANALYSIS DEMO SECTION ===== -->
+<section class="ai-demo-section" id="ki-analyse">
+    <div class="container position-relative z-1">
+        <div class="row align-items-center g-5">
+
+            <!-- Left: Animated AI Terminal -->
+            <div class="col-lg-6" data-aos="fade-right" data-aos-duration="900">
+                <div class="ai-terminal scan-wrap">
+                    <div class="ai-terminal-bar">
+                        <div class="ai-dot" style="background:#ff5f56"></div>
+                        <div class="ai-dot" style="background:#ffbd2e"></div>
+                        <div class="ai-dot" style="background:#27c93f"></div>
+                        <span class="ms-2 small font-monospace" style="color:rgba(255,255,255,.45);">verlust-ki-engine v2.4.1</span>
+                        <span class="ms-auto"><span class="live-dot"></span></span>
+                    </div>
+                    <div class="ai-terminal-body" id="aiTerminal">
+                        <div class="scan-line"></div>
+                        <span class="t-muted"># Initialisiere KI-Analyse-Pipeline...<br></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right: Capabilities + 3D mini stats -->
+            <div class="col-lg-6" data-aos="fade-left" data-aos-duration="900" data-aos-delay="100">
+                <div class="section-eyebrow" style="color:var(--accent);">KI-Technologie</div>
+                <h2 class="fw-bold display-6 text-white mb-3">
+                    KI-gestützte<br>
+                    <span class="glow-gold" style="color:var(--accent);">Transaktionsverfolgung</span>
+                </h2>
+                <p style="color:rgba(255,255,255,.65);line-height:1.8;" class="mb-4">
+                    Unser proprietäres Modell wurde auf über 150.000 Betrugsfällen trainiert.
+                    Es erkennt auch hochkomplexe, verschachtelte Betrugsstrukturen mit einer
+                    Genauigkeit von mehr als 94%.
+                </p>
+
+                <?php $ai_skills = [
+                    ['label' => 'Transaktionsanalyse',            'pct' => 94],
+                    ['label' => 'Betrugsmusters-Erkennung',        'pct' => 91],
+                    ['label' => 'Blockchain-Forensik',             'pct' => 88],
+                    ['label' => 'Rückforderungs-Wahrscheinlichkeit','pct' => 87],
+                ]; ?>
+                <?php foreach ($ai_skills as $sk): ?>
+                <div class="ai-progress-wrap">
+                    <div class="d-flex justify-content-between">
+                        <span class="small fw-semibold" style="color:rgba(255,255,255,.8)"><?= $sk['label'] ?></span>
+                        <span class="small fw-bold" style="color:var(--accent)"><?= $sk['pct'] ?>%</span>
+                    </div>
+                    <div class="ai-progress-track">
+                        <div class="ai-progress-fill" style="--pct:<?= $sk['pct'] ?>%"></div>
+                    </div>
+                </div>
+                <?php endforeach; ?>
+
+                <!-- 3D floating mini-stat cards -->
+                <div class="d-flex gap-3 mt-4">
+                    <div class="float-card flex-fill text-center">
+                        <div class="fw-bold fs-4" style="color:var(--accent)">94%</div>
+                        <div class="small" style="color:rgba(255,255,255,.55)">Erkennungsrate</div>
+                    </div>
+                    <div class="float-card flex-fill text-center">
+                        <div class="fw-bold fs-4" style="color:var(--accent)">48h</div>
+                        <div class="small" style="color:rgba(255,255,255,.55)">Analyse-Zeit</div>
+                    </div>
+                    <div class="float-card flex-fill text-center">
+                        <div class="fw-bold fs-4" style="color:var(--accent)">150k+</div>
+                        <div class="small" style="color:rgba(255,255,255,.55)">Trainingsfälle</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
 
 <!-- ===== HOW IT WORKS ===== -->
 <section id="wie-es-funktioniert" class="py-6 bg-white">
@@ -672,6 +976,34 @@ for ($y = date('Y'); $y >= MIN_YEAR_LOST; $y--) { $years[] = $y; }
         </div>
     </div>
 </section>
+
+<!-- ===== LIVE RECOVERY TICKER ===== -->
+<div class="ticker-wrap">
+    <div class="ticker-track" id="tickerTrack">
+        <?php
+        $ticks = [
+            ['name'=>'M.K., München',  'amount'=>'€47.200', 'type'=>'Krypto-Betrug'],
+            ['name'=>'S.F., Wien',     'amount'=>'€28.900', 'type'=>'Forex-Betrug'],
+            ['name'=>'T.L., Zürich',   'amount'=>'€91.500', 'type'=>'Fake-Broker'],
+            ['name'=>'A.R., Berlin',   'amount'=>'€15.800', 'type'=>'Romance-Scam'],
+            ['name'=>'K.M., Hamburg',  'amount'=>'€62.000', 'type'=>'Krypto-Betrug'],
+            ['name'=>'P.S., Köln',     'amount'=>'€34.100', 'type'=>'Forex-Betrug'],
+            ['name'=>'I.B., Frankfurt','amount'=>'€78.300', 'type'=>'Fake-Broker'],
+            ['name'=>'J.W., Stuttgart','amount'=>'€22.600', 'type'=>'Binäre Optionen'],
+        ];
+        // Duplicate for seamless loop
+        foreach (array_merge($ticks, $ticks) as $t):
+        ?>
+        <div class="ticker-item">
+            <span class="t-badge-ok">✓ Zurückgeholt</span>
+            <span><?= htmlspecialchars($t['name'], ENT_QUOTES, 'UTF-8') ?></span>
+            <span class="t-amount"><?= htmlspecialchars($t['amount'], ENT_QUOTES, 'UTF-8') ?></span>
+            <span style="color:rgba(255,255,255,.3);font-size:.7rem"><?= htmlspecialchars($t['type'], ENT_QUOTES, 'UTF-8') ?></span>
+            <span style="color:rgba(255,255,255,.12);margin:0 .75rem">|</span>
+        </div>
+        <?php endforeach; ?>
+    </div>
+</div>
 
 <!-- ===== FEATURES / WHY US ===== -->
 <section class="py-6 bg-white">
@@ -937,6 +1269,38 @@ for ($y = date('Y'); $y >= MIN_YEAR_LOST; $y--) { $years[] = $y; }
                     </div>
                 </div>
             </div>
+        </div>
+    </div>
+</section>
+
+<!-- ===== TRUST BADGES ===== -->
+<section class="py-6 bg-white">
+    <div class="container">
+        <div class="text-center mb-5" data-aos="fade-up">
+            <div class="section-eyebrow">Vertrauen & Sicherheit</div>
+            <h2 class="fw-bold display-6">Warum Sie uns vertrauen können</h2>
+            <p class="text-muted">Zertifiziert, sicher, transparent – Ihr Schutz hat höchste Priorität.</p>
+        </div>
+        <div class="row g-3">
+            <?php $trust_badges = [
+                ['icon'=>'🔒','title'=>'256-Bit SSL','desc'=>'Alle Übertragungen militärisch verschlüsselt'],
+                ['icon'=>'🇪🇺','title'=>'DSGVO-konform','desc'=>'Vollständige EU-Datenschutz-Compliance'],
+                ['icon'=>'⚖️','title'=>'Lizenzierte Partner','desc'=>'Anwaltskanzleien in 18+ Ländern'],
+                ['icon'=>'🏆','title'=>'87% Erfolgsquote','desc'=>'Geprüfte Rate aus über 2.400 Fällen'],
+                ['icon'=>'💳','title'=>'Keine Vorauszahlung','desc'=>'Rein erfolgsbasiertes Vergütungsmodell'],
+                ['icon'=>'📋','title'=>'Volle Transparenz','desc'=>'Laufende Updates zu Ihrem Fall-Status'],
+            ]; ?>
+            <?php foreach ($trust_badges as $i => $tb): ?>
+            <div class="col-6 col-md-4 col-lg-4" data-aos="fade-up" data-aos-delay="<?= $i * 70 ?>">
+                <div class="trust-badge-card">
+                    <div class="trust-badge-icon"><?= $tb['icon'] ?></div>
+                    <div>
+                        <div class="fw-bold small mb-1"><?= $tb['title'] ?></div>
+                        <div class="text-muted" style="font-size:.78rem;line-height:1.4"><?= $tb['desc'] ?></div>
+                    </div>
+                </div>
+            </div>
+            <?php endforeach; ?>
         </div>
     </div>
 </section>
@@ -1288,21 +1652,242 @@ for ($y = date('Y'); $y >= MIN_YEAR_LOST; $y--) { $years[] = $y; }
     'use strict';
 
     // ── AOS init ────────────────────────────────────────────
-    AOS.init({ duration: 700, once: true, easing: 'ease-out-cubic' });
+    AOS.init({ duration: 750, once: true, easing: 'ease-out-cubic', offset: 60 });
 
     // ── Navbar scroll effect ────────────────────────────────
-    const nav = document.getElementById('mainNav2');
-    if (nav) window.addEventListener('scroll', () => nav.classList.toggle('scrolled', window.scrollY > 40));
+    var nav = document.getElementById('mainNav2');
+    if (nav) window.addEventListener('scroll', function () {
+        nav.classList.toggle('scrolled', window.scrollY > 40);
+    });
 
     // ── Form validation ────────────────────────────────────
     document.querySelectorAll('form[novalidate]').forEach(function (form) {
         form.addEventListener('submit', function (e) {
-            if (!form.checkValidity()) {
-                e.preventDefault(); e.stopPropagation();
-            }
+            if (!form.checkValidity()) { e.preventDefault(); e.stopPropagation(); }
             form.classList.add('was-validated');
         });
     });
+
+    // ────────────────────────────────────────────────────────
+    //  HERO CANVAS – animated AI neural-network particle field
+    // ────────────────────────────────────────────────────────
+    (function () {
+        var canvas = document.getElementById('heroCanvas');
+        if (!canvas) return;
+        var ctx = canvas.getContext('2d');
+        var W, H, nodes, packets;
+
+        var NODE_COUNT     = 70;
+        var CONNECT_DIST   = 130;
+        var PACKET_SPEED   = 1.4;
+        var PACKET_SPAWN_MS = 400;
+
+        function resize() {
+            W = canvas.width  = canvas.offsetWidth;
+            H = canvas.height = canvas.offsetHeight;
+            initNodes();
+        }
+
+        function initNodes() {
+            nodes = [];
+            for (var i = 0; i < NODE_COUNT; i++) {
+                var gold = Math.random() < 0.15;
+                nodes.push({
+                    x: Math.random() * W,
+                    y: Math.random() * H,
+                    vx: (Math.random() - .5) * .4,
+                    vy: (Math.random() - .5) * .4,
+                    r: gold ? 3.5 : (1.5 + Math.random() * 1.5),
+                    gold: gold,
+                    phase: Math.random() * Math.PI * 2,
+                });
+            }
+            packets = [];
+        }
+
+        function spawnPacket() {
+            // Pick a random edge between connected nodes
+            var attempts = 0;
+            while (attempts++ < 20) {
+                var a = nodes[Math.floor(Math.random() * nodes.length)];
+                var b = nodes[Math.floor(Math.random() * nodes.length)];
+                if (a === b) continue;
+                var dx = b.x - a.x, dy = b.y - a.y;
+                if (Math.sqrt(dx*dx + dy*dy) < CONNECT_DIST) {
+                    packets.push({ ax: a.x, ay: a.y, bx: b.x, by: b.y, t: 0 });
+                    return;
+                }
+            }
+        }
+
+        var lastPacketTime = 0;
+        function draw(ts) {
+            ctx.clearRect(0, 0, W, H);
+
+            // Update node positions
+            var T = ts * 0.001;
+            nodes.forEach(function (n) {
+                n.x += n.vx;
+                n.y += n.vy;
+                if (n.x < 0 || n.x > W) n.vx *= -1;
+                if (n.y < 0 || n.y > H) n.vy *= -1;
+            });
+
+            // Draw edges
+            for (var i = 0; i < nodes.length; i++) {
+                for (var j = i + 1; j < nodes.length; j++) {
+                    var dx = nodes[j].x - nodes[i].x;
+                    var dy = nodes[j].y - nodes[i].y;
+                    var d  = Math.sqrt(dx*dx + dy*dy);
+                    if (d < CONNECT_DIST) {
+                        var alpha = (1 - d / CONNECT_DIST) * 0.18;
+                        ctx.strokeStyle = 'rgba(100,160,255,' + alpha + ')';
+                        ctx.lineWidth   = .6;
+                        ctx.beginPath();
+                        ctx.moveTo(nodes[i].x, nodes[i].y);
+                        ctx.lineTo(nodes[j].x, nodes[j].y);
+                        ctx.stroke();
+                    }
+                }
+            }
+
+            // Draw nodes
+            nodes.forEach(function (n) {
+                var pulse = Math.sin(T * 1.8 + n.phase) * .5 + .5; // 0..1
+                if (n.gold) {
+                    ctx.shadowBlur  = 10 + pulse * 8;
+                    ctx.shadowColor = '#f5a623';
+                    ctx.fillStyle   = 'rgba(245,166,35,' + (.7 + pulse * .3) + ')';
+                } else {
+                    ctx.shadowBlur  = 0;
+                    ctx.shadowColor = 'transparent';
+                    ctx.fillStyle   = 'rgba(180,210,255,' + (.25 + pulse * .2) + ')';
+                }
+                ctx.beginPath();
+                ctx.arc(n.x, n.y, n.r + (n.gold ? pulse : 0), 0, Math.PI * 2);
+                ctx.fill();
+                ctx.shadowBlur = 0;
+            });
+
+            // Spawn packets
+            if (ts - lastPacketTime > PACKET_SPAWN_MS) {
+                spawnPacket();
+                lastPacketTime = ts;
+            }
+
+            // Draw + move packets
+            packets = packets.filter(function (p) {
+                p.t += PACKET_SPEED / Math.sqrt(
+                    (p.bx-p.ax)*(p.bx-p.ax) + (p.by-p.ay)*(p.by-p.ay)
+                );
+                if (p.t >= 1) return false;
+                var x = p.ax + (p.bx - p.ax) * p.t;
+                var y = p.ay + (p.by - p.ay) * p.t;
+                ctx.shadowBlur  = 12;
+                ctx.shadowColor = '#f5a623';
+                ctx.fillStyle   = '#f5a623';
+                ctx.beginPath();
+                ctx.arc(x, y, 3, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.shadowBlur = 0;
+                return true;
+            });
+
+            requestAnimationFrame(draw);
+        }
+
+        resize();
+        window.addEventListener('resize', resize);
+        requestAnimationFrame(draw);
+    })();
+
+    // ────────────────────────────────────────────────────────
+    //  AI TERMINAL TYPEWRITER
+    // ────────────────────────────────────────────────────────
+    (function () {
+        var terminal = document.getElementById('aiTerminal');
+        if (!terminal) return;
+
+        var lines = [
+            { delay: 600,  html: '<span class="t-green">▶</span> <span class="t-muted">Lade Falldaten...</span>' },
+            { delay: 1200, html: '<span class="t-green">✓</span> <span class="t-gold">Betrugstyp erkannt:</span> Krypto-Betrug (Konfidenz: 97.3%)' },
+            { delay: 2000, html: '<span class="t-green">▶</span> <span class="t-muted">Analysiere Blockchain-Transaktionen...</span>' },
+            { delay: 3100, html: '<span class="t-green">✓</span> <span class="t-blue">23 Wallet-Adressen</span> verknüpft' },
+            { delay: 3800, html: '<span class="t-green">✓</span> <span class="t-blue">6 Exchange-Konten</span> identifiziert' },
+            { delay: 4500, html: '<span class="t-green">▶</span> <span class="t-muted">Prüfe Rückforderungsmöglichkeiten...</span>' },
+            { delay: 5500, html: '<span class="t-green">✓</span> <span class="t-gold">Rückforderungswahrscheinlichkeit: 89%</span>' },
+            { delay: 6300, html: '<span class="t-green">✓</span> Mögliche Rückholung: <span class="t-blue">€ 41.700 – €47.200</span>' },
+            { delay: 7200, html: '<span class="t-green">✓</span> Strategie: Chargeback + Rechtliches Verfahren (EU)' },
+            { delay: 8200, html: '<span class="t-green">■</span> <span class="t-gold">Analyse abgeschlossen</span> · Bericht wird erstellt...' },
+        ];
+
+        var cursor = document.createElement('span');
+        cursor.className = 'ai-cursor';
+
+        lines.forEach(function (l) {
+            setTimeout(function () {
+                var div = document.createElement('div');
+                div.innerHTML = l.html;
+                terminal.appendChild(div);
+                terminal.appendChild(cursor);
+                terminal.scrollTop = terminal.scrollHeight;
+            }, l.delay);
+        });
+
+        // Re-run animation every 14s
+        setInterval(function () {
+            terminal.innerHTML = '<div class="scan-line"></div><span class="t-muted"># Neue Analyse gestartet...<br></span>';
+            lines.forEach(function (l) {
+                setTimeout(function () {
+                    var div = document.createElement('div');
+                    div.innerHTML = l.html;
+                    terminal.appendChild(div);
+                    terminal.appendChild(cursor);
+                    terminal.scrollTop = terminal.scrollHeight;
+                }, l.delay);
+            });
+        }, 14000);
+    })();
+
+    // ────────────────────────────────────────────────────────
+    //  INTERSECTION OBSERVER: counters, ring, progress bars
+    // ────────────────────────────────────────────────────────
+    var io = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+            if (!entry.isIntersecting) return;
+            var el = entry.target;
+
+            // Animated counter
+            if (el.hasAttribute('data-counter')) {
+                var target = parseInt(el.getAttribute('data-counter'), 10);
+                var duration = 1800;
+                var start = performance.now();
+                (function tick(now) {
+                    var p = Math.min((now - start) / duration, 1);
+                    var eased = 1 - Math.pow(1 - p, 3); // ease-out-cubic
+                    el.textContent = Math.round(eased * target).toLocaleString('de-DE');
+                    if (p < 1) requestAnimationFrame(tick);
+                })(start);
+            }
+
+            // SVG ring fill (87% success)
+            if (el.id === 'ringFill') {
+                el.classList.add('animated');
+            }
+
+            // AI progress bars
+            if (el.classList.contains('ai-progress-fill')) {
+                el.classList.add('animated');
+            }
+
+            io.unobserve(el);
+        });
+    }, { threshold: 0.25 });
+
+    document.querySelectorAll('[data-counter]').forEach(function (el) { io.observe(el); });
+    var ring = document.getElementById('ringFill');
+    if (ring) io.observe(ring);
+    document.querySelectorAll('.ai-progress-fill').forEach(function (el) { io.observe(el); });
 
     // ── Visitor tracking ───────────────────────────────────
     var visitId = null;
@@ -1364,7 +1949,7 @@ for ($y = date('Y'); $y >= MIN_YEAR_LOST; $y--) { $years[] = $y; }
     document.querySelectorAll('a[href^="#"]').forEach(function (a) {
         a.addEventListener('click', function (e) {
             var href = this.getAttribute('href');
-            if (href === '#' || href.startsWith('#') === false) return;
+            if (href === '#' || !href.startsWith('#')) return;
             var target = document.querySelector(href);
             if (target) {
                 e.preventDefault();
