@@ -452,7 +452,7 @@ footer .footer-bottom{border-top:1px solid rgba(255,255,255,.08);margin-top:2rem
     </div>
     <div class="row g-4">
       <div class="col-md-4" data-aos="fade-up" data-aos-delay="0">
-        <div class="why-card"><div class="why-icon"><i class="bi bi-cpu"></i></div><h5>KI-gestützte Analyse</h5><p>Unser proprietäres KI-System analysiert Ihren Fall in Minuten und erkennt Muster aus tausenden Betugsfällen.</p></div>
+        <div class="why-card"><div class="why-icon"><i class="bi bi-cpu"></i></div><h5>KI-gestützte Analyse</h5><p>Unser proprietäres KI-System analysiert Ihren Fall in Minuten und erkennt Muster aus tausenden Betrugsfällen.</p></div>
       </div>
       <div class="col-md-4" data-aos="fade-up" data-aos-delay="80">
         <div class="why-card"><div class="why-icon"><i class="bi bi-cash-coin"></i></div><h5>No-Win-No-Fee</h5><p>Kein Erfolg bedeutet keine Kosten für Sie. Wir tragen das finanzielle Risiko gemeinsam mit Ihnen.</p></div>
