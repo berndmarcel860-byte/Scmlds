@@ -44,6 +44,8 @@ CREATE TABLE IF NOT EXISTS leads (
     status ENUM('Neu', 'In Bearbeitung', 'Kontaktiert', 'Erfolgreich', 'Abgelehnt') DEFAULT 'Neu',
     admin_notes TEXT,
     ip_address VARCHAR(45),
+    lead_source VARCHAR(80) DEFAULT 'website',
+    utm_source  VARCHAR(100) DEFAULT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -79,8 +81,103 @@ INSERT IGNORE INTO scam_categories (name, description) VALUES
 ('Andere', 'Sonstige Anlage- und Investitionsbetrug');
 
 -- Migration: add country and year_lost if upgrading from older schema
-ALTER TABLE leads ADD COLUMN IF NOT EXISTS country VARCHAR(100) AFTER phone;
-ALTER TABLE leads ADD COLUMN IF NOT EXISTS year_lost SMALLINT UNSIGNED AFTER country;
+-- (These columns are already in the CREATE TABLE above for fresh installs.)
+-- The procedure below is MySQL 5.7+ / MariaDB 10+ compatible.
+DROP PROCEDURE IF EXISTS _vr_migrate;
+DELIMITER $$
+CREATE PROCEDURE _vr_migrate()
+BEGIN
+    -- leads: country (pre-2024 upgrade)
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = DATABASE() AND table_name = 'leads' AND column_name = 'country'
+    ) THEN
+        ALTER TABLE leads ADD COLUMN country VARCHAR(100) AFTER phone;
+    END IF;
+
+    -- leads: year_lost (pre-2024 upgrade)
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = DATABASE() AND table_name = 'leads' AND column_name = 'year_lost'
+    ) THEN
+        ALTER TABLE leads ADD COLUMN year_lost SMALLINT UNSIGNED AFTER country;
+    END IF;
+
+    -- leads: lead_source (UTM / lead-gen feature)
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = DATABASE() AND table_name = 'leads' AND column_name = 'lead_source'
+    ) THEN
+        ALTER TABLE leads ADD COLUMN lead_source VARCHAR(80) DEFAULT 'website' AFTER ip_address;
+    END IF;
+
+    -- leads: utm_source
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = DATABASE() AND table_name = 'leads' AND column_name = 'utm_source'
+    ) THEN
+        ALTER TABLE leads ADD COLUMN utm_source VARCHAR(100) DEFAULT NULL AFTER lead_source;
+    END IF;
+
+    -- visitor_logs: utm_source
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = DATABASE() AND table_name = 'visitor_logs' AND column_name = 'utm_source'
+    ) THEN
+        ALTER TABLE visitor_logs ADD COLUMN utm_source VARCHAR(100) DEFAULT NULL AFTER referrer;
+    END IF;
+
+    -- visitor_logs: utm_medium
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = DATABASE() AND table_name = 'visitor_logs' AND column_name = 'utm_medium'
+    ) THEN
+        ALTER TABLE visitor_logs ADD COLUMN utm_medium VARCHAR(100) DEFAULT NULL AFTER utm_source;
+    END IF;
+
+    -- visitor_logs: utm_campaign
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = DATABASE() AND table_name = 'visitor_logs' AND column_name = 'utm_campaign'
+    ) THEN
+        ALTER TABLE visitor_logs ADD COLUMN utm_campaign VARCHAR(150) DEFAULT NULL AFTER utm_medium;
+    END IF;
+
+    -- visitor_logs: utm_content
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = DATABASE() AND table_name = 'visitor_logs' AND column_name = 'utm_content'
+    ) THEN
+        ALTER TABLE visitor_logs ADD COLUMN utm_content VARCHAR(150) DEFAULT NULL AFTER utm_campaign;
+    END IF;
+
+    -- visitor_logs: utm_term
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = DATABASE() AND table_name = 'visitor_logs' AND column_name = 'utm_term'
+    ) THEN
+        ALTER TABLE visitor_logs ADD COLUMN utm_term VARCHAR(150) DEFAULT NULL AFTER utm_content;
+    END IF;
+
+    -- visitor_logs: gclid
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = DATABASE() AND table_name = 'visitor_logs' AND column_name = 'gclid'
+    ) THEN
+        ALTER TABLE visitor_logs ADD COLUMN gclid VARCHAR(200) DEFAULT NULL AFTER utm_term;
+    END IF;
+
+    -- visitor_logs: landing_page
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = DATABASE() AND table_name = 'visitor_logs' AND column_name = 'landing_page'
+    ) THEN
+        ALTER TABLE visitor_logs ADD COLUMN landing_page VARCHAR(512) DEFAULT NULL AFTER gclid;
+    END IF;
+END$$
+DELIMITER ;
+CALL _vr_migrate();
+DROP PROCEDURE IF EXISTS _vr_migrate;
 
 -- ============================================================
 -- Site Settings (key-value store, admin-editable)
@@ -142,6 +239,13 @@ CREATE TABLE IF NOT EXISTS visitor_logs (
     id INT AUTO_INCREMENT PRIMARY KEY,
     ip_address VARCHAR(45) NOT NULL,
     referrer VARCHAR(512) DEFAULT '',
+    utm_source   VARCHAR(100) DEFAULT NULL,
+    utm_medium   VARCHAR(100) DEFAULT NULL,
+    utm_campaign VARCHAR(150) DEFAULT NULL,
+    utm_content  VARCHAR(150) DEFAULT NULL,
+    utm_term     VARCHAR(150) DEFAULT NULL,
+    gclid        VARCHAR(200) DEFAULT NULL,
+    landing_page VARCHAR(512) DEFAULT NULL,
     user_agent VARCHAR(512) DEFAULT '',
     time_on_site INT UNSIGNED DEFAULT 0,  -- seconds
     submitted_lead TINYINT(1) NOT NULL DEFAULT 0,
@@ -164,25 +268,6 @@ INSERT IGNORE INTO settings (setting_key, setting_value, setting_label, setting_
 -- SEO / Open Graph settings
 INSERT IGNORE INTO settings (setting_key, setting_value, setting_label, setting_group) VALUES
 ('og_image', 'https://verlustrueckholung.de/assets/images/og-image.jpg', 'Open Graph Bild-URL (1200×630 px)', 'seo');
-
--- ============================================================
--- Lead-generation: UTM tracking columns
--- ============================================================
-
--- UTM parameters on visitor_logs (one row per session/page visit)
-ALTER TABLE visitor_logs
-    ADD COLUMN IF NOT EXISTS utm_source   VARCHAR(100) DEFAULT NULL AFTER referrer,
-    ADD COLUMN IF NOT EXISTS utm_medium   VARCHAR(100) DEFAULT NULL AFTER utm_source,
-    ADD COLUMN IF NOT EXISTS utm_campaign VARCHAR(150) DEFAULT NULL AFTER utm_medium,
-    ADD COLUMN IF NOT EXISTS utm_content  VARCHAR(150) DEFAULT NULL AFTER utm_campaign,
-    ADD COLUMN IF NOT EXISTS utm_term     VARCHAR(150) DEFAULT NULL AFTER utm_content,
-    ADD COLUMN IF NOT EXISTS gclid        VARCHAR(200) DEFAULT NULL AFTER utm_term,
-    ADD COLUMN IF NOT EXISTS landing_page VARCHAR(512) DEFAULT NULL AFTER gclid;
-
--- Store the primary acquisition channel + UTM source on each lead
-ALTER TABLE leads
-    ADD COLUMN IF NOT EXISTS lead_source VARCHAR(80) DEFAULT 'website' AFTER ip_address,
-    ADD COLUMN IF NOT EXISTS utm_source  VARCHAR(100) DEFAULT NULL     AFTER lead_source;
 
 -- ============================================================
 -- Lead-generation: site-wide settings
