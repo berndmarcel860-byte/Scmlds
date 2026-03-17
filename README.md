@@ -6,17 +6,21 @@ KI-gestützte Kapitalrückholung bei Anlagebetrug — PHP/MySQL application with
 
 ## Requirements
 
-- PHP 8.1+
+- PHP 8.3 (with PHP-FPM)
 - MySQL 5.7+ / MariaDB 10+
-- **Nginx** (recommended) or Apache with `mod_rewrite`
-- PHP-FPM (for Nginx)
+- **Nginx**
 - [Composer](https://getcomposer.org/) for PHP dependencies
 
 ---
 
-## Nginx Setup (recommended)
+## Nginx Setup
 
 This project includes a ready-to-use Nginx server block at **`nginx.conf`**.
+
+**Server details:**
+- Root: `/var/www/verlustrueckholung.de`
+- PHP-FPM socket: `unix:/var/run/php/php8.3-fpm.sock`
+- SSL: managed by Certbot
 
 ### 1. Install dependencies
 
@@ -34,25 +38,18 @@ mysql -u root -p < database/schema.sql
 
 Edit `config/config.php` with your database credentials, domain, and email settings.
 
-### 4. Configure Nginx
+### 4. Deploy the Nginx config
 
 ```bash
-# Open the config and replace the placeholder values:
-#   - "verlustrueckholung.de"      → your domain
-#   - "/var/www/verlustrueckholung" → absolute path to this directory
-#   - "127.0.0.1:9000"             → your PHP-FPM socket/address
-#     (e.g. unix:/run/php/php8.2-fpm.sock)
-nano nginx.conf
-
-# Copy to Nginx sites
-sudo cp nginx.conf /etc/nginx/sites-available/your-site
-sudo ln -s /etc/nginx/sites-available/your-site /etc/nginx/sites-enabled/your-site
+sudo cp nginx.conf /etc/nginx/sites-available/verlustrueckholung.de
+sudo ln -s /etc/nginx/sites-available/verlustrueckholung.de \
+           /etc/nginx/sites-enabled/verlustrueckholung.de
 ```
 
-### 5. Obtain TLS certificates (Let's Encrypt)
+### 5. Obtain / renew TLS certificates (Let's Encrypt)
 
 ```bash
-sudo certbot --nginx -d yourdomain.com -d www.yourdomain.com
+sudo certbot --nginx -d verlustrueckholung.de -d www.verlustrueckholung.de
 ```
 
 ### 6. Test and reload
@@ -61,30 +58,8 @@ sudo certbot --nginx -d yourdomain.com -d www.yourdomain.com
 sudo nginx -t && sudo systemctl reload nginx
 ```
 
-### PHP-FPM socket (Unix socket alternative)
-
-If your PHP-FPM uses a Unix socket instead of TCP, replace:
-```nginx
-fastcgi_pass 127.0.0.1:9000;
-```
-with (adjust PHP version as needed):
-```nginx
-fastcgi_pass unix:/run/php/php8.2-fpm.sock;
-```
-
 ---
 
-## Apache Setup (alternative)
-
-A `.htaccess` is included in the repo root and `blog/` directory and works out of the box when `mod_rewrite` and `AllowOverride All` are enabled.
-
-```apache
-# In your Apache VirtualHost:
-<Directory /var/www/verlustrueckholung>
-    AllowOverride All
-    Options -Indexes
-</Directory>
-```
 
 ---
 
