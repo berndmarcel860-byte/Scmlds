@@ -15,6 +15,12 @@ $meta_desc      = 'VerlustRückholung hilft Opfern von Anlagebetrug ihr Kapital 
 $og_image       = get_setting('og_image', $canonical_url . 'assets/images/og-image.jpg');
 $og_site_name   = get_setting('company_name', BRAND_NAME);
 
+// Lead-generation helpers
+$whatsapp_number   = preg_replace('/\D/', '', get_setting('whatsapp_number', ''));
+$announcement_text = trim(get_setting('announcement_text', ''));
+$announcement_url  = trim(get_setting('announcement_url', ''));
+$announcement_bg   = trim(get_setting('announcement_bg', '#d32f2f'));
+
 // Year range helper — guard against config version mismatch
 if (!defined('MIN_YEAR_LOST')) { define('MIN_YEAR_LOST', 2015); }
 $years = [];
@@ -931,6 +937,23 @@ for ($y = date('Y'); $y >= MIN_YEAR_LOST; $y--) { $years[] = $y; }
 </head>
 <body>
 
+<?php if ($announcement_text !== ''): ?>
+<!-- ===== ANNOUNCEMENT BAR ===== -->
+<div id="announcementBar" style="background:<?= htmlspecialchars($announcement_bg, ENT_QUOTES, 'UTF-8') ?>;color:#fff;text-align:center;padding:.5rem 1rem;font-size:.85rem;font-weight:600;position:relative;z-index:1060;">
+    <?php if ($announcement_url !== ''): ?>
+    <a href="<?= htmlspecialchars($announcement_url, ENT_QUOTES, 'UTF-8') ?>"
+       style="color:#fff;text-decoration:underline;">
+        <?= htmlspecialchars($announcement_text, ENT_QUOTES, 'UTF-8') ?>
+    </a>
+    <?php else: ?>
+    <?= htmlspecialchars($announcement_text, ENT_QUOTES, 'UTF-8') ?>
+    <?php endif; ?>
+    <button onclick="document.getElementById('announcementBar').style.display='none';"
+            style="background:none;border:none;color:#fff;position:absolute;right:.75rem;top:50%;transform:translateY(-50%);font-size:1rem;cursor:pointer;"
+            aria-label="Schließen">&#x2715;</button>
+</div>
+<?php endif; ?>
+
 <!-- ===== NAVBAR ===== -->
 <nav class="navbar-v2" id="mainNav2">
     <div class="container d-flex align-items-center justify-content-between gap-2">
@@ -1106,6 +1129,8 @@ for ($y = date('Y'); $y >= MIN_YEAR_LOST; $y--) { $years[] = $y; }
                     <form action="submit_lead.php" method="POST" id="heroForm" novalidate>
                         <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
                         <input type="hidden" name="visit_id" id="visitIdHeroForm" value="">
+                        <input type="hidden" name="lead_source" value="hero_form">
+                        <input type="hidden" name="utm_source" value="">
                         <div class="row g-2">
                             <div class="col-6">
                                 <input type="text" name="first_name" class="form-control" placeholder="Vorname *" required>
@@ -2176,6 +2201,8 @@ for ($y = date('Y'); $y >= MIN_YEAR_LOST; $y--) { $years[] = $y; }
                         <form action="submit_lead.php" method="POST" id="mainFormV2" novalidate>
                             <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
                             <input type="hidden" name="visit_id" id="visitIdMainFormV2" value="">
+                            <input type="hidden" name="lead_source" value="main_form">
+                            <input type="hidden" name="utm_source" value="">
 
                             <!-- Section 1 -->
                             <div class="form-step-label">
@@ -2504,6 +2531,7 @@ for ($y = date('Y'); $y >= MIN_YEAR_LOST; $y--) { $years[] = $y; }
                             <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
                             <input type="hidden" name="lead_source" value="engagement_modal">
                             <input type="hidden" name="visit_id" id="visitIdEngV2" value="">
+                            <input type="hidden" name="utm_source" value="">
                             <div class="row g-2 mb-3">
                                 <div class="col-sm-6">
                                     <label class="form-label fw-semibold small">Vorname *</label>
@@ -2711,6 +2739,7 @@ for ($y = date('Y'); $y >= MIN_YEAR_LOST; $y--) { $years[] = $y; }
                             <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
                             <input type="hidden" name="lead_source" value="full_form_modal">
                             <input type="hidden" name="visit_id" data-visit-id value="">
+                            <input type="hidden" name="utm_source" value="">
 
                             <!-- Section 1: Persönliche Angaben -->
                             <div class="fall-form-section mb-4">
@@ -3356,10 +3385,20 @@ for ($y = date('Y'); $y >= MIN_YEAR_LOST; $y--) { $years[] = $y; }
     var visitId = null;
     var startTime = Date.now();
 
+    // Collect UTM params + gclid/fbclid from the current URL
     (function logVisit() {
+        var sp = new URLSearchParams(window.location.search);
         var body = new FormData();
         body.append('action', 'visit');
         body.append('referrer', document.referrer || '');
+        body.append('landing_page', window.location.href.substring(0, 512));
+        ['utm_source','utm_medium','utm_campaign','utm_content','utm_term','gclid'].forEach(function (k) {
+            var v = sp.get(k);
+            if (v) body.append(k, v.substring(0, 200));
+        });
+        // Also store utm_source in sessionStorage so hidden form fields can read it
+        var utmSrc = sp.get('utm_source');
+        if (utmSrc) sessionStorage.setItem('vr_utm_source', utmSrc.substring(0, 100));
         fetch('track.php', { method: 'POST', body: body })
             .then(function (r) { return r.json(); })
             .then(function (d) {
@@ -3371,6 +3410,10 @@ for ($y = date('Y'); $y >= MIN_YEAR_LOST; $y--) { $years[] = $y; }
                     });
                 }
             }).catch(function () {});
+        // Populate utm_source hidden fields in all forms so submit_lead.php can store it
+        document.querySelectorAll('input[name="utm_source"]').forEach(function (inp) {
+            inp.value = sessionStorage.getItem('vr_utm_source') || '';
+        });
     })();
 
     function sendTimeUpdate() {
@@ -3719,6 +3762,38 @@ for ($y = date('Y'); $y >= MIN_YEAR_LOST; $y--) { $years[] = $y; }
 
 })();
 </script>
+
+<?php if ($whatsapp_number !== ''): ?>
+<!-- ===== FLOATING WHATSAPP BUTTON ===== -->
+<a href="https://wa.me/<?= htmlspecialchars($whatsapp_number, ENT_QUOTES, 'UTF-8') ?>?text=<?= urlencode('Hallo, ich benötige Hilfe bei der Rückforderung meines Kapitals.') ?>"
+   id="whatsappFAB"
+   target="_blank" rel="noopener noreferrer"
+   aria-label="Auf WhatsApp schreiben"
+   title="Auf WhatsApp schreiben"
+   style="position:fixed;bottom:1.5rem;right:1.5rem;z-index:1055;
+          width:60px;height:60px;border-radius:50%;
+          background:#25d366;color:#fff;display:flex;align-items:center;justify-content:center;
+          box-shadow:0 6px 20px rgba(37,211,102,.5);text-decoration:none;
+          transition:transform .2s,box-shadow .2s;">
+    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true">
+        <path d="M13.601 2.326A7.854 7.854 0 0 0 7.994 0C3.627 0 .068 3.558.064 7.926c0 1.399.366 2.76 1.057 3.965L0 16l4.204-1.102a7.933 7.933 0 0 0 3.79.965h.004c4.368 0 7.926-3.558 7.93-7.93A7.898 7.898 0 0 0 13.6 2.326zM7.994 14.521a6.573 6.573 0 0 1-3.356-.92l-.24-.144-2.494.654.666-2.433-.156-.251a6.56 6.56 0 0 1-1.007-3.505c0-3.626 2.957-6.584 6.591-6.584a6.56 6.56 0 0 1 4.66 1.931 6.557 6.557 0 0 1 1.928 4.66c-.004 3.639-2.961 6.592-6.592 6.592zm3.615-4.934c-.197-.099-1.17-.578-1.353-.646-.182-.065-.315-.099-.445.099-.133.197-.513.646-.627.775-.114.133-.232.148-.43.05-.197-.1-.836-.308-1.592-.985-.59-.525-.985-1.175-1.103-1.372-.114-.198-.011-.304.088-.403.087-.088.197-.232.296-.346.1-.114.133-.198.198-.33.065-.134.034-.248-.015-.347-.05-.099-.445-1.076-.612-1.47-.16-.389-.323-.335-.445-.34-.114-.007-.247-.007-.38-.007a.729.729 0 0 0-.529.247c-.182.198-.691.677-.691 1.654 0 .977.71 1.916.81 2.049.098.133 1.394 2.132 3.383 2.992.47.205.84.326 1.129.418.475.152.904.129 1.246.08.38-.058 1.171-.48 1.338-.943.164-.464.164-.86.114-.943-.049-.084-.182-.133-.38-.232z"/>
+    </svg>
+</a>
+<script>
+(function () {
+    var fab = document.getElementById('whatsappFAB');
+    if (!fab) return;
+    fab.addEventListener('mouseenter', function () {
+        this.style.transform = 'scale(1.12)';
+        this.style.boxShadow = '0 8px 28px rgba(37,211,102,.65)';
+    });
+    fab.addEventListener('mouseleave', function () {
+        this.style.transform = '';
+        this.style.boxShadow = '0 6px 20px rgba(37,211,102,.5)';
+    });
+})();
+</script>
+<?php endif; ?>
 
 <!-- Visitor Tracking beacon on page load is already above; no duplicate needed -->
 </body>

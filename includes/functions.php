@@ -183,6 +183,30 @@ function get_visitor_stats(): array
     );
     $stats['top_referrers'] = $stmt->fetchAll();
 
+    // UTM source breakdown (visits + leads)
+    $stmt = $pdo->query(
+        "SELECT
+            COALESCE(utm_source, '(keine)') AS utm_source,
+            COUNT(*)                         AS visits,
+            SUM(submitted_lead)              AS leads
+         FROM visitor_logs
+         GROUP BY utm_source
+         ORDER BY visits DESC
+         LIMIT 20"
+    );
+    $stats['utm_breakdown'] = $stmt->fetchAll();
+
+    // Lead source breakdown from leads table
+    $stmt = $pdo->query(
+        "SELECT
+            COALESCE(lead_source, 'website') AS lead_source,
+            COUNT(*)                          AS cnt
+         FROM leads
+         GROUP BY lead_source
+         ORDER BY cnt DESC"
+    );
+    $stats['lead_source_breakdown'] = $stmt->fetchAll();
+
     return $stats;
 }
 

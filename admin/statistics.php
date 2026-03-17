@@ -201,6 +201,72 @@ $lstats = get_dashboard_stats();
             </div>
         </div>
 
+        <!-- ===== UTM Source Breakdown ===== -->
+        <div class="row g-4 mt-0">
+            <div class="col-lg-6">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-white border-0 fw-bold">
+                        <i class="bi bi-tags me-2 text-success"></i>Besuche nach UTM-Quelle
+                        <span class="text-muted fw-normal small ms-1">(nur wenn UTM-Parameter in der URL)</span>
+                    </div>
+                    <div class="card-body p-0">
+                        <table class="table table-sm table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="px-3">utm_source</th>
+                                    <th class="text-end px-3">Besuche</th>
+                                    <th class="text-end px-3">Leads</th>
+                                    <th class="text-end px-3">CVR</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            <?php foreach ($vstats['utm_breakdown'] as $row): ?>
+                                <?php $cvr = $row['visits'] > 0 ? round(($row['leads'] / $row['visits']) * 100, 1) : 0; ?>
+                                <tr>
+                                    <td class="px-3 small"><?= htmlspecialchars($row['utm_source'], ENT_QUOTES, 'UTF-8') ?></td>
+                                    <td class="text-end px-3"><?= (int) $row['visits'] ?></td>
+                                    <td class="text-end px-3 fw-semibold text-success"><?= (int) $row['leads'] ?></td>
+                                    <td class="text-end px-3"><?= $cvr ?>%</td>
+                                </tr>
+                            <?php endforeach; ?>
+                            <?php if (empty($vstats['utm_breakdown'])): ?>
+                                <tr><td colspan="4" class="text-center text-muted py-3 small">Noch keine UTM-Daten. Fügen Sie <code>?utm_source=google</code> zu Ihren Links hinzu.</td></tr>
+                            <?php endif; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-white border-0 fw-bold">
+                        <i class="bi bi-funnel me-2 text-warning"></i>Leads nach Formular-Quelle
+                    </div>
+                    <div class="card-body p-0">
+                        <table class="table table-sm table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="px-3">Formular</th>
+                                    <th class="text-end px-3">Leads</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            <?php foreach ($vstats['lead_source_breakdown'] as $row): ?>
+                                <tr>
+                                    <td class="px-3 small"><?= htmlspecialchars($row['lead_source'], ENT_QUOTES, 'UTF-8') ?></td>
+                                    <td class="text-end px-3 fw-semibold"><?= (int) $row['cnt'] ?></td>
+                                </tr>
+                            <?php endforeach; ?>
+                            <?php if (empty($vstats['lead_source_breakdown'])): ?>
+                                <tr><td colspan="2" class="text-center text-muted py-3 small">Noch keine Leads vorhanden.</td></tr>
+                            <?php endif; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </div>
 </div>
 

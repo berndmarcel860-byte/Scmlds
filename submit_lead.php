@@ -118,10 +118,12 @@ try {
     $stmt = $pdo->prepare(
         'INSERT INTO leads
          (first_name, last_name, email, phone, country, year_lost,
-          amount_lost, platform_category, case_description, status, ip_address)
+          amount_lost, platform_category, case_description, status, ip_address,
+          lead_source, utm_source)
          VALUES
          (:fn, :ln, :em, :ph, :co, :yr,
-          :al, :pc, :cd, :st, :ip)'
+          :al, :pc, :cd, :st, :ip,
+          :ls, :us)'
     );
     $stmt->execute([
         ':fn' => $first_name,
@@ -135,6 +137,8 @@ try {
         ':cd' => $case_description,
         ':st' => 'Neu',
         ':ip' => $_SERVER['REMOTE_ADDR'] ?? '',
+        ':ls' => $lead_source,
+        ':us' => substr(trim($_POST['utm_source'] ?? ''), 0, 100) ?: null,
     ]);
     $lead_id = (int) $pdo->lastInsertId();
 

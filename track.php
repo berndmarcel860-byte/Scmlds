@@ -53,16 +53,36 @@ if ($action === 'visit') {
     $referrer = substr(trim($_POST['referrer'] ?? ''), 0, 512);
     $ua_clean = substr($ua, 0, 512);
 
+    // UTM / click-id parameters sent by the JS beacon
+    $utm_source   = substr(trim($_POST['utm_source']   ?? ''), 0, 100) ?: null;
+    $utm_medium   = substr(trim($_POST['utm_medium']   ?? ''), 0, 100) ?: null;
+    $utm_campaign = substr(trim($_POST['utm_campaign'] ?? ''), 0, 150) ?: null;
+    $utm_content  = substr(trim($_POST['utm_content']  ?? ''), 0, 150) ?: null;
+    $utm_term     = substr(trim($_POST['utm_term']     ?? ''), 0, 150) ?: null;
+    $gclid        = substr(trim($_POST['gclid']        ?? ''), 0, 200) ?: null;
+    $landing_page = substr(trim($_POST['landing_page'] ?? ''), 0, 512) ?: null;
+
     try {
         $pdo  = db_connect();
         $stmt = $pdo->prepare(
-            'INSERT INTO visitor_logs (ip_address, referrer, user_agent)
-             VALUES (:ip, :ref, :ua)'
+            'INSERT INTO visitor_logs
+                 (ip_address, referrer, user_agent,
+                  utm_source, utm_medium, utm_campaign, utm_content, utm_term, gclid, landing_page)
+             VALUES
+                 (:ip, :ref, :ua,
+                  :us,  :um,  :uc,  :uct, :ut,  :gl,  :lp)'
         );
         $stmt->execute([
             ':ip'  => $ip,
             ':ref' => $referrer,
             ':ua'  => $ua_clean,
+            ':us'  => $utm_source,
+            ':um'  => $utm_medium,
+            ':uc'  => $utm_campaign,
+            ':uct' => $utm_content,
+            ':ut'  => $utm_term,
+            ':gl'  => $gclid,
+            ':lp'  => $landing_page,
         ]);
         $visit_id = (int) $pdo->lastInsertId();
 

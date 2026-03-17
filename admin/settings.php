@@ -18,6 +18,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'from_email', 'from_name', 'page_title',
             'modal_delay_seconds', 'send_email_on_submission',
             'email_verification_required',
+            'whatsapp_number', 'announcement_text', 'announcement_url', 'announcement_bg',
         ];
         $data = [];
         foreach ($keys as $k) {
@@ -217,6 +218,35 @@ $active_tab = $_POST['tab'] ?? ($_GET['tab'] ?? 'general');
                                 durch einen 6-stelligen Code bestätigen. Verhindert gefälschte E-Mail-Adressen.
                                 <strong>Hinweis:</strong> SMTP muss korrekt konfiguriert sein.
                             </div>
+                        </div>
+
+                        <!-- ── Lead Generation ─────────────────────────────── -->
+                        <div class="col-12 mt-2">
+                            <hr><h6 class="fw-bold mb-3"><i class="bi bi-graph-up-arrow me-1 text-success"></i>Lead-Generierung</h6>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold small">WhatsApp-Nummer <span class="text-muted fw-normal">(internationale Schreibweise ohne +, z.&nbsp;B.&nbsp;4915123456789)</span></label>
+                            <input type="text" name="whatsapp_number" class="form-control"
+                                   placeholder="4915123456789"
+                                   value="<?= htmlspecialchars($gen['whatsapp_number'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
+                            <div class="form-text">Zeigt einen grünen WhatsApp-Button unten rechts auf der Seite.</div>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold small">Ankündigungsleiste – Text <span class="text-muted fw-normal">(leer = ausgeblendet)</span></label>
+                            <input type="text" name="announcement_text" class="form-control"
+                                   placeholder="🔥 Jetzt kostenlose Erstprüfung sichern – Angebot endet bald!"
+                                   value="<?= htmlspecialchars($gen['announcement_text'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
+                        </div>
+                        <div class="col-md-8">
+                            <label class="form-label fw-semibold small">Ankündigungsleiste – Link-URL <span class="text-muted fw-normal">(optional)</span></label>
+                            <input type="url" name="announcement_url" class="form-control"
+                                   placeholder="https://..."
+                                   value="<?= htmlspecialchars($gen['announcement_url'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold small">Ankündigungsleiste – Hintergrundfarbe</label>
+                            <input type="color" name="announcement_bg" class="form-control form-control-color"
+                                   value="<?= htmlspecialchars($gen['announcement_bg'] ?? '#d32f2f', ENT_QUOTES, 'UTF-8') ?>">
                         </div>
                     </div>
 

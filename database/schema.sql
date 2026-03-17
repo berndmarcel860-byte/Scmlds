@@ -165,3 +165,31 @@ INSERT IGNORE INTO settings (setting_key, setting_value, setting_label, setting_
 INSERT IGNORE INTO settings (setting_key, setting_value, setting_label, setting_group) VALUES
 ('og_image', 'https://verlustrueckholung.de/assets/images/og-image.jpg', 'Open Graph Bild-URL (1200×630 px)', 'seo');
 
+-- ============================================================
+-- Lead-generation: UTM tracking columns
+-- ============================================================
+
+-- UTM parameters on visitor_logs (one row per session/page visit)
+ALTER TABLE visitor_logs
+    ADD COLUMN IF NOT EXISTS utm_source   VARCHAR(100) DEFAULT NULL AFTER referrer,
+    ADD COLUMN IF NOT EXISTS utm_medium   VARCHAR(100) DEFAULT NULL AFTER utm_source,
+    ADD COLUMN IF NOT EXISTS utm_campaign VARCHAR(150) DEFAULT NULL AFTER utm_medium,
+    ADD COLUMN IF NOT EXISTS utm_content  VARCHAR(150) DEFAULT NULL AFTER utm_campaign,
+    ADD COLUMN IF NOT EXISTS utm_term     VARCHAR(150) DEFAULT NULL AFTER utm_content,
+    ADD COLUMN IF NOT EXISTS gclid        VARCHAR(200) DEFAULT NULL AFTER utm_term,
+    ADD COLUMN IF NOT EXISTS landing_page VARCHAR(512) DEFAULT NULL AFTER gclid;
+
+-- Store the primary acquisition channel + UTM source on each lead
+ALTER TABLE leads
+    ADD COLUMN IF NOT EXISTS lead_source VARCHAR(80) DEFAULT 'website' AFTER ip_address,
+    ADD COLUMN IF NOT EXISTS utm_source  VARCHAR(100) DEFAULT NULL     AFTER lead_source;
+
+-- ============================================================
+-- Lead-generation: site-wide settings
+-- ============================================================
+INSERT IGNORE INTO settings (setting_key, setting_value, setting_label, setting_group) VALUES
+('whatsapp_number',   '',  'WhatsApp-Nummer (intl. Format, z. B. 4915123456789)', 'general'),
+('announcement_text', '',  'Ankündigungsleiste – Text (leer = ausgeblendet)',      'general'),
+('announcement_url',  '',  'Ankündigungsleiste – Link-URL (optional)',             'general'),
+('announcement_bg',   '#d32f2f', 'Ankündigungsleiste – Hintergrundfarbe',         'general');
+
