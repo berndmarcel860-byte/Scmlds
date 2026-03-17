@@ -25,6 +25,9 @@ ServerSignature Off
     # Serve sitemap.xml via sitemap.php
     RewriteRule ^sitemap\.xml$ sitemap.php [L]
 
+    # Route /blog/{slug} to blog/post.php
+    RewriteRule ^blog/([a-z0-9\-]+)/?$ blog/post.php?slug=$1 [L,QSA]
+
     # Route everything through index.php (front controller)
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteCond %{REQUEST_FILENAME} !-d

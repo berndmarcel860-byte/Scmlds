@@ -11,9 +11,13 @@ $error   = isset($_GET['error']) ? htmlspecialchars($_GET['error'], ENT_QUOTES, 
 
 // SEO helpers
 $canonical_url  = rtrim(get_setting('site_url', SITE_URL), '/') . '/';
-$meta_desc      = 'VerlustRückholung hilft Opfern von Anlagebetrug ihr Kapital zurückzufordern. KI-gestützte Analyse, internationale Experten, 87% Erfolgsquote. Kostenlose Erstprüfung.';
+$meta_desc      = get_setting('meta_description', 'VerlustRückholung hilft Opfern von Anlagebetrug ihr Kapital zurückzufordern. KI-gestützte Analyse, internationale Experten, 87% Erfolgsquote. Kostenlose Erstprüfung.');
+$meta_keywords  = get_setting('meta_keywords', '');
+$robots_meta    = get_setting('robots_meta', 'index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1');
 $og_image       = get_setting('og_image', $canonical_url . 'assets/images/og-image.jpg');
 $og_site_name   = get_setting('company_name', BRAND_NAME);
+$twitter_handle = get_setting('twitter_handle', '');
+$ga_id          = get_setting('google_analytics_id', '');
 
 // Lead-generation helpers
 $whatsapp_number   = preg_replace('/\D/', '', get_setting('whatsapp_number', ''));
@@ -35,8 +39,11 @@ for ($y = date('Y'); $y >= MIN_YEAR_LOST; $y--) { $years[] = $y; }
     <!-- ── Primary SEO ─────────────────────────────────────── -->
     <title><?= htmlspecialchars($page_title, ENT_QUOTES, 'UTF-8') ?></title>
     <meta name="description" content="<?= htmlspecialchars($meta_desc, ENT_QUOTES, 'UTF-8') ?>">
+    <?php if ($meta_keywords): ?>
+    <meta name="keywords" content="<?= htmlspecialchars($meta_keywords, ENT_QUOTES, 'UTF-8') ?>">
+    <?php endif; ?>
     <link rel="canonical" href="<?= htmlspecialchars($canonical_url, ENT_QUOTES, 'UTF-8') ?>">
-    <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
+    <meta name="robots" content="<?= htmlspecialchars($robots_meta, ENT_QUOTES, 'UTF-8') ?>">
 
     <!-- ── Open Graph (Facebook / LinkedIn / WhatsApp) ───────── -->
     <meta property="og:type"        content="website">
@@ -54,6 +61,9 @@ for ($y = date('Y'); $y >= MIN_YEAR_LOST; $y--) { $years[] = $y; }
     <meta name="twitter:title"       content="<?= htmlspecialchars($page_title, ENT_QUOTES, 'UTF-8') ?>">
     <meta name="twitter:description" content="<?= htmlspecialchars($meta_desc, ENT_QUOTES, 'UTF-8') ?>">
     <meta name="twitter:image"       content="<?= htmlspecialchars($og_image, ENT_QUOTES, 'UTF-8') ?>">
+    <?php if ($twitter_handle): ?>
+    <meta name="twitter:site"        content="<?= htmlspecialchars($twitter_handle, ENT_QUOTES, 'UTF-8') ?>">
+    <?php endif; ?>
 
     <!-- ── JSON-LD Structured Data ─────────────────────────── -->
     <script type="application/ld+json">
@@ -162,6 +172,16 @@ for ($y = date('Y'); $y >= MIN_YEAR_LOST; $y--) { $years[] = $y; }
     <link href="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.css" rel="stylesheet">
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <?php if ($ga_id): ?>
+    <!-- Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=<?= htmlspecialchars($ga_id, ENT_QUOTES, 'UTF-8') ?>"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', '<?= htmlspecialchars($ga_id, ENT_QUOTES, 'UTF-8') ?>');
+    </script>
+    <?php endif; ?>
 
     <style>
     /* ============================================================

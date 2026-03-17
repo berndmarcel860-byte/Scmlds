@@ -267,7 +267,13 @@ INSERT IGNORE INTO settings (setting_key, setting_value, setting_label, setting_
 
 -- SEO / Open Graph settings
 INSERT IGNORE INTO settings (setting_key, setting_value, setting_label, setting_group) VALUES
-('og_image', 'https://verlustrueckholung.de/assets/images/og-image.jpg', 'Open Graph Bild-URL (1200×630 px)', 'seo');
+('og_image',             'https://verlustrueckholung.de/assets/images/og-image.jpg', 'Open Graph Bild-URL (1200×630 px)',      'seo'),
+('meta_description',     'VerlustRückholung hilft Opfern von Anlagebetrug ihr Kapital zurückzufordern. KI-gestützte Analyse, internationale Experten, 87% Erfolgsquote. Kostenlose Erstprüfung.', 'Meta-Beschreibung (max. 160 Zeichen)', 'seo'),
+('meta_keywords',        'Geld zurückfordern, Anlagebetrug, Kapitalrückholung, Krypto-Betrug, Forex-Betrug, Scam Recovery, Verlust zurückfordern', 'Meta-Keywords (kommagetrennt)', 'seo'),
+('robots_meta',          'index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1', 'Robots Meta-Tag Inhalt', 'seo'),
+('twitter_handle',       '',                                                                               'Twitter/X Handle (z. B. @VerlustRückholung)', 'seo'),
+('google_analytics_id',  '',                                                                               'Google Analytics 4 Measurement-ID (G-XXXXXXXXXX)', 'seo'),
+('openai_api_key',       '',                                                                               'OpenAI API-Key (für KI-SEO-Generierung)', 'seo');
 
 -- ============================================================
 -- Lead-generation: site-wide settings
@@ -277,4 +283,23 @@ INSERT IGNORE INTO settings (setting_key, setting_value, setting_label, setting_
 ('announcement_text', '',  'Ankündigungsleiste – Text (leer = ausgeblendet)',      'general'),
 ('announcement_url',  '',  'Ankündigungsleiste – Link-URL (optional)',             'general'),
 ('announcement_bg',   '#d32f2f', 'Ankündigungsleiste – Hintergrundfarbe',         'general');
+
+-- ============================================================
+-- Blog posts (for SEO content marketing)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS blog_posts (
+    id              INT AUTO_INCREMENT PRIMARY KEY,
+    title           VARCHAR(255) NOT NULL,
+    slug            VARCHAR(255) NOT NULL UNIQUE,
+    excerpt         TEXT,
+    content         LONGTEXT,
+    meta_title      VARCHAR(255),
+    meta_description TEXT,
+    meta_keywords   TEXT,
+    featured_image  VARCHAR(512),
+    status          ENUM('draft','published') NOT NULL DEFAULT 'draft',
+    published_at    DATETIME DEFAULT NULL,
+    created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 

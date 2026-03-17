@@ -480,3 +480,179 @@ function send_telegram_notification(array $data): bool
     }
     return $ok;
 }
+
+// ── Blog Posts ────────────────────────────────────────────────────────────────
+
+function get_blog_posts(array $filters = [], int $page = 1, int $per_page = 20): array
+{
+    $pdo    = db_connect();
+    $where  = ['1=1'];
+    $params = [];
+
+    if (!empty($filters['status'])) {
+        $where[]           = 'status = :status';
+        $params[':status'] = $filters['status'];
+    }
+    if (!empty($filters['search'])) {
+        $where[]      = '(title LIKE :s OR excerpt LIKE :s)';
+        $params[':s'] = '%' . $filters['search'] . '%';
+    }
+
+    $whereSQL = implode(' AND ', $where);
+    $offset   = ($page - 1) * $per_page;
+
+    $countStmt = $pdo->prepare("SELECT COUNT(*) FROM blog_posts WHERE $whereSQL");
+    $countStmt->execute($params);
+    $total = (int) $countStmt->fetchColumn();
+
+    $stmt = $pdo->prepare(
+        "SELECT id, title, slug, excerpt, status, featured_image, published_at, created_at
+         FROM blog_posts WHERE $whereSQL ORDER BY created_at DESC LIMIT :limit OFFSET :offset"
+    );
+    foreach ($params as $k => $v) {
+        $stmt->bindValue($k, $v);
+    }
+    $stmt->bindValue(':limit', $per_page, PDO::PARAM_INT);
+    $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+    $stmt->execute();
+
+    return ['data' => $stmt->fetchAll(), 'total' => $total, 'pages' => (int) ceil($total / $per_page)];
+}
+
+function get_blog_post(int $id): ?array
+{
+    $pdo  = db_connect();
+    $stmt = $pdo->prepare('SELECT * FROM blog_posts WHERE id = :id');
+    $stmt->execute([':id' => $id]);
+    $row = $stmt->fetch();
+    return $row ?: null;
+}
+
+function get_blog_post_by_slug(string $slug): ?array
+{
+    $pdo  = db_connect();
+    $stmt = $pdo->prepare("SELECT * FROM blog_posts WHERE slug = :slug AND status = 'published'");
+    $stmt->execute([':slug' => $slug]);
+    $row = $stmt->fetch();
+    return $row ?: null;
+}
+
+/**
+ * Get published blog posts for the public index.
+ */
+function get_published_blog_posts(int $page = 1, int $per_page = 10): array
+{
+    $pdo    = db_connect();
+    $offset = ($page - 1) * $per_page;
+
+    $total = (int) $pdo->query("SELECT COUNT(*) FROM blog_posts WHERE status = 'published'")->fetchColumn();
+
+    $stmt = $pdo->prepare(
+        "SELECT id, title, slug, excerpt, featured_image, published_at, created_at
+         FROM blog_posts WHERE status = 'published'
+         ORDER BY COALESCE(published_at, created_at) DESC LIMIT :limit OFFSET :offset"
+    );
+    $stmt->bindValue(':limit', $per_page, PDO::PARAM_INT);
+    $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+    $stmt->execute();
+
+    return ['data' => $stmt->fetchAll(), 'total' => $total, 'pages' => (int) ceil($total / $per_page)];
+}
+
+function save_blog_post(array $data, ?int $id = null): int|false
+{
+    $pdo = db_connect();
+
+    $published_at = null;
+    if ($data['status'] === 'published' && !empty($data['published_at'])) {
+        $published_at = $data['published_at'];
+    } elseif ($data['status'] === 'published' && $id === null) {
+        $published_at = date('Y-m-d H:i:s');
+    }
+
+    if ($id === null) {
+        $stmt = $pdo->prepare(
+            'INSERT INTO blog_posts
+             (title, slug, excerpt, content, meta_title, meta_description, meta_keywords,
+              featured_image, status, published_at)
+             VALUES (:ti, :sl, :ex, :co, :mt, :md, :mk, :fi, :st, :pa)'
+        );
+        $ok = $stmt->execute([
+            ':ti' => $data['title'],
+            ':sl' => $data['slug'],
+            ':ex' => $data['excerpt']          ?? null,
+            ':co' => $data['content']          ?? null,
+            ':mt' => $data['meta_title']       ?? null,
+            ':md' => $data['meta_description'] ?? null,
+            ':mk' => $data['meta_keywords']    ?? null,
+            ':fi' => $data['featured_image']   ?? null,
+            ':st' => $data['status'],
+            ':pa' => $published_at,
+        ]);
+        return $ok ? (int) $pdo->lastInsertId() : false;
+    }
+
+    $stmt = $pdo->prepare(
+        'UPDATE blog_posts SET title=:ti, slug=:sl, excerpt=:ex, content=:co,
+         meta_title=:mt, meta_description=:md, meta_keywords=:mk,
+         featured_image=:fi, status=:st, published_at=:pa WHERE id=:id'
+    );
+    $ok = $stmt->execute([
+        ':ti' => $data['title'],
+        ':sl' => $data['slug'],
+        ':ex' => $data['excerpt']          ?? null,
+        ':co' => $data['content']          ?? null,
+        ':mt' => $data['meta_title']       ?? null,
+        ':md' => $data['meta_description'] ?? null,
+        ':mk' => $data['meta_keywords']    ?? null,
+        ':fi' => $data['featured_image']   ?? null,
+        ':st' => $data['status'],
+        ':pa' => $published_at,
+        ':id' => $id,
+    ]);
+    return $ok ? $id : false;
+}
+
+function delete_blog_post(int $id): bool
+{
+    $pdo  = db_connect();
+    $stmt = $pdo->prepare('DELETE FROM blog_posts WHERE id = :id');
+    return $stmt->execute([':id' => $id]);
+}
+
+/**
+ * Generate a URL-safe slug from a title.
+ * Handles German umlauts.
+ */
+function slugify(string $text): string
+{
+    $map = ['ä'=>'ae','ö'=>'oe','ü'=>'ue','Ä'=>'ae','Ö'=>'oe','Ü'=>'ue','ß'=>'ss'];
+    $text = strtr($text, $map);
+    $text = strtolower(trim(preg_replace('/[^a-z0-9]+/i', '-', $text), '-'));
+    return $text ?: 'post';
+}
+
+/**
+ * Ensure the blog_posts table exists (forward-compatible migration).
+ */
+function ensure_blog_table(): void
+{
+    $pdo = db_connect();
+    $pdo->exec(
+        "CREATE TABLE IF NOT EXISTS blog_posts (
+            id              INT AUTO_INCREMENT PRIMARY KEY,
+            title           VARCHAR(255) NOT NULL,
+            slug            VARCHAR(255) NOT NULL UNIQUE,
+            excerpt         TEXT,
+            content         LONGTEXT,
+            meta_title      VARCHAR(255),
+            meta_description TEXT,
+            meta_keywords   TEXT,
+            featured_image  VARCHAR(512),
+            status          ENUM('draft','published') NOT NULL DEFAULT 'draft',
+            published_at    DATETIME DEFAULT NULL,
+            created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
+    );
+}

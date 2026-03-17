@@ -36,6 +36,16 @@
                 </a>
             </li>
             <li class="nav-item">
+                <a href="seo.php" class="nav-link sidebar-link <?= basename($_SERVER['PHP_SELF']) === 'seo.php' ? 'active' : '' ?>">
+                    <i class="bi bi-search me-2"></i>SEO
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="blog.php" class="nav-link sidebar-link <?= in_array(basename($_SERVER['PHP_SELF']), ['blog.php','blog_edit.php']) ? 'active' : '' ?>">
+                    <i class="bi bi-journal-richtext me-2"></i>Blog
+                </a>
+            </li>
+            <li class="nav-item">
                 <a href="settings.php" class="nav-link sidebar-link <?= basename($_SERVER['PHP_SELF']) === 'settings.php' ? 'active' : '' ?>">
                     <i class="bi bi-gear me-2"></i>Einstellungen
                 </a>
