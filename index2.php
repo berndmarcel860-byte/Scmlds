@@ -738,12 +738,56 @@ for ($y = date('Y'); $y >= MIN_YEAR_LOST; $y--) { $years[] = $y; }
         .form-box-body { padding: 1.25rem; }
         .section-v2 { padding: 3rem 0; }
         .modal-dialog.modal-xl { margin: 0.5rem; }
+        /* Hero form card tighter on mobile */
+        .hero-form-card { padding: 1.25rem; border-radius: 14px; }
+        .hero-form-card .form-card-header { margin: -1.25rem -1.25rem 1.25rem; padding: 1rem 1.25rem; border-radius: 14px 14px 0 0; }
+        /* fullFormModal header compacter */
+        .fall-modal-header-inner .d-flex.p-4 { padding: 1rem !important; }
+        /* Badge strip wraps to 2×2 on small screens */
+        .fall-badges-strip { flex-wrap: wrap; }
+        .fall-badges-strip .fall-badge { flex: 1 1 50%; min-width: 0; }
+        /* Inline CTA buttons stack vertically */
+        .d-flex.flex-wrap.gap-3.mt-4 .btn { width: 100%; justify-content: center; }
+        /* Modals: no side margin so they use full width */
+        .modal-dialog.modal-lg { margin: 0.5rem; max-width: calc(100% - 1rem); }
+        /* Navbar hamburger toggle button */
+        .navbar-toggler-v2 {
+            background: none;
+            border: 1px solid rgba(255,255,255,.25);
+            border-radius: 6px;
+            padding: .3rem .6rem;
+            color: #fff;
+            font-size: 1.25rem;
+            line-height: 1;
+            cursor: pointer;
+        }
     }
     @media (max-width: 575.98px) {
         .hero-v2 h1 { font-size: clamp(1.4rem, 5.5vw, 2rem); }
         .ticker-wrap { font-size: .8rem; }
         .trust-item { font-size: .75rem; }
+        .hero-form-card { padding: 1rem; }
+        .hero-form-card .form-card-header { margin: -1rem -1rem 1rem; padding: .85rem 1rem; }
+        /* Stat bands: 2 cols instead of 4 */
+        .stats-band .col-6.col-md-3 { flex: 0 0 50%; max-width: 50%; }
+        /* Fall form section inner padding reduced */
+        .fall-form-section { padding: 14px; }
+        /* fullFormModal full-screen padding */
+        .modal-fullscreen-sm-down .modal-body .col-lg-7 { padding: 1rem !important; }
+        /* Form action buttons stacked */
+        .fall-submit-btn { font-size: .95rem; }
     }
+    /* Mobile offcanvas nav menu */
+    .offcanvas-nav { background: #060e1f; border-color: rgba(255,255,255,.1); }
+    .offcanvas-nav .offcanvas-header { border-bottom: 1px solid rgba(255,255,255,.08); padding: 1rem 1.25rem; }
+    .offcanvas-nav .offcanvas-body { padding: 1.25rem; }
+    .offcanvas-nav .nav-link-mob {
+        display: block; color: rgba(255,255,255,.8); text-decoration: none;
+        font-size: 1rem; font-weight: 500; padding: .75rem 1rem;
+        border-radius: 8px; transition: all .2s;
+    }
+    .offcanvas-nav .nav-link-mob:hover,
+    .offcanvas-nav .nav-link-mob:active { background: rgba(255,255,255,.08); color: #fff; }
     </style>
 </head>
 <body>
@@ -758,11 +802,53 @@ for ($y = date('Y'); $y >= MIN_YEAR_LOST; $y--) { $years[] = $y; }
             <a href="#erfahrungsberichte"  class="nav-link-v2">Erfahrungen</a>
             <a href="#kontakt"             class="nav-link-v2">Kontakt</a>
         </div>
-        <a href="#" class="btn-cta-nav" data-bs-toggle="modal" data-bs-target="#fullFormModal">
-            <i class="bi bi-shield-check me-1"></i>Kostenlos prüfen
-        </a>
+        <div class="d-flex align-items-center gap-2">
+            <a href="#" class="btn-cta-nav" data-bs-toggle="modal" data-bs-target="#fullFormModal">
+                <i class="bi bi-shield-check me-1"></i>Kostenlos prüfen
+            </a>
+            <!-- Hamburger – visible only on < lg -->
+            <button class="navbar-toggler-v2 d-lg-none" type="button"
+                    data-bs-toggle="offcanvas" data-bs-target="#mobileNavV2"
+                    aria-controls="mobileNavV2" aria-label="Menü öffnen">
+                <i class="bi bi-list"></i>
+            </button>
+        </div>
     </div>
 </nav>
+
+<!-- ===== MOBILE OFFCANVAS NAV ===== -->
+<div class="offcanvas offcanvas-end offcanvas-nav d-lg-none" tabindex="-1" id="mobileNavV2"
+     aria-labelledby="mobileNavV2Label">
+    <div class="offcanvas-header">
+        <span class="nav-brand" id="mobileNavV2Label">⚖️ Verlust<span>Rückholung</span></span>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Schließen"></button>
+    </div>
+    <div class="offcanvas-body">
+        <nav class="d-flex flex-column gap-1 mb-4">
+            <a href="#wie-es-funktioniert" class="nav-link-mob" data-bs-dismiss="offcanvas">
+                <i class="bi bi-gear-fill me-2 text-warning"></i>Wie es funktioniert
+            </a>
+            <a href="#betrugsarten" class="nav-link-mob" data-bs-dismiss="offcanvas">
+                <i class="bi bi-shield-exclamation me-2 text-warning"></i>Betrugsarten
+            </a>
+            <a href="#erfahrungsberichte" class="nav-link-mob" data-bs-dismiss="offcanvas">
+                <i class="bi bi-star-fill me-2 text-warning"></i>Erfahrungen
+            </a>
+            <a href="#kontakt" class="nav-link-mob" data-bs-dismiss="offcanvas">
+                <i class="bi bi-envelope-fill me-2 text-warning"></i>Kontakt
+            </a>
+        </nav>
+        <button class="btn btn-warning fw-bold w-100 py-3" style="border-radius:10px;"
+                data-bs-dismiss="offcanvas"
+                data-bs-toggle="modal" data-bs-target="#fullFormModal">
+            <i class="bi bi-shield-check me-2"></i>Kostenlose Erstprüfung starten
+        </button>
+        <div class="mt-4 text-center">
+            <div class="small text-white-50 mb-1">Unverbindlich · 100% kostenlos</div>
+            <div class="small" style="color:rgba(255,255,255,.35);">KI-System aktiv · 87% Erfolgsquote</div>
+        </div>
+    </div>
+</div>
 
 <!-- ===== HERO ===== -->
 <section class="hero-v2" id="hero">
@@ -2575,7 +2661,7 @@ for ($y = date('Y'); $y >= MIN_YEAR_LOST; $y--) { $years[] = $y; }
 
 <!-- Info Modal: Wie KI-Technologie funktioniert -->
 <div class="modal fade" id="infoModalV2" tabindex="-1">
-    <div class="modal-dialog modal-lg">
+    <div class="modal-dialog modal-lg modal-fullscreen-sm-down modal-dialog-scrollable">
         <div class="modal-content">
             <div class="modal-header border-0 bg-primary text-white">
                 <h5 class="modal-title fw-bold">
@@ -2637,7 +2723,7 @@ for ($y = date('Y'); $y >= MIN_YEAR_LOST; $y--) { $years[] = $y; }
 
 <!-- Scam Type Detail Modal -->
 <div class="modal fade" id="scamModalV2" tabindex="-1">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-dialog-scrollable">
         <div class="modal-content">
             <div class="modal-header border-0">
                 <h5 class="modal-title fw-bold" id="scamModalV2Title"></h5>
@@ -2703,7 +2789,7 @@ for ($y = date('Y'); $y >= MIN_YEAR_LOST; $y--) { $years[] = $y; }
 
 <!-- Impressum Modal -->
 <div class="modal fade" id="impressumModalV2" tabindex="-1">
-    <div class="modal-dialog modal-lg">
+    <div class="modal-dialog modal-lg modal-fullscreen-sm-down modal-dialog-scrollable">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title fw-bold">Impressum</h5>
