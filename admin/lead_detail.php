@@ -33,11 +33,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_lead'])) {
         'last_name'         => trim($_POST['last_name'] ?? ''),
         'email'             => trim($_POST['email'] ?? ''),
         'phone'             => trim($_POST['phone'] ?? ''),
+        'country'           => trim($_POST['country'] ?? ''),
+        'year_lost'         => trim($_POST['year_lost'] ?? ''),
         'amount_lost'       => (float) ($_POST['amount_lost'] ?? 0),
         'platform_category' => trim($_POST['platform_category'] ?? ''),
         'case_description'  => trim($_POST['case_description'] ?? ''),
         'status'            => $new_status,
         'admin_notes'       => trim($_POST['admin_notes'] ?? ''),
+        'lead_source'       => trim($_POST['lead_source'] ?? 'website'),
+        'utm_source'        => trim($_POST['utm_source'] ?? ''),
     ];
 
     if (update_lead($id, $data)) {
@@ -123,6 +127,18 @@ $categories = ['Krypto-Betrug', 'Forex-Betrug', 'Fake-Broker', 'Romance-Scam mit
                                            value="<?= htmlspecialchars($lead['phone'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
                                 </div>
                                 <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Land</label>
+                                    <input type="text" name="country" class="form-control"
+                                           placeholder="z. B. Deutschland"
+                                           value="<?= htmlspecialchars($lead['country'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Jahr des Verlustes</label>
+                                    <input type="number" name="year_lost" class="form-control" min="2000" max="2099"
+                                           placeholder="z. B. 2023"
+                                           value="<?= htmlspecialchars($lead['year_lost'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
+                                </div>
+                                <div class="col-md-6">
                                     <label class="form-label fw-semibold">Verlorener Betrag (€)</label>
                                     <input type="number" name="amount_lost" class="form-control" min="0"
                                            value="<?= htmlspecialchars($lead['amount_lost'] ?? '0', ENT_QUOTES, 'UTF-8') ?>">
@@ -150,6 +166,29 @@ $categories = ['Krypto-Betrug', 'Forex-Betrug', 'Fake-Broker', 'Romance-Scam mit
                         <div class="card-body">
                             <textarea name="admin_notes" class="form-control" rows="4"
                                       placeholder="Interne Notizen zum Fall..."><?= htmlspecialchars($lead['admin_notes'] ?? '', ENT_QUOTES, 'UTF-8') ?></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Acquisition / UTM tracking -->
+                    <div class="card border-0 shadow-sm mt-4">
+                        <div class="card-header bg-white border-0 fw-bold">
+                            <i class="bi bi-bar-chart-line me-2 text-primary"></i>Akquisition &amp; Tracking
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Lead-Quelle</label>
+                                    <input type="text" name="lead_source" class="form-control"
+                                           placeholder="z. B. website, google, facebook"
+                                           value="<?= htmlspecialchars($lead['lead_source'] ?? 'website', ENT_QUOTES, 'UTF-8') ?>">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">UTM Source</label>
+                                    <input type="text" name="utm_source" class="form-control"
+                                           placeholder="z. B. google, newsletter"
+                                           value="<?= htmlspecialchars($lead['utm_source'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>

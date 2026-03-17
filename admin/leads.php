@@ -127,8 +127,10 @@ $categories = ['Krypto-Betrug', 'Forex-Betrug', 'Fake-Broker', 'Romance-Scam mit
                                 <th>Name</th>
                                 <th>E-Mail</th>
                                 <th>Telefon</th>
+                                <th>Land</th>
                                 <th>Betrag</th>
                                 <th>Kategorie</th>
+                                <th>Quelle</th>
                                 <th>Status</th>
                                 <th>Datum</th>
                                 <th>Aktionen</th>
@@ -149,6 +151,9 @@ $categories = ['Krypto-Betrug', 'Forex-Betrug', 'Fake-Broker', 'Romance-Scam mit
                                 <td class="text-muted">
                                     <?= htmlspecialchars($lead['phone'] ?: '–', ENT_QUOTES, 'UTF-8') ?>
                                 </td>
+                                <td class="text-muted">
+                                    <?= htmlspecialchars($lead['country'] ?: '–', ENT_QUOTES, 'UTF-8') ?>
+                                </td>
                                 <td class="fw-semibold text-danger">
                                     <?= format_currency((float) $lead['amount_lost']) ?>
                                 </td>
@@ -156,6 +161,12 @@ $categories = ['Krypto-Betrug', 'Forex-Betrug', 'Fake-Broker', 'Romance-Scam mit
                                     <span class="badge bg-light text-dark border">
                                         <?= htmlspecialchars($lead['platform_category'], ENT_QUOTES, 'UTF-8') ?>
                                     </span>
+                                </td>
+                                <td class="text-muted small">
+                                    <?= htmlspecialchars($lead['lead_source'] ?: 'website', ENT_QUOTES, 'UTF-8') ?>
+                                    <?php if (!empty($lead['utm_source'])): ?>
+                                        <br><span class="text-info"><?= htmlspecialchars($lead['utm_source'], ENT_QUOTES, 'UTF-8') ?></span>
+                                    <?php endif; ?>
                                 </td>
                                 <td>
                                     <!-- Quick status change -->
@@ -193,7 +204,7 @@ $categories = ['Krypto-Betrug', 'Forex-Betrug', 'Fake-Broker', 'Romance-Scam mit
                             </tr>
                         <?php endforeach; ?>
                         <?php if (empty($leads)): ?>
-                            <tr><td colspan="9" class="text-center text-muted py-5">
+                            <tr><td colspan="11" class="text-center text-muted py-5">
                                 <i class="bi bi-inbox fs-1 d-block mb-2"></i>
                                 Keine Leads gefunden.
                             </td></tr>

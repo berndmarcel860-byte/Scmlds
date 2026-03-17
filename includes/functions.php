@@ -97,8 +97,10 @@ function update_lead(int $id, array $data): bool {
     $pdo = db_connect();
     $stmt = $pdo->prepare(
         'UPDATE leads SET first_name=:fn, last_name=:ln, email=:em, phone=:ph,
+         country=:co, year_lost=:yl,
          amount_lost=:al, platform_category=:pc, case_description=:cd,
-         status=:st, admin_notes=:an
+         status=:st, admin_notes=:an,
+         lead_source=:ls, utm_source=:us
          WHERE id=:id'
     );
     return $stmt->execute([
@@ -106,11 +108,15 @@ function update_lead(int $id, array $data): bool {
         ':ln' => $data['last_name'],
         ':em' => $data['email'],
         ':ph' => $data['phone'],
+        ':co' => $data['country']    ?? null,
+        ':yl' => $data['year_lost']  !== '' ? (int) $data['year_lost'] : null,
         ':al' => $data['amount_lost'],
         ':pc' => $data['platform_category'],
         ':cd' => $data['case_description'],
         ':st' => $data['status'],
         ':an' => $data['admin_notes'],
+        ':ls' => $data['lead_source'] ?? 'website',
+        ':us' => $data['utm_source']  !== '' ? $data['utm_source'] : null,
         ':id' => $id,
     ]);
 }

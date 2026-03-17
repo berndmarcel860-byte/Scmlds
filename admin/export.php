@@ -21,8 +21,10 @@ $output = fopen('php://output', 'w');
 fwrite($output, "\xEF\xBB\xBF");
 
 fputcsv($output, [
-    'ID', 'Vorname', 'Nachname', 'E-Mail', 'Telefon',
-    'Betrag (€)', 'Betrugsart', 'Status', 'Fallbeschreibung', 'IP-Adresse',
+    'ID', 'Vorname', 'Nachname', 'E-Mail', 'Telefon', 'Land', 'Jahr des Verlustes',
+    'Betrag (€)', 'Betrugsart', 'Status', 'Fallbeschreibung',
+    'Lead-Quelle', 'UTM Source',
+    'IP-Adresse', 'Admin-Notizen',
     'Eingegangen', 'Aktualisiert'
 ], ';');
 
@@ -40,11 +42,16 @@ do {
             $lead['last_name'],
             $lead['email'],
             $lead['phone'] ?? '',
+            $lead['country'] ?? '',
+            $lead['year_lost'] ?? '',
             number_format((float) $lead['amount_lost'], 2, ',', '.'),
             $lead['platform_category'],
             $lead['status'],
             $lead['case_description'],
+            $lead['lead_source'] ?? 'website',
+            $lead['utm_source'] ?? '',
             $lead['ip_address'] ?? '',
+            $lead['admin_notes'] ?? '',
             date('d.m.Y H:i', strtotime($lead['created_at'])),
             date('d.m.Y H:i', strtotime($lead['updated_at'])),
         ], ';');
