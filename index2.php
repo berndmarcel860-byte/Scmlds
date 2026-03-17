@@ -5,6 +5,7 @@ require_once __DIR__ . '/includes/functions.php';
 
 $page_title  = get_setting('page_title', 'VerlustRückholung – KI-gestützte Kapitalrückholung bei Anlagebetrug');
 $modal_delay = max(5, (int) get_setting('modal_delay_seconds', '60'));
+$email_verify_enabled = get_setting('email_verification_required', '0') === '1';
 $success = isset($_GET['success']) && $_GET['success'] === '1';
 $error   = isset($_GET['error']) ? htmlspecialchars($_GET['error'], ENT_QUOTES, 'UTF-8') : '';
 
@@ -794,7 +795,13 @@ for ($y = date('Y'); $y >= MIN_YEAR_LOST; $y--) { $years[] = $y; }
     }
     .offcanvas-nav .nav-link-mob:hover,
     .offcanvas-nav .nav-link-mob:active { background: rgba(255,255,255,.08); color: #fff; }
+
+    /* ── OTP / E-Mail-Verifizierung ─────────────────────────── */
+    .otp-send-btn { font-size: .82rem; }
+    .otp-entry .form-control { letter-spacing: .2em; font-weight: 700; font-size: 1.1rem; }
+    .otp-verified-badge { padding: .35rem 0; }
     </style>
+    <script>/* injected by PHP */ var EMAIL_VERIFY_REQUIRED = <?= $email_verify_enabled ? 'true' : 'false' ?>;</script>
 </head>
 <body>
 
@@ -983,8 +990,26 @@ for ($y = date('Y'); $y >= MIN_YEAR_LOST; $y--) { $years[] = $y; }
                                 <div class="invalid-feedback">Pflichtfeld</div>
                             </div>
                             <div class="col-12">
-                                <input type="email" name="email" class="form-control" placeholder="E-Mail-Adresse *" required>
+                                <input type="email" name="email" id="heroEmailInput" class="form-control" placeholder="E-Mail-Adresse *" required>
                                 <div class="invalid-feedback">Gültige E-Mail eingeben</div>
+                                <!-- OTP verification – heroForm -->
+                                <div class="otp-section mt-1" id="otpSection_hero">
+                                    <input type="hidden" name="email_verified" id="emailVerifiedHidden_hero" value="">
+                                    <button type="button" class="btn btn-sm btn-outline-primary otp-send-btn w-100" id="otpSendBtn_hero" disabled>
+                                        <i class="bi bi-envelope-arrow-right me-1"></i>Bestätigungscode senden
+                                    </button>
+                                    <div class="otp-entry mt-2 d-none" id="otpEntry_hero">
+                                        <div class="input-group">
+                                            <input type="text" class="form-control otp-code-input" id="otpCodeInput_hero" maxlength="6" placeholder="6-stelliger Code" autocomplete="one-time-code" inputmode="numeric">
+                                            <button type="button" class="btn btn-success otp-verify-btn" id="otpVerifyBtn_hero"><i class="bi bi-check-lg"></i> Prüfen</button>
+                                        </div>
+                                        <div class="form-text otp-status-msg" id="otpStatusMsg_hero"></div>
+                                    </div>
+                                    <div class="otp-verified-badge d-none" id="otpVerifiedBadge_hero">
+                                        <i class="bi bi-check-circle-fill text-success me-1"></i>
+                                        <span class="text-success small fw-semibold">E-Mail verifiziert</span>
+                                    </div>
+                                </div>
                             </div>
                             <div class="col-12">
                                 <input type="tel" name="phone" class="form-control" placeholder="Telefonnummer (optional)">
@@ -2051,9 +2076,27 @@ for ($y = date('Y'); $y >= MIN_YEAR_LOST; $y--) { $years[] = $y; }
                                     <label class="form-label fw-semibold small">E-Mail-Adresse *</label>
                                     <div class="input-group">
                                         <span class="input-group-text bg-white border-end-0"><i class="bi bi-envelope text-muted"></i></span>
-                                        <input type="email" name="email" class="form-control border-start-0 ps-1" placeholder="max@example.de" required>
+                                        <input type="email" name="email" id="mainEmailInput" class="form-control border-start-0 ps-1" placeholder="max@example.de" required>
                                     </div>
                                     <div class="invalid-feedback">Bitte gültige E-Mail eingeben.</div>
+                                    <!-- OTP verification – mainFormV2 -->
+                                    <div class="otp-section mt-1" id="otpSection_main">
+                                        <input type="hidden" name="email_verified" id="emailVerifiedHidden_main" value="">
+                                        <button type="button" class="btn btn-sm btn-outline-primary otp-send-btn w-100" id="otpSendBtn_main" disabled>
+                                            <i class="bi bi-envelope-arrow-right me-1"></i>Bestätigungscode senden
+                                        </button>
+                                        <div class="otp-entry mt-2 d-none" id="otpEntry_main">
+                                            <div class="input-group">
+                                                <input type="text" class="form-control otp-code-input" id="otpCodeInput_main" maxlength="6" placeholder="6-stelliger Code" autocomplete="one-time-code" inputmode="numeric">
+                                                <button type="button" class="btn btn-success otp-verify-btn" id="otpVerifyBtn_main"><i class="bi bi-check-lg"></i> Prüfen</button>
+                                            </div>
+                                            <div class="form-text otp-status-msg" id="otpStatusMsg_main"></div>
+                                        </div>
+                                        <div class="otp-verified-badge d-none" id="otpVerifiedBadge_main">
+                                            <i class="bi bi-check-circle-fill text-success me-1"></i>
+                                            <span class="text-success small fw-semibold">E-Mail verifiziert</span>
+                                        </div>
+                                    </div>
                                 </div>
                                 <div class="col-sm-6">
                                     <label class="form-label fw-semibold small">Telefonnummer</label>
@@ -2348,8 +2391,26 @@ for ($y = date('Y'); $y >= MIN_YEAR_LOST; $y--) { $years[] = $y; }
                                 </div>
                                 <div class="col-sm-6">
                                     <label class="form-label fw-semibold small">E-Mail *</label>
-                                    <input type="email" name="email" class="form-control form-control-sm" placeholder="max@example.de" required>
+                                    <input type="email" name="email" id="engEmailInput" class="form-control form-control-sm" placeholder="max@example.de" required>
                                     <div class="invalid-feedback">Bitte gültige E-Mail eingeben.</div>
+                                    <!-- OTP verification – engFormV2 -->
+                                    <div class="otp-section mt-1" id="otpSection_eng">
+                                        <input type="hidden" name="email_verified" id="emailVerifiedHidden_eng" value="">
+                                        <button type="button" class="btn btn-sm btn-outline-primary otp-send-btn w-100" id="otpSendBtn_eng" disabled>
+                                            <i class="bi bi-envelope-arrow-right me-1"></i>Bestätigungscode senden
+                                        </button>
+                                        <div class="otp-entry mt-2 d-none" id="otpEntry_eng">
+                                            <div class="input-group">
+                                                <input type="text" class="form-control otp-code-input" id="otpCodeInput_eng" maxlength="6" placeholder="6-stelliger Code" autocomplete="one-time-code" inputmode="numeric">
+                                                <button type="button" class="btn btn-success otp-verify-btn" id="otpVerifyBtn_eng"><i class="bi bi-check-lg"></i> Prüfen</button>
+                                            </div>
+                                            <div class="form-text otp-status-msg" id="otpStatusMsg_eng"></div>
+                                        </div>
+                                        <div class="otp-verified-badge d-none" id="otpVerifiedBadge_eng">
+                                            <i class="bi bi-check-circle-fill text-success me-1"></i>
+                                            <span class="text-success small fw-semibold">E-Mail verifiziert</span>
+                                        </div>
+                                    </div>
                                 </div>
                                 <div class="col-sm-6">
                                     <label class="form-label fw-semibold small">Telefon</label>
@@ -2552,9 +2613,27 @@ for ($y = date('Y'); $y >= MIN_YEAR_LOST; $y--) { $years[] = $y; }
                                         <label class="form-label fw-semibold small">E-Mail-Adresse *</label>
                                         <div class="input-group">
                                             <span class="input-group-text bg-white border-end-0"><i class="bi bi-envelope text-muted"></i></span>
-                                            <input type="email" name="email" class="form-control border-start-0 ps-1" placeholder="max@example.de" required>
+                                            <input type="email" name="email" id="modalEmailInput" class="form-control border-start-0 ps-1" placeholder="max@example.de" required>
                                         </div>
                                         <div class="invalid-feedback">Bitte gültige E-Mail eingeben.</div>
+                                        <!-- OTP verification – fullFormModalForm -->
+                                        <div class="otp-section mt-1" id="otpSection_modal">
+                                            <input type="hidden" name="email_verified" id="emailVerifiedHidden_modal" value="">
+                                            <button type="button" class="btn btn-sm btn-outline-primary otp-send-btn w-100" id="otpSendBtn_modal" disabled>
+                                                <i class="bi bi-envelope-arrow-right me-1"></i>Bestätigungscode senden
+                                            </button>
+                                            <div class="otp-entry mt-2 d-none" id="otpEntry_modal">
+                                                <div class="input-group">
+                                                    <input type="text" class="form-control otp-code-input" id="otpCodeInput_modal" maxlength="6" placeholder="6-stelliger Code" autocomplete="one-time-code" inputmode="numeric">
+                                                    <button type="button" class="btn btn-success otp-verify-btn" id="otpVerifyBtn_modal"><i class="bi bi-check-lg"></i> Prüfen</button>
+                                                </div>
+                                                <div class="form-text otp-status-msg" id="otpStatusMsg_modal"></div>
+                                            </div>
+                                            <div class="otp-verified-badge d-none" id="otpVerifiedBadge_modal">
+                                                <i class="bi bi-check-circle-fill text-success me-1"></i>
+                                                <span class="text-success small fw-semibold">E-Mail verifiziert</span>
+                                            </div>
+                                        </div>
                                     </div>
                                     <div class="col-sm-6">
                                         <label class="form-label fw-semibold small">Telefonnummer</label>
@@ -2843,10 +2922,11 @@ for ($y = date('Y'); $y >= MIN_YEAR_LOST; $y--) { $years[] = $y; }
     (function () {
         // IDs and their success-display strategies
         var formDefs = [
-            { id: 'heroForm',    type: 'inline' },
-            { id: 'mainFormV2', type: 'inline' },
-            { id: 'modalFormV2', type: 'modal'  },
-            { id: 'engFormV2',   type: 'modal'  },
+            { id: 'heroForm',          type: 'inline' },
+            { id: 'mainFormV2',        type: 'inline' },
+            { id: 'modalFormV2',       type: 'modal'  },
+            { id: 'engFormV2',         type: 'modal'  },
+            { id: 'fullFormModalForm', type: 'modal'  },
         ];
 
         function showAlert(container, success, message) {
@@ -3371,6 +3451,143 @@ for ($y = date('Y'); $y >= MIN_YEAR_LOST; $y--) { $years[] = $y; }
             if (animId) cancelAnimationFrame(animId);
             init();
             animId = requestAnimationFrame(draw);
+        });
+    })();
+
+    // ══════════════════════════════════════════════════════════
+    //  E-Mail OTP Verification Controller
+    // ══════════════════════════════════════════════════════════
+    (function () {
+        if (!EMAIL_VERIFY_REQUIRED) return; // feature disabled by admin
+
+        // Map of: formId → { emailInputId, suffix }
+        var formMap = [
+            { formId: 'heroForm',          emailId: 'heroEmailInput',  suffix: 'hero'  },
+            { formId: 'mainFormV2',        emailId: 'mainEmailInput',  suffix: 'main'  },
+            { formId: 'engFormV2',         emailId: 'engEmailInput',   suffix: 'eng'   },
+            { formId: 'fullFormModalForm', emailId: 'modalEmailInput', suffix: 'modal' },
+        ];
+
+        function csrfToken() {
+            var t = document.querySelector('input[name="csrf_token"]');
+            return t ? t.value : '';
+        }
+
+        function setStatus(suffix, msg, isError) {
+            var el = document.getElementById('otpStatusMsg_' + suffix);
+            if (!el) return;
+            el.textContent = msg;
+            el.style.color = isError ? '#dc3545' : '#198754';
+        }
+
+        formMap.forEach(function (def) {
+            var form     = document.getElementById(def.formId);
+            var emailEl  = document.getElementById(def.emailId);
+            var sendBtn  = document.getElementById('otpSendBtn_' + def.suffix);
+            var entryDiv = document.getElementById('otpEntry_' + def.suffix);
+            var codeEl   = document.getElementById('otpCodeInput_' + def.suffix);
+            var verifyBtn= document.getElementById('otpVerifyBtn_' + def.suffix);
+            var badgeDiv = document.getElementById('otpVerifiedBadge_' + def.suffix);
+            var hiddenEl = document.getElementById('emailVerifiedHidden_' + def.suffix);
+            var submitBtn;
+
+            if (!form || !emailEl || !sendBtn) return;
+            submitBtn = form.querySelector('[type="submit"]');
+
+            // Disable submit until verified
+            if (submitBtn) submitBtn.disabled = true;
+
+            // Enable/disable "Send code" button based on email validity
+            function onEmailInput() {
+                var valid = emailEl.validity.valid && emailEl.value.trim() !== '';
+                // If the verified email changes, reset verification
+                if (hiddenEl.value && emailEl.value.toLowerCase() !== hiddenEl.value) {
+                    hiddenEl.value = '';
+                    badgeDiv.classList.add('d-none');
+                    sendBtn.classList.remove('d-none');
+                    if (entryDiv) entryDiv.classList.add('d-none');
+                    if (submitBtn) submitBtn.disabled = true;
+                }
+                sendBtn.disabled = !valid;
+            }
+            emailEl.addEventListener('input', onEmailInput);
+            emailEl.addEventListener('change', onEmailInput);
+
+            // Send OTP
+            sendBtn.addEventListener('click', function () {
+                var email = emailEl.value.trim();
+                if (!email) return;
+                sendBtn.disabled = true;
+                sendBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status"></span>Wird gesendet…';
+                var fd = new FormData();
+                fd.append('csrf_token', csrfToken());
+                fd.append('email', email);
+                fetch('send_email_otp.php', { method: 'POST', body: fd })
+                    .then(function (r) { return r.json(); })
+                    .then(function (data) {
+                        sendBtn.innerHTML = '<i class="bi bi-envelope-arrow-right me-1"></i>Erneut senden';
+                        sendBtn.disabled = false;
+                        if (data.success) {
+                            entryDiv.classList.remove('d-none');
+                            setStatus(def.suffix, data.message, false);
+                            if (codeEl) { codeEl.value = ''; codeEl.focus(); }
+                        } else {
+                            setStatus(def.suffix, data.message, true);
+                            entryDiv.classList.add('d-none');
+                        }
+                    })
+                    .catch(function () {
+                        sendBtn.innerHTML = '<i class="bi bi-envelope-arrow-right me-1"></i>Bestätigungscode senden';
+                        sendBtn.disabled = false;
+                        setStatus(def.suffix, 'Netzwerkfehler. Bitte erneut versuchen.', true);
+                    });
+            });
+
+            // Verify OTP
+            if (verifyBtn) {
+                verifyBtn.addEventListener('click', function () {
+                    var code = codeEl ? codeEl.value.trim() : '';
+                    if (!code) { setStatus(def.suffix, 'Bitte den Code eingeben.', true); return; }
+                    verifyBtn.disabled = true;
+                    verifyBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span>';
+                    var fd = new FormData();
+                    fd.append('csrf_token', csrfToken());
+                    fd.append('email', emailEl.value.trim());
+                    fd.append('code', code);
+                    fetch('verify_email_otp.php', { method: 'POST', body: fd })
+                        .then(function (r) { return r.json(); })
+                        .then(function (data) {
+                            verifyBtn.disabled = false;
+                            verifyBtn.innerHTML = '<i class="bi bi-check-lg"></i> Prüfen';
+                            if (data.success) {
+                                hiddenEl.value = emailEl.value.toLowerCase();
+                                entryDiv.classList.add('d-none');
+                                sendBtn.classList.add('d-none');
+                                badgeDiv.classList.remove('d-none');
+                                setStatus(def.suffix, '', false);
+                                if (submitBtn) submitBtn.disabled = false;
+                            } else {
+                                setStatus(def.suffix, data.message, true);
+                            }
+                        })
+                        .catch(function () {
+                            verifyBtn.disabled = false;
+                            verifyBtn.innerHTML = '<i class="bi bi-check-lg"></i> Prüfen';
+                            setStatus(def.suffix, 'Netzwerkfehler. Bitte erneut versuchen.', true);
+                        });
+                });
+            }
+
+            // Also allow Enter key in code field to trigger verify
+            if (codeEl) {
+                codeEl.addEventListener('keydown', function (e) {
+                    if (e.key === 'Enter') { e.preventDefault(); if (verifyBtn) verifyBtn.click(); }
+                });
+                // Only allow digits
+                codeEl.addEventListener('input', function () {
+                    this.value = this.value.replace(/\D/g, '').slice(0, 6);
+                });
+            }
         });
     })();
 

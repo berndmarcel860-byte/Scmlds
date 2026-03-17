@@ -76,6 +76,16 @@ if (!$is_engagement) {
     }
 }
 
+// ── E-mail verification check ──────────────────────────────
+if (get_setting('email_verification_required', '0') === '1') {
+    $verifiedEmail = $_SESSION['email_verified'] ?? '';
+    if (empty($verifiedEmail)) {
+        $errors[] = 'Bitte bestätigen Sie Ihre E-Mail-Adresse mit dem zugesandten Code, bevor Sie das Formular absenden.';
+    } elseif (strtolower($verifiedEmail) !== strtolower($email)) {
+        $errors[] = 'Die E-Mail-Adresse stimmt nicht mit der verifizierten Adresse überein. Bitte fordern Sie einen neuen Code an.';
+    }
+}
+
 // Year lost: optional but must be plausible if provided
 $year_lost_int = null;
 if ($year_lost !== '') {
@@ -169,6 +179,8 @@ if (get_setting('send_email_on_submission', '1') === '1') {
 
 // ── Regenerate CSRF token after successful submission ──────
 $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+// Clear the e-mail verification flag so the next submission requires re-verification
+unset($_SESSION['email_verified']);
 
 send_response(true, 'Vielen Dank! Ihr Fall wurde eingereicht. Wir melden uns innerhalb von 48 Stunden.', [
     'csrf_token' => $_SESSION['csrf_token'],

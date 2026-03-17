@@ -157,3 +157,7 @@ CREATE TABLE IF NOT EXISTS visitor_logs (
 INSERT IGNORE INTO settings (setting_key, setting_value, setting_label, setting_group) VALUES
 ('active_design', 'index2', 'Aktives Seitendesign', 'design');
 
+-- E-mail verification via OTP (added for real-email enforcement)
+INSERT IGNORE INTO settings (setting_key, setting_value, setting_label, setting_group) VALUES
+('email_verification_required', '0', 'E-Mail-Verifizierung via Code erforderlich', 'general');
+

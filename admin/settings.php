@@ -17,13 +17,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'company_name', 'site_url', 'admin_email',
             'from_email', 'from_name', 'page_title',
             'modal_delay_seconds', 'send_email_on_submission',
+            'email_verification_required',
         ];
         $data = [];
         foreach ($keys as $k) {
             $data[$k] = trim($_POST[$k] ?? '');
         }
         // Checkboxes
-        $data['send_email_on_submission'] = isset($_POST['send_email_on_submission']) ? '1' : '0';
+        $data['send_email_on_submission']      = isset($_POST['send_email_on_submission'])      ? '1' : '0';
+        $data['email_verification_required']   = isset($_POST['email_verification_required'])   ? '1' : '0';
 
         if (save_settings($data)) {
             log_activity('settings_updated', 'General settings updated');
@@ -182,6 +184,21 @@ $active_tab = $_POST['tab'] ?? ($_GET['tab'] ?? 'general');
                             <div class="text-muted small mt-1">
                                 Wenn deaktiviert, werden keine E-Mails nach einer Falleinreichung gesendet.
                                 Telegram-Benachrichtigungen sind davon unabhängig.
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" name="email_verification_required"
+                                       id="emailVerifyToggle" value="1"
+                                       <?= ($gen['email_verification_required'] ?? '0') === '1' ? 'checked' : '' ?>>
+                                <label class="form-check-label fw-semibold" for="emailVerifyToggle">
+                                    E-Mail-Verifizierung via Code aktivieren
+                                </label>
+                            </div>
+                            <div class="text-muted small mt-1">
+                                Wenn aktiviert, müssen Nutzer ihre E-Mail-Adresse vor dem Absenden des Formulars
+                                durch einen 6-stelligen Code bestätigen. Verhindert gefälschte E-Mail-Adressen.
+                                <strong>Hinweis:</strong> SMTP muss korrekt konfiguriert sein.
                             </div>
                         </div>
                     </div>
