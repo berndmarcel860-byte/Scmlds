@@ -45,12 +45,13 @@ for ($y = date('Y'); $y >= MIN_YEAR_LOST; $y--) { $years[] = $y; }
         --border:    #e2e8f0;
     }
     *, *::before, *::after { box-sizing: border-box; }
-    html { scroll-behavior: smooth; }
+    html { scroll-behavior: smooth; overflow-x: hidden; max-width: 100%; }
     body {
         font-family: 'Inter', sans-serif;
         color: var(--text);
         background: #fff;
         overflow-x: hidden;
+        max-width: 100%;
     }
 
     /* ── TYPOGRAPHY ─────────────────────────────────────────── */
@@ -761,6 +762,8 @@ for ($y = date('Y'); $y >= MIN_YEAR_LOST; $y--) { $years[] = $y; }
             line-height: 1;
             cursor: pointer;
         }
+        /* Navbar: shrink brand on small tablets */
+        .nav-brand { font-size: 1.05rem; }
     }
     @media (max-width: 575.98px) {
         .hero-v2 h1 { font-size: clamp(1.4rem, 5.5vw, 2rem); }
@@ -776,6 +779,9 @@ for ($y = date('Y'); $y >= MIN_YEAR_LOST; $y--) { $years[] = $y; }
         .modal-fullscreen-sm-down .modal-body .col-lg-7 { padding: 1rem !important; }
         /* Form action buttons stacked */
         .fall-submit-btn { font-size: .95rem; }
+        /* Navbar: further shrink brand on phones */
+        .nav-brand { font-size: .92rem; }
+        .navbar-v2 .container { gap: .5rem; }
     }
     /* Mobile offcanvas nav menu */
     .offcanvas-nav { background: #060e1f; border-color: rgba(255,255,255,.1); }
@@ -794,7 +800,7 @@ for ($y = date('Y'); $y >= MIN_YEAR_LOST; $y--) { $years[] = $y; }
 
 <!-- ===== NAVBAR ===== -->
 <nav class="navbar-v2" id="mainNav2">
-    <div class="container d-flex align-items-center justify-content-between gap-3">
+    <div class="container d-flex align-items-center justify-content-between gap-2">
         <a href="#" class="nav-brand">⚖️ Verlust<span>Rückholung</span></a>
         <div class="d-none d-lg-flex align-items-center gap-1">
             <a href="#wie-es-funktioniert" class="nav-link-v2">Wie es funktioniert</a>
@@ -804,7 +810,7 @@ for ($y = date('Y'); $y >= MIN_YEAR_LOST; $y--) { $years[] = $y; }
         </div>
         <div class="d-flex align-items-center gap-2">
             <a href="#" class="btn-cta-nav" data-bs-toggle="modal" data-bs-target="#fullFormModal">
-                <i class="bi bi-shield-check me-1"></i>Kostenlos prüfen
+                <i class="bi bi-shield-check"></i><span class="d-none d-sm-inline ms-1">Kostenlos prüfen</span>
             </a>
             <!-- Hamburger – visible only on < lg -->
             <button class="navbar-toggler-v2 d-lg-none" type="button"
