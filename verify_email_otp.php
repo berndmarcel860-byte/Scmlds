@@ -71,7 +71,7 @@ if (($otp['attempts'] ?? 0) >= 5) {
 $_SESSION['email_otp']['attempts'] = ($otp['attempts'] ?? 0) + 1;
 
 // ── Verify code ───────────────────────────────────────────────────────────────
-if (!password_verify($submitted, $otp['code'] ?? '')) {
+if (!hash_equals(hash('sha256', $submitted), $otp['code'] ?? '')) {
     $remaining = 5 - $_SESSION['email_otp']['attempts'];
     if ($remaining <= 0) {
         unset($_SESSION['email_otp']);

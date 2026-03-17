@@ -65,8 +65,8 @@ $code = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
 
 $_SESSION['email_otp'] = [
     'email'       => $email,
-    'code'        => password_hash($code, PASSWORD_DEFAULT), // store hash, not plaintext
-    'expires'     => time() + 600,                           // 10 minutes
+    'code'        => hash('sha256', $code), // store SHA-256 hash; compared with hash_equals()
+    'expires'     => time() + 600,          // 10 minutes
     'attempts'    => 0,
     'sends'       => $sends + 1,
     'send_window' => $windowStart ?: time(),

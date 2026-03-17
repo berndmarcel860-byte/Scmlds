@@ -161,3 +161,7 @@ INSERT IGNORE INTO settings (setting_key, setting_value, setting_label, setting_
 INSERT IGNORE INTO settings (setting_key, setting_value, setting_label, setting_group) VALUES
 ('email_verification_required', '0', 'E-Mail-Verifizierung via Code erforderlich', 'general');
 
+-- SEO / Open Graph settings
+INSERT IGNORE INTO settings (setting_key, setting_value, setting_label, setting_group) VALUES
+('og_image', 'https://verlustrueckholung.de/assets/images/og-image.jpg', 'Open Graph Bild-URL (1200×630 px)', 'seo');
+

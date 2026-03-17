@@ -65,6 +65,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $msg_type = 'danger';
             $message  = 'Fehler beim Speichern der Telegram-Einstellungen.';
         }
+    } elseif ($tab === 'seo') {
+        $seoKeys = ['og_image'];
+        $seoData = [];
+        foreach ($seoKeys as $k) {
+            $seoData[$k] = trim($_POST[$k] ?? '');
+        }
+        if (save_settings($seoData)) {
+            log_activity('settings_updated', 'SEO settings updated');
+            $message = 'SEO-Einstellungen wurden gespeichert.';
+        } else {
+            $msg_type = 'danger';
+            $message  = 'Fehler beim Speichern der SEO-Einstellungen.';
+        }
     }
 }
 
@@ -123,6 +136,10 @@ $active_tab = $_POST['tab'] ?? ($_GET['tab'] ?? 'general');
             <li class="nav-item">
                 <a class="nav-link <?= $active_tab === 'telegram' ? 'active' : '' ?>"
                    href="?tab=telegram"><i class="bi bi-telegram me-1"></i>Telegram</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link <?= $active_tab === 'seo'      ? 'active' : '' ?>"
+                   href="?tab=seo"><i class="bi bi-search me-1"></i>SEO</a>
             </li>
         </ul>
 
@@ -335,6 +352,51 @@ $active_tab = $_POST['tab'] ?? ($_GET['tab'] ?? 'general');
                         <i class="bi bi-send me-1"></i>Test-Nachricht senden
                     </a>
                     <?php endif; ?>
+                </form>
+            </div>
+        </div>
+        <?php endif; ?>
+
+        <!-- ===== TAB: SEO ===== -->
+        <?php if ($active_tab === 'seo'): ?>
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <div class="alert alert-info mb-4">
+                    <i class="bi bi-info-circle me-2"></i>
+                    Diese Einstellungen steuern, wie die Seite in Suchmaschinen und beim Teilen in sozialen Netzwerken erscheint.
+                    Die <strong>robots.txt</strong> und <strong>sitemap.xml</strong> sind automatisch unter
+                    <code>/robots.txt</code> und <code>/sitemap.xml</code> erreichbar.
+                </div>
+                <form method="POST">
+                    <input type="hidden" name="tab" value="seo">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label fw-semibold small">Open Graph Bild-URL <span class="text-muted fw-normal">(empfohlen: 1200 × 630 Pixel)</span></label>
+                            <input type="url" name="og_image" class="form-control"
+                                   placeholder="https://example.de/assets/images/og-image.jpg"
+                                   value="<?= htmlspecialchars($gen['og_image'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
+                            <div class="form-text">Wird beim Teilen der Seite auf Facebook, LinkedIn, WhatsApp und Twitter angezeigt.</div>
+                        </div>
+                        <div class="col-12">
+                            <div class="alert alert-secondary py-2 px-3 mb-0">
+                                <h6 class="fw-bold mb-2"><i class="bi bi-lightbulb me-1"></i>SEO-Checkliste</h6>
+                                <ul class="mb-0 small">
+                                    <li>✅ Canonical-Tag &amp; robots meta sind bereits gesetzt</li>
+                                    <li>✅ Open Graph und Twitter Card meta tags sind vorhanden</li>
+                                    <li>✅ JSON-LD strukturierte Daten (LocalBusiness + FAQPage) sind eingebettet</li>
+                                    <li>✅ sitemap.xml wird automatisch generiert (<a href="/sitemap.xml" target="_blank">/sitemap.xml</a>)</li>
+                                    <li>✅ robots.txt ist vorhanden (<a href="/robots.txt" target="_blank">/robots.txt</a>)</li>
+                                    <li>✅ HTTPS-Weiterleitung und www → non-www per .htaccess</li>
+                                    <li>⚠️ Reichen Sie die Sitemap in der <a href="https://search.google.com/search-console" target="_blank">Google Search Console</a> ein</li>
+                                    <li>⚠️ Erstellen Sie ein 1200×630 px OG-Bild und hinterlegen Sie die URL oben</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <hr class="my-4">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-save me-1"></i>SEO-Einstellungen speichern
+                    </button>
                 </form>
             </div>
         </div>

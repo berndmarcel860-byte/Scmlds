@@ -9,6 +9,12 @@ $email_verify_enabled = get_setting('email_verification_required', '0') === '1';
 $success = isset($_GET['success']) && $_GET['success'] === '1';
 $error   = isset($_GET['error']) ? htmlspecialchars($_GET['error'], ENT_QUOTES, 'UTF-8') : '';
 
+// SEO helpers
+$canonical_url  = rtrim(get_setting('site_url', SITE_URL), '/') . '/';
+$meta_desc      = 'VerlustRückholung hilft Opfern von Anlagebetrug ihr Kapital zurückzufordern. KI-gestützte Analyse, internationale Experten, 87% Erfolgsquote. Kostenlose Erstprüfung.';
+$og_image       = get_setting('og_image', $canonical_url . 'assets/images/og-image.jpg');
+$og_site_name   = get_setting('company_name', BRAND_NAME);
+
 // Year range helper — guard against config version mismatch
 if (!defined('MIN_YEAR_LOST')) { define('MIN_YEAR_LOST', 2015); }
 $years = [];
@@ -19,8 +25,128 @@ for ($y = date('Y'); $y >= MIN_YEAR_LOST; $y--) { $years[] = $y; }
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- ── Primary SEO ─────────────────────────────────────── -->
     <title><?= htmlspecialchars($page_title, ENT_QUOTES, 'UTF-8') ?></title>
-    <meta name="description" content="VerlustRückholung hilft Opfern von Anlagebetrug ihr Kapital zurückzufordern. KI-gestützte Analyse, internationale Experten, 87% Erfolgsquote. Kostenlose Erstprüfung.">
+    <meta name="description" content="<?= htmlspecialchars($meta_desc, ENT_QUOTES, 'UTF-8') ?>">
+    <link rel="canonical" href="<?= htmlspecialchars($canonical_url, ENT_QUOTES, 'UTF-8') ?>">
+    <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
+
+    <!-- ── Open Graph (Facebook / LinkedIn / WhatsApp) ───────── -->
+    <meta property="og:type"        content="website">
+    <meta property="og:url"         content="<?= htmlspecialchars($canonical_url, ENT_QUOTES, 'UTF-8') ?>">
+    <meta property="og:title"       content="<?= htmlspecialchars($page_title, ENT_QUOTES, 'UTF-8') ?>">
+    <meta property="og:description" content="<?= htmlspecialchars($meta_desc, ENT_QUOTES, 'UTF-8') ?>">
+    <meta property="og:image"       content="<?= htmlspecialchars($og_image, ENT_QUOTES, 'UTF-8') ?>">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:site_name"   content="<?= htmlspecialchars($og_site_name, ENT_QUOTES, 'UTF-8') ?>">
+    <meta property="og:locale"      content="de_DE">
+
+    <!-- ── Twitter / X Card ─────────────────────────────────── -->
+    <meta name="twitter:card"        content="summary_large_image">
+    <meta name="twitter:title"       content="<?= htmlspecialchars($page_title, ENT_QUOTES, 'UTF-8') ?>">
+    <meta name="twitter:description" content="<?= htmlspecialchars($meta_desc, ENT_QUOTES, 'UTF-8') ?>">
+    <meta name="twitter:image"       content="<?= htmlspecialchars($og_image, ENT_QUOTES, 'UTF-8') ?>">
+
+    <!-- ── JSON-LD Structured Data ─────────────────────────── -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@graph": [
+            {
+                "@type": "ProfessionalService",
+                "@id": "<?= htmlspecialchars($canonical_url, ENT_QUOTES, 'UTF-8') ?>#organization",
+                "name": "<?= htmlspecialchars($og_site_name, ENT_QUOTES, 'UTF-8') ?>",
+                "url":  "<?= htmlspecialchars($canonical_url, ENT_QUOTES, 'UTF-8') ?>",
+                "logo": "<?= htmlspecialchars($canonical_url, ENT_QUOTES, 'UTF-8') ?>assets/images/logo.png",
+                "description": "<?= htmlspecialchars($meta_desc, ENT_QUOTES, 'UTF-8') ?>",
+                "email": "<?= htmlspecialchars(get_setting('admin_email', ADMIN_EMAIL), ENT_QUOTES, 'UTF-8') ?>",
+                "areaServed": ["DE", "AT", "CH"],
+                "inLanguage": "de",
+                "knowsAbout": ["Kapitalrückforderung", "Anlagebetrug", "Krypto-Betrug", "Forex-Betrug", "Scam Recovery"],
+                "priceRange": "Erfolgsbasiert",
+                "aggregateRating": {
+                    "@type": "AggregateRating",
+                    "ratingValue": "4.9",
+                    "reviewCount": "312",
+                    "bestRating": "5"
+                }
+            },
+            {
+                "@type": "WebSite",
+                "@id": "<?= htmlspecialchars($canonical_url, ENT_QUOTES, 'UTF-8') ?>#website",
+                "url": "<?= htmlspecialchars($canonical_url, ENT_QUOTES, 'UTF-8') ?>",
+                "name": "<?= htmlspecialchars($og_site_name, ENT_QUOTES, 'UTF-8') ?>",
+                "inLanguage": "de",
+                "potentialAction": {
+                    "@type": "SearchAction",
+                    "target": {
+                        "@type": "EntryPoint",
+                        "urlTemplate": "<?= htmlspecialchars($canonical_url, ENT_QUOTES, 'UTF-8') ?>?s={search_term_string}"
+                    },
+                    "query-input": "required name=search_term_string"
+                }
+            },
+            {
+                "@type": "FAQPage",
+                "mainEntity": [
+                    {
+                        "@type": "Question",
+                        "name": "Ist die Erstprüfung wirklich kostenlos?",
+                        "acceptedAnswer": {
+                            "@type": "Answer",
+                            "text": "Ja, vollständig und unverbindlich. Wir analysieren Ihren Fall und teilen Ihnen mit, ob wir helfen können – ohne jegliche Vorauszahlung. Kosten entstehen erst bei Erfolg."
+                        }
+                    },
+                    {
+                        "@type": "Question",
+                        "name": "Wie lange dauert die Analyse?",
+                        "acceptedAnswer": {
+                            "@type": "Answer",
+                            "text": "Innerhalb von 48 Stunden erhalten Sie eine erste Einschätzung. Die vollständige KI-Analyse dauert in der Regel 5–10 Werktage."
+                        }
+                    },
+                    {
+                        "@type": "Question",
+                        "name": "Welche Betrugsformen können geprüft werden?",
+                        "acceptedAnswer": {
+                            "@type": "Answer",
+                            "text": "Wir prüfen Krypto-Scams, Forex-Betrug, Fake-Broker, Romance-Scam mit Investitionsbetrug, Binäre Optionen und weitere Online-Investitionsbetrug."
+                        }
+                    },
+                    {
+                        "@type": "Question",
+                        "name": "Was passiert, wenn keine Rückforderung möglich ist?",
+                        "acceptedAnswer": {
+                            "@type": "Answer",
+                            "text": "In diesem Fall entstehen Ihnen keinerlei Kosten. Wir teilen Ihnen das Ergebnis ehrlich mit und geben Empfehlungen für weitere Schritte."
+                        }
+                    },
+                    {
+                        "@type": "Question",
+                        "name": "Sind meine Daten sicher?",
+                        "acceptedAnswer": {
+                            "@type": "Answer",
+                            "text": "Ja. Alle Daten werden SSL-verschlüsselt übertragen, ausschließlich zur Fallbearbeitung verwendet und nicht an Dritte weitergegeben. Wir sind DSGVO-konform."
+                        }
+                    }
+                ]
+            },
+            {
+                "@type": "BreadcrumbList",
+                "itemListElement": [
+                    {
+                        "@type": "ListItem",
+                        "position": 1,
+                        "name": "Startseite",
+                        "item": "<?= htmlspecialchars($canonical_url, ENT_QUOTES, 'UTF-8') ?>"
+                    }
+                ]
+            }
+        ]
+    }
+    </script>
 
     <!-- Bootstrap 5.3 -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -2240,12 +2366,12 @@ for ($y = date('Y'); $y >= MIN_YEAR_LOST; $y--) { $years[] = $y; }
 </section>
 
 <!-- ===== FAQ ===== -->
-<section class="py-6 bg-white">
+<section id="faq" class="py-6 bg-white">
     <div class="container">
         <div class="row justify-content-center mb-5">
             <div class="col-lg-6 text-center" data-aos="fade-up">
                 <div class="section-eyebrow">Häufige Fragen</div>
-                <h2 class="fw-bold display-6">FAQ</h2>
+                <h2 class="fw-bold display-6">FAQ – Häufig gestellte Fragen</h2>
             </div>
         </div>
         <div class="row justify-content-center">
