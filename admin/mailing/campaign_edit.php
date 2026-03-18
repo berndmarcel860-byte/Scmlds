@@ -8,10 +8,12 @@ require_once __DIR__ . '/../../includes/functions.php';
 
 admin_check();
 
-$msg      = '';
-$msg_type = 'success';
-$campaign = null;
-$cid      = (int) ($_GET['id'] ?? 0);
+$msg               = '';
+$msg_type          = 'success';
+$campaign          = null;
+$cid               = (int) ($_GET['id'] ?? 0);
+$show_column_mapper = false;
+$csv_preview_info  = null;
 
 if ($cid) {
     $campaign = get_mailing_campaign($cid);
@@ -43,36 +45,73 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
-    // CSV import
+    // ── Phase 1: CSV uploaded → store in session, show column mapper ─────────────
+    if ($action === 'csv_preview' && $cid) {
+        if (isset($_FILES['csv_file']) && $_FILES['csv_file']['error'] === UPLOAD_ERR_OK) {
+            $tmp_src = $_FILES['csv_file']['tmp_name'];
+            // Store raw CSV bytes in session (small files only; warn for large ones)
+            $csv_bytes = file_get_contents($tmp_src);
+            if ($csv_bytes !== false) {
+                $_SESSION['csv_import_data'] = base64_encode($csv_bytes);
+                $_SESSION['csv_import_cid']  = $cid;
+                // Get preview for UI
+                $fh_prev = fopen($tmp_src, 'r');
+                $csv_preview_info = read_csv_preview($fh_prev, 5);
+                fclose($fh_prev);
+                $show_column_mapper = true;
+            } else {
+                $msg_type = 'danger';
+                $msg = 'Datei konnte nicht gelesen werden.';
+            }
+        } else {
+            $msg_type = 'danger';
+            $msg = 'Bitte eine CSV-Datei hochladen.';
+        }
+    }
+
+    // ── Phase 2: Column mapping submitted → import ────────────────────────────
     if ($action === 'import_csv' && $cid) {
         $imported = 0;
 
-        if (isset($_FILES['csv_file']) && $_FILES['csv_file']['error'] === UPLOAD_ERR_OK) {
-            $tmp = $_FILES['csv_file']['tmp_name'];
-            if (($fh = fopen($tmp, 'r')) !== false) {
-                $rows = parse_csv_file_to_recipient_rows($fh);
-                fclose($fh);
-                $imported = import_mailing_recipients($cid, $rows);
+        if (!empty($_SESSION['csv_import_data']) && (int)($_SESSION['csv_import_cid'] ?? 0) === $cid) {
+            // Recover CSV from session
+            $csv_bytes = base64_decode($_SESSION['csv_import_data']);
+            $fh = fopen('php://memory', 'r+');
+            fwrite($fh, $csv_bytes);
+            rewind($fh);
+
+            // Build column map from POST: col_map[0]=email, col_map[1]=name, ...
+            $raw_map    = $_POST['col_map']   ?? [];
+            $has_header = !empty($_POST['has_header']);
+            $delim      = $_POST['csv_delim'] ?? ',';
+            $col_map    = [];
+            foreach ($raw_map as $idx => $field) {
+                $col_map[(int)$idx] = $field;
             }
+
+            $rows     = parse_csv_with_column_map($fh, $col_map, $has_header, $delim);
+            fclose($fh);
+            $imported = import_mailing_recipients($cid, $rows);
+            unset($_SESSION['csv_import_data'], $_SESSION['csv_import_cid']);
             $msg = "$imported Empfänger importiert.";
             $campaign = get_mailing_campaign($cid);
+
         } elseif (!empty(trim($_POST['manual_emails'] ?? ''))) {
             // Manual paste: one address per line, optional comma/tab-separated name
             $lines = preg_split('/[\r\n]+/', trim($_POST['manual_emails']));
             $rows  = [];
             foreach ($lines as $line) {
-                $line  = trim($line);
+                $line = trim($line);
                 if ($line === '') continue;
-                // Allow:  "email"  or  "email,name"  or  "email;name"  or  "email\tname"
-                $parts = preg_split('/[,;\t]+/', $line, 2);
-                $email = trim($parts[0]);
-                $name  = trim($parts[1] ?? '');
-                // Also handle "Name <email>" format
+                $parts    = preg_split('/[,;\t]+/', $line, 3);
+                $email    = trim($parts[0]);
+                $name     = trim($parts[1] ?? '');
+                $platform = trim($parts[2] ?? '');
                 if (preg_match('/^(.+?)\s*<([^>]+)>$/', $line, $m)) {
                     $name  = trim($m[1]);
                     $email = trim($m[2]);
                 }
-                $rows[] = [$email, $name];
+                $rows[] = ['email'=>$email,'name'=>$name,'scam_platform'=>$platform];
             }
             $imported = import_mailing_recipients($cid, $rows);
             $msg = "$imported Empfänger importiert.";
@@ -225,6 +264,84 @@ $sample_recipients = $cid ? get_mailing_recipients($cid, '', 10, 0) : [];
             <!-- Step 2: Recipient import -->
             <?php if ($cid): ?>
             <div class="col-lg-6">
+
+                <?php if ($show_column_mapper && $csv_preview_info): ?>
+                <!-- ── Column Mapper (Phase 2) ─────────────────────────────────────── -->
+                <div class="card shadow-sm border-0">
+                    <div class="card-header bg-white py-3">
+                        <h6 class="fw-semibold mb-0"><span class="badge bg-primary me-2">2</span>Spalten zuordnen</h6>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted small mb-3">
+                            Weise jeder CSV-Spalte das richtige Datenfeld zu. Spalten ohne Zuordnung werden ignoriert.
+                        </p>
+                        <form method="post">
+                            <input type="hidden" name="action"     value="import_csv">
+                            <input type="hidden" name="has_header" value="<?= $csv_preview_info['has_header'] ? '1' : '' ?>">
+                            <input type="hidden" name="csv_delim"  value="<?= htmlspecialchars($csv_preview_info['delim']) ?>">
+
+                            <?php
+                            $col_field_opts = [
+                                ''             => '— ignorieren —',
+                                'email'        => 'E-Mail *',
+                                'name'         => 'Name (kombiniert)',
+                                'firstname'    => 'Vorname',
+                                'lastname'     => 'Nachname',
+                                'scam_platform'=> 'Betrugsplattform',
+                            ];
+                            // Auto-suggest based on header text
+                            $auto = [];
+                            foreach ($csv_preview_info['header'] as $i => $h) {
+                                $hl = mb_strtolower(trim($h));
+                                if      (str_contains($hl,'mail'))                             $auto[$i] = 'email';
+                                elseif  (str_contains($hl,'vorname')||str_contains($hl,'first')) $auto[$i] = 'firstname';
+                                elseif  (str_contains($hl,'nachname')||str_contains($hl,'last')) $auto[$i] = 'lastname';
+                                elseif  (str_contains($hl,'name'))                             $auto[$i] = 'name';
+                                elseif  (str_contains($hl,'platform')||str_contains($hl,'broker')||str_contains($hl,'scam')||str_contains($hl,'firma')) $auto[$i] = 'scam_platform';
+                                else                                                            $auto[$i] = '';
+                            }
+                            ?>
+
+                            <div class="table-responsive">
+                                <table class="table table-sm table-bordered align-middle mb-3">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <?php foreach ($csv_preview_info['header'] as $i => $h): ?>
+                                            <th class="text-center" style="min-width:130px">
+                                                <div class="small text-muted mb-1"><?= htmlspecialchars($h) ?></div>
+                                                <select name="col_map[<?= $i ?>]" class="form-select form-select-sm">
+                                                    <?php foreach ($col_field_opts as $v => $label): ?>
+                                                    <option value="<?= $v ?>" <?= ($auto[$i] ?? '') === $v ? 'selected' : '' ?>><?= $label ?></option>
+                                                    <?php endforeach; ?>
+                                                </select>
+                                            </th>
+                                            <?php endforeach; ?>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <?php foreach ($csv_preview_info['preview'] as $row): ?>
+                                        <tr>
+                                            <?php foreach ($csv_preview_info['header'] as $i => $_): ?>
+                                            <td class="small text-truncate" style="max-width:160px" title="<?= htmlspecialchars($row[$i] ?? '') ?>"><?= htmlspecialchars($row[$i] ?? '') ?></td>
+                                            <?php endforeach; ?>
+                                        </tr>
+                                        <?php endforeach; ?>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <div class="d-flex gap-2">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-upload me-1"></i>Importieren
+                                </button>
+                                <a href="campaign_edit.php?id=<?= $cid ?>" class="btn btn-outline-secondary">Abbrechen</a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <?php else: ?>
+                <!-- ── Normal import form (Phase 1) ──────────────────────────────── -->
                 <div class="card shadow-sm border-0">
                     <div class="card-header bg-white py-3">
                         <h6 class="fw-semibold mb-0"><span class="badge bg-primary me-2">2</span>Empfänger importieren</h6>
@@ -234,40 +351,43 @@ $sample_recipients = $cid ? get_mailing_recipients($cid, '', 10, 0) : [];
                             <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#tabCsv">CSV hochladen</a></li>
                             <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tabManual">Manuell eingeben</a></li>
                         </ul>
-                        <form method="post" enctype="multipart/form-data">
-                            <input type="hidden" name="action" value="import_csv">
-                            <div class="tab-content">
-                                <div class="tab-pane fade show active" id="tabCsv">
-                                    <p class="text-muted small mb-1">Der Importer erkennt automatisch:</p>
-                                    <ul class="text-muted small mb-2">
-                                        <li><code>email, name</code> (Name kombiniert)</li>
-                                        <li><code>email, vorname, nachname</code> (Namen getrennt)</li>
-                                        <li><code>vorname, nachname, email</code> (E-Mail am Ende)</li>
-                                        <li>Komma-, Semikolon- und Tab-Trennung</li>
-                                        <li>Optionale Kopfzeile wird automatisch erkannt und übersprungen</li>
-                                    </ul>
+                        <div class="tab-content">
+                            <div class="tab-pane fade show active" id="tabCsv">
+                                <p class="text-muted small mb-2">
+                                    Nach dem Upload siehst du eine Vorschau und kannst jede Spalte dem richtigen Feld zuordnen
+                                    (E-Mail, Name, Vorname/Nachname getrennt, <strong>Betrugsplattform</strong>).
+                                </p>
+                                <form method="post" enctype="multipart/form-data">
+                                    <input type="hidden" name="action" value="csv_preview">
                                     <div class="mb-3">
                                         <label class="form-label fw-semibold">CSV-Datei</label>
                                         <input type="file" name="csv_file" class="form-control" accept=".csv,.txt">
                                     </div>
-                                </div>
-                                <div class="tab-pane fade" id="tabManual">
-                                    <p class="text-muted small">Eine Adresse pro Zeile. Unterstützte Formate:</p>
-                                    <ul class="text-muted small mb-2">
-                                        <li><code>email@example.com</code></li>
-                                        <li><code>email@example.com,Max Mustermann</code></li>
-                                        <li><code>Max Mustermann &lt;email@example.com&gt;</code></li>
-                                    </ul>
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="bi bi-eye me-1"></i>Vorschau &amp; Spalten zuordnen
+                                    </button>
+                                </form>
+                            </div>
+                            <div class="tab-pane fade" id="tabManual">
+                                <p class="text-muted small">Eine Adresse pro Zeile. Unterstützte Formate:</p>
+                                <ul class="text-muted small mb-2">
+                                    <li><code>email@example.com</code></li>
+                                    <li><code>email@example.com, Max Mustermann</code></li>
+                                    <li><code>email@example.com, Max Mustermann, BrokerXYZ</code> <span class="text-primary">(mit Plattform)</span></li>
+                                    <li><code>Max Mustermann &lt;email@example.com&gt;</code></li>
+                                </ul>
+                                <form method="post">
+                                    <input type="hidden" name="action" value="import_csv">
                                     <div class="mb-3">
                                         <textarea name="manual_emails" class="form-control font-monospace" rows="8"
-                                                  placeholder="max@mustermann.de,Max Mustermann&#10;anna@beispiel.de&#10;Hans Müller <hans@mail.de>"></textarea>
+                                                  placeholder="max@mustermann.de,Max Mustermann,CryptoScamBroker&#10;anna@beispiel.de,Anna Schmidt&#10;Hans Müller <hans@mail.de>"></textarea>
                                     </div>
-                                </div>
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="bi bi-upload me-1"></i>Importieren
+                                    </button>
+                                </form>
                             </div>
-                            <button type="submit" class="btn btn-primary">
-                                <i class="bi bi-upload me-1"></i>Importieren
-                            </button>
-                        </form>
+                        </div>
 
                         <?php if ($stats && $stats['total'] > 0): ?>
                         <hr>
@@ -281,6 +401,7 @@ $sample_recipients = $cid ? get_mailing_recipients($cid, '', 10, 0) : [];
                         <?php endif; ?>
                     </div>
                 </div>
+                <?php endif; ?>
 
                 <!-- Sample recipients -->
                 <?php if (!empty($sample_recipients)): ?>
@@ -291,12 +412,13 @@ $sample_recipients = $cid ? get_mailing_recipients($cid, '', 10, 0) : [];
                     </div>
                     <div class="table-responsive">
                         <table class="table table-sm table-hover mb-0">
-                            <thead class="table-light"><tr><th>E-Mail</th><th>Name</th><th>Status</th></tr></thead>
+                            <thead class="table-light"><tr><th>E-Mail</th><th>Name</th><th>Plattform</th><th>Status</th></tr></thead>
                             <tbody>
                             <?php foreach ($sample_recipients as $r): ?>
                             <tr>
                                 <td class="small"><?= htmlspecialchars($r['email']) ?></td>
                                 <td class="small text-muted"><?= htmlspecialchars($r['name']) ?></td>
+                                <td class="small text-muted"><?= htmlspecialchars($r['scam_platform'] ?? '') ?></td>
                                 <td><span class="badge bg-<?= ['pending'=>'secondary','sent'=>'success','failed'=>'danger'][$r['status']] ?? 'secondary' ?>" style="font-size:.7em"><?= $r['status'] ?></span></td>
                             </tr>
                             <?php endforeach; ?>

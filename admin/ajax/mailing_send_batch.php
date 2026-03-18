@@ -157,25 +157,52 @@ if (!$recipient) {
 }
 
 // ── Build personalised email ──────────────────────────────────────────────────
-$unsub_url   = $unsubscribe_base . '/unsubscribe.php?token=' . urlencode($recipient['open_token'] ?? '');
-$track_pixel = '';
+$unsub_url     = $unsubscribe_base . '/unsubscribe.php?token=' . urlencode($recipient['open_token'] ?? '');
+$scam_platform = trim($recipient['scam_platform'] ?? '');
+$track_pixel   = '';
 if ($track_opens) {
     $track_pixel = '<img src="' . htmlspecialchars($site_url . '/track_open.php?t=' . urlencode($recipient['open_token'] ?? ''), ENT_QUOTES) . '" width="1" height="1" alt="" style="display:none">';
 }
 
 $vars = [
-    '{{name}}'           => htmlspecialchars($recipient['name'] ?: 'Interessent'),
-    '{{email}}'          => htmlspecialchars($recipient['email']),
-    '{{company_name}}'   => htmlspecialchars($company_name),
-    '{{site_url}}'       => htmlspecialchars($site_url),
-    '{{sender_name}}'    => htmlspecialchars($account['from_name'] ?: $company_name),
-    '{{unsubscribe_url}}'=> htmlspecialchars($unsub_url),
-    '{{open_tracker}}'   => $track_pixel,
+    '{{name}}'            => htmlspecialchars($recipient['name'] ?: 'Interessent'),
+    '{{email}}'           => htmlspecialchars($recipient['email']),
+    '{{company_name}}'    => htmlspecialchars($company_name),
+    '{{site_url}}'        => htmlspecialchars($site_url),
+    '{{sender_name}}'     => htmlspecialchars($account['from_name'] ?: $company_name),
+    '{{unsubscribe_url}}' => htmlspecialchars($unsub_url),
+    '{{open_tracker}}'    => $track_pixel,
+    '{{scam_platform}}'   => htmlspecialchars($scam_platform),
 ];
 
-$subject   = str_replace(array_keys($vars), array_values($vars), $campaign['subject']   ?? '');
-$body_html = str_replace(array_keys($vars), array_values($vars), $campaign['body_html'] ?? '');
-$body_text = str_replace(array_keys($vars), array_values($vars), $campaign['body_text'] ?? '');
+// Resolve {{#if scam_platform}}…{{else}}…{{/if}} conditional blocks
+function resolve_platform_conditional(string $tpl, string $platform): string {
+    // Step 1: handle {{#if scam_platform}}…{{else}}…{{/if}} (must run first — more specific)
+    $tpl = preg_replace_callback(
+        '/\{\{#if\s+scam_platform\}\}(.*?)\{\{else\}\}(.*?)\{\{\/if\}\}/s',
+        fn($m) => $platform !== '' ? $m[1] : $m[2],
+        $tpl
+    );
+    // Step 2: handle {{#if scam_platform}}…{{/if}} (no else — runs after)
+    $tpl = preg_replace_callback(
+        '/\{\{#if\s+scam_platform\}\}(.*?)\{\{\/if\}\}/s',
+        fn($m) => $platform !== '' ? $m[1] : '',
+        $tpl
+    );
+    return $tpl;
+}
+
+$raw_html = $campaign['body_html'] ?? '';
+$raw_text = $campaign['body_text'] ?? '';
+$raw_subj = $campaign['subject']   ?? '';
+
+$raw_html = resolve_platform_conditional($raw_html, $scam_platform);
+$raw_text = resolve_platform_conditional($raw_text, $scam_platform);
+$raw_subj = resolve_platform_conditional($raw_subj, $scam_platform);
+
+$subject   = str_replace(array_keys($vars), array_values($vars), $raw_subj);
+$body_html = str_replace(array_keys($vars), array_values($vars), $raw_html);
+$body_text = str_replace(array_keys($vars), array_values($vars), $raw_text);
 
 // ── Send email ────────────────────────────────────────────────────────────────
 $sent_now   = 0;

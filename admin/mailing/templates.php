@@ -45,6 +45,7 @@ if (isset($_GET['edit'])) { $edit = get_mailing_template((int) $_GET['edit']); }
 $templates = get_mailing_templates();
 
 // Professional German email template for kryptoxpay.co.uk
+// Supports {{#if scam_platform}}…{{else}}…{{/if}} conditional blocks
 $default_html = <<<'HTML'
 <!DOCTYPE html>
 <html lang="de">
@@ -67,6 +68,9 @@ $default_html = <<<'HTML'
   .header-logo{font-size:24px;font-weight:700;color:#ffffff;letter-spacing:-0.5px;text-decoration:none}
   .header-logo span{color:#f0a500}
   .header-tagline{margin:6px 0 0;font-size:12px;color:#7fa8d4;letter-spacing:1px;text-transform:uppercase}
+  /* Alert banner */
+  .alert-banner{background:#fff3cd;border-left:4px solid #f0a500;padding:14px 20px;margin:0 0 20px;border-radius:0 6px 6px 0}
+  .alert-banner p{margin:0;font-size:14px;color:#7a5c00}
   /* Body */
   .body{padding:38px 40px;color:#374151;font-size:15px;line-height:1.8}
   .body h2{margin:0 0 18px;font-size:20px;color:#0d2744;font-weight:700}
@@ -99,28 +103,39 @@ $default_html = <<<'HTML'
     <!-- Header -->
     <div class="header">
       <div class="header-logo">{{company_name}}</div>
-      <p class="header-tagline">Digitale Vermögensverwaltung &amp; Rückholung</p>
+      <p class="header-tagline">KI-gestützte Kapitalrückholung &amp; Beratung</p>
     </div>
 
     <!-- Body -->
     <div class="body">
       <h2>Sehr geehrte/r {{name}},</h2>
 
-      <p>wir wenden uns heute an Sie mit wichtigen Informationen, die für Ihre finanzielle Situation von Bedeutung sein könnten.</p>
-
-      <p>Unser Team bei <strong>{{company_name}}</strong> unterstützt Anleger dabei, ihre Situation zu bewerten und mögliche Handlungsoptionen zu prüfen. Mit unserer langjährigen Erfahrung im Bereich digitaler Vermögenswerte stehen wir Ihnen als vertrauenswürdiger Ansprechpartner zur Verfügung.</p>
+      {{#if scam_platform}}
+      <div class="alert-banner">
+        <p>&#9888;&nbsp; Wir haben Informationen erhalten, dass Sie Kapital auf der Plattform <strong>{{scam_platform}}</strong> verloren haben könnten. Unser KI-gestütztes System hat diese Plattform als bekannte Betrugsstätte identifiziert.</p>
+      </div>
+      <p>wir wenden uns heute gezielt an Sie, da Anzeichen vorliegen, dass Sie durch <strong>{{scam_platform}}</strong> einen finanziellen Schaden erlitten haben könnten.</p>
+      <p>Mit modernster KI-Technologie und langjähriger Erfahrung im Bereich der Kapitalrückholung unterstützen wir Betroffene dabei, verlorene Mittel zurückzuholen. Unsere Analyse von <strong>{{scam_platform}}</strong> zeigt, dass eine Rückholung in vergleichbaren Fällen möglich sein kann.</p>
+      {{else}}
+      <p>wir wenden uns heute mit einer wichtigen Mitteilung an Sie, die im Zusammenhang mit Ihren digitalen Vermögenswerten stehen könnte.</p>
+      <p>Unser Team bei <strong>{{company_name}}</strong> unterstützt Anleger dabei, ihre Situation zu bewerten und mögliche Handlungsoptionen zu prüfen. Mit modernster KI-Technologie und langjähriger Erfahrung stehen wir Ihnen als vertrauenswürdiger Ansprechpartner zur Verfügung.</p>
+      {{/if}}
 
       <p>Was wir für Sie tun können:</p>
       <ul>
         <li>Kostenlose und unverbindliche Erstberatung</li>
-        <li>Transparente Analyse Ihrer individuellen Situation</li>
+        <li>KI-gestützte Analyse Ihrer individuellen Situation</li>
         <li>Professionelle Unterstützung durch erfahrene Fachleute</li>
         <li>Diskrete und vertrauliche Bearbeitung Ihres Anliegens</li>
       </ul>
 
       <div class="divider"></div>
 
+      {{#if scam_platform}}
+      <p>Handeln Sie jetzt – je früher wir Ihren Fall prüfen können, desto besser sind die Chancen auf eine Rückholung Ihrer Mittel. Kontaktieren Sie uns unverbindlich über unsere Website.</p>
+      {{else}}
       <p>Wenn Sie mehr erfahren möchten oder Fragen zu Ihrer Situation haben, stehen wir Ihnen gerne zur Verfügung. Eine unverbindliche Kontaktaufnahme ist der erste Schritt.</p>
+      {{/if}}
 
       <div class="cta-wrapper">
         <a href="{{site_url}}" class="cta-btn">Jetzt unverbindlich informieren</a>
@@ -228,8 +243,9 @@ HTML;
                                     <code>{{name}}</code> <code>{{email}}</code>
                                     <code>{{company_name}}</code> <code>{{site_url}}</code>
                                     <code>{{sender_name}}</code> <code>{{unsubscribe_url}}</code>
-                                    <code>{{open_tracker}}</code> (Tracking-Pixel)
-                                </span></div>
+                                    <code>{{scam_platform}}</code> <code>{{open_tracker}}</code> (Tracking-Pixel)
+                                </span><br>
+                                <span class="text-primary small">Konditionale Blöcke: <code>{{#if scam_platform}}…{{else}}…{{/if}}</code> – zeigt je nach vorhandener Betrugsplattform unterschiedliche Inhalte.</span></div>
                             </div>
 
                             <div class="mb-3">

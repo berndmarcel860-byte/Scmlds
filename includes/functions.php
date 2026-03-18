@@ -831,9 +831,100 @@ function count_mailing_recipients(int $campaign_id, string $status = ''): int
 }
 
 /**
- * Parse a raw CSV file handle into normalised [ [email, full_name], ... ] rows.
+ * Read a CSV file and return a preview: header row (or auto-generated) + first $limit data rows.
  *
- * Handles all common column layouts:
+ * Used by the column-mapper UI so the admin can see column contents before assigning roles.
+ *
+ * @param  resource $fh     Open file handle (will be rewound).
+ * @param  int      $limit  Max data rows to return (default 5).
+ * @return array{
+ *   delim: string,
+ *   header: string[],
+ *   has_header: bool,
+ *   preview: array<array<string>>
+ * }
+ */
+function read_csv_preview($fh, int $limit = 5): array
+{
+    rewind($fh);
+    $sample = fread($fh, 4096);
+    rewind($fh);
+    $commas     = substr_count($sample, ',');
+    $semicolons = substr_count($sample, ';');
+    $tabs       = substr_count($sample, "\t");
+    $delim = ';';
+    if ($commas >= $semicolons && $commas >= $tabs)  $delim = ',';
+    elseif ($tabs > $semicolons)                     $delim = "\t";
+
+    $raw = [];
+    while (($row = fgetcsv($fh, 0, $delim)) !== false) {
+        $row = array_map('trim', $row);
+        if (array_filter($row)) $raw[] = $row;
+        if (count($raw) >= $limit + 2) break; // read a bit extra
+    }
+    if (empty($raw)) return ['delim'=>$delim,'header'=>[],'has_header'=>false,'preview'=>[]];
+
+    $header_patterns = '/^(e-?mail|name|vorname|nachname|first|last|platform|scam|broker|company|firma)/i';
+    $has_header = false;
+    foreach ($raw[0] as $cell) {
+        if (preg_match($header_patterns, trim($cell))) { $has_header = true; break; }
+    }
+
+    $header = $has_header ? $raw[0] : array_map(fn($i) => 'Spalte ' . ($i + 1), array_keys($raw[0]));
+    $data   = $has_header ? array_slice($raw, 1, $limit) : array_slice($raw, 0, $limit);
+
+    return ['delim'=>$delim,'header'=>$header,'has_header'=>$has_header,'preview'=>$data];
+}
+
+/**
+ * Parse a raw CSV file handle into normalised associative recipient rows using a column map.
+ *
+ * $column_map is an array of field names indexed by CSV column index, e.g.:
+ *   [0 => 'email', 1 => 'name', 2 => 'scam_platform']
+ *
+ * Supported field names: 'email', 'name', 'firstname', 'lastname', 'scam_platform', '' (skip).
+ *
+ * @param resource $fh         Open file handle (will be rewound).
+ * @param array    $column_map CSV-column-index → field-name mapping.
+ * @param bool     $has_header Whether the first row is a header (skip it).
+ * @return array   Each element: ['email'=>…, 'name'=>…, 'scam_platform'=>…]
+ */
+function parse_csv_with_column_map($fh, array $column_map, bool $has_header, string $delim = ','): array
+{
+    rewind($fh);
+    $out = [];
+    $first = true;
+    while (($row = fgetcsv($fh, 0, $delim)) !== false) {
+        $row = array_map('trim', $row);
+        if ($first && $has_header) { $first = false; continue; }
+        $first = false;
+        if (!array_filter($row)) continue;
+
+        $rec = ['email'=>'','name'=>'','scam_platform'=>'','_firstname'=>'','_lastname'=>''];
+        foreach ($column_map as $col_idx => $field) {
+            $val = $row[(int)$col_idx] ?? '';
+            switch ($field) {
+                case 'email':         $rec['email']         = $val; break;
+                case 'name':          $rec['name']          = $val; break;
+                case 'firstname':     $rec['_firstname']    = $val; break;
+                case 'lastname':      $rec['_lastname']     = $val; break;
+                case 'scam_platform': $rec['scam_platform'] = $val; break;
+                // '' = skip column
+            }
+        }
+        // Combine firstname + lastname into name if name not set directly
+        if ($rec['name'] === '' && ($rec['_firstname'] !== '' || $rec['_lastname'] !== '')) {
+            $rec['name'] = trim($rec['_firstname'] . ' ' . $rec['_lastname']);
+        }
+        unset($rec['_firstname'], $rec['_lastname']);
+        $out[] = $rec;
+    }
+    return $out;
+}
+
+
+/**
+ * Handles all common column layouts (legacy auto-detect parser):
  *   – email, name               (2 cols, name combined)
  *   – email, firstname, lastname (3 cols, names separate)
  *   – firstname, lastname, email (3 cols, email last)
@@ -921,27 +1012,45 @@ function parse_csv_file_to_recipient_rows($fh): array
 }
 
 /**
- * Import recipients from a parsed CSV array ([ [email, name], ... ]).
- * The $rows array may come from parse_csv_file_to_recipient_rows() or from
- * manually entered text; it must contain [email, optional_name] per entry.
+ * Import recipients from a parsed CSV array.
+ *
+ * Each $row must be an associative array with keys:
+ *   'email'         – required
+ *   'name'          – optional full name
+ *   'scam_platform' – optional platform where the lead lost money
+ *
+ * Legacy positional arrays [ email, name ] are also accepted for backwards compatibility.
+ *
  * Returns number of rows inserted.
  */
 function import_mailing_recipients(int $campaign_id, array $rows): int
 {
     $pdo  = db_connect();
-    $stmt = $pdo->prepare('INSERT IGNORE INTO mailing_recipients (campaign_id,email,name,open_token) VALUES (:cid,:em,:nm,:tok)');
+    $stmt = $pdo->prepare(
+        'INSERT IGNORE INTO mailing_recipients (campaign_id,email,name,scam_platform,open_token) ' .
+        'VALUES (:cid,:em,:nm,:sp,:tok)'
+    );
     $count = 0;
     foreach ($rows as $row) {
-        $email = filter_var(trim($row[0] ?? ''), FILTER_VALIDATE_EMAIL);
+        // Support both associative and legacy positional format
+        if (isset($row['email'])) {
+            $email    = filter_var(trim($row['email'] ?? ''), FILTER_VALIDATE_EMAIL);
+            $name     = trim($row['name']          ?? '');
+            $platform = trim($row['scam_platform'] ?? '');
+        } else {
+            $email    = filter_var(trim($row[0] ?? ''), FILTER_VALIDATE_EMAIL);
+            $name     = trim($row[1] ?? '');
+            $platform = trim($row[2] ?? '');
+        }
         if (!$email) continue;
-        $name  = trim($row[1] ?? '');
         $token = bin2hex(random_bytes(16));
-        if ($stmt->execute([':cid'=>$campaign_id,':em'=>$email,':nm'=>$name,':tok'=>$token])) {
+        if ($stmt->execute([':cid'=>$campaign_id,':em'=>$email,':nm'=>$name,':sp'=>$platform,':tok'=>$token])) {
             $count++;
         }
     }
     // Update campaign total
-    $pdo->prepare('UPDATE mailing_campaigns SET total=(SELECT COUNT(*) FROM mailing_recipients WHERE campaign_id=:cid) WHERE id=:cid2')->execute([':cid'=>$campaign_id,':cid2'=>$campaign_id]);
+    $pdo->prepare('UPDATE mailing_campaigns SET total=(SELECT COUNT(*) FROM mailing_recipients WHERE campaign_id=:cid) WHERE id=:cid2')
+        ->execute([':cid'=>$campaign_id,':cid2'=>$campaign_id]);
     return $count;
 }
 
@@ -1066,18 +1175,26 @@ function ensure_mailing_tables(): void
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
 
     $pdo->exec("CREATE TABLE IF NOT EXISTS mailing_recipients (
-        id           INT AUTO_INCREMENT PRIMARY KEY,
-        campaign_id  INT           NOT NULL,
-        email        VARCHAR(255)  NOT NULL,
-        name         VARCHAR(255)  DEFAULT '',
-        status       ENUM('pending','sent','failed','bounced','unsubscribed') NOT NULL DEFAULT 'pending',
-        smtp_account_id INT DEFAULT NULL,
-        sent_at      DATETIME DEFAULT NULL,
-        error_msg    VARCHAR(512)  DEFAULT NULL,
-        open_token   VARCHAR(64)   DEFAULT NULL,
-        opened_at    DATETIME DEFAULT NULL,
-        created_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        id              INT AUTO_INCREMENT PRIMARY KEY,
+        campaign_id     INT           NOT NULL,
+        email           VARCHAR(255)  NOT NULL,
+        name            VARCHAR(255)  DEFAULT '',
+        scam_platform   VARCHAR(255)  DEFAULT '',
+        status          ENUM('pending','sent','failed','bounced','unsubscribed') NOT NULL DEFAULT 'pending',
+        smtp_account_id INT           DEFAULT NULL,
+        sent_at         DATETIME      DEFAULT NULL,
+        error_msg       VARCHAR(512)  DEFAULT NULL,
+        open_token      VARCHAR(64)   DEFAULT NULL,
+        opened_at       DATETIME      DEFAULT NULL,
+        created_at      TIMESTAMP     DEFAULT CURRENT_TIMESTAMP
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
+    // Add scam_platform column to existing tables that pre-date this migration
+    try {
+        $pdo->exec("ALTER TABLE mailing_recipients ADD COLUMN scam_platform VARCHAR(255) DEFAULT '' AFTER name");
+    } catch (\PDOException $e) {
+        // Column already exists — ignore duplicate column error
+    }
 
     // Seed the KryptoxPay professional German template if not already present
     $check = $pdo->query("SELECT COUNT(*) FROM mailing_templates WHERE name = 'KryptoxPay – Professionell (DE)'")->fetchColumn();
@@ -1095,6 +1212,7 @@ function ensure_mailing_tables(): void
 
 /**
  * Returns the full HTML of the KryptoxPay professional German email template.
+ * Supports {{#if scam_platform}}…{{else}}…{{/if}} conditional blocks.
  */
 function _kryptoxpay_email_template_html(): string
 {
@@ -1114,6 +1232,8 @@ function _kryptoxpay_email_template_html(): string
   .header-logo{font-size:24px;font-weight:700;color:#ffffff;letter-spacing:-0.5px;text-decoration:none;display:block}
   .header-logo span{color:#f0a500}
   .header-tagline{margin:6px 0 0;font-size:12px;color:#7fa8d4;letter-spacing:1px;text-transform:uppercase}
+  .alert-banner{background:#fff3cd;border-left:4px solid #f0a500;padding:14px 20px;margin:0 0 20px;border-radius:0 6px 6px 0}
+  .alert-banner p{margin:0;font-size:14px;color:#7a5c00}
   .body{padding:38px 40px;color:#374151;font-size:15px;line-height:1.8}
   .body h2{margin:0 0 18px;font-size:20px;color:#0d2744;font-weight:700}
   .body p{margin:0 0 16px}
@@ -1136,21 +1256,33 @@ function _kryptoxpay_email_template_html(): string
   <div class="email-content">
     <div class="header">
       <a class="header-logo" href="https://kryptoxpay.co.uk">Kryptox<span>Pay</span></a>
-      <p class="header-tagline">Digitale Vermögensverwaltung &amp; Beratung</p>
+      <p class="header-tagline">KI-gestützte Kapitalrückholung &amp; Beratung</p>
     </div>
     <div class="body">
       <h2>Sehr geehrte/r {{name}},</h2>
+      {{#if scam_platform}}
+      <div class="alert-banner">
+        <p>&#9888;&nbsp; Wir haben Informationen erhalten, dass Sie Kapital auf der Plattform <strong>{{scam_platform}}</strong> verloren haben könnten. Unser KI-System hat diese Plattform als bekannte Betrugsstätte identifiziert.</p>
+      </div>
+      <p>wir wenden uns heute gezielt an Sie, da Anzeichen vorliegen, dass Sie durch <strong>{{scam_platform}}</strong> einen finanziellen Schaden erlitten haben könnten.</p>
+      <p>Mit modernster KI-Technologie und langjähriger Erfahrung im Bereich der Kapitalrückholung unterstützen wir Betroffene dabei, verlorene Mittel zurückzuholen.</p>
+      {{else}}
       <p>wir wenden uns heute mit einer wichtigen Mitteilung an Sie, die im Zusammenhang mit Ihren digitalen Vermögenswerten stehen könnte.</p>
-      <p>Bei <strong>KryptoxPay</strong> begleiten wir Anlegerinnen und Anleger dabei, ihre finanzielle Situation transparent zu bewerten und fundierte Entscheidungen zu treffen. Unser Team aus erfahrenen Fachleuten steht Ihnen mit Sachverstand und Diskretion zur Seite.</p>
+      <p>Bei <strong>KryptoxPay</strong> begleiten wir Anlegerinnen und Anleger dabei, ihre finanzielle Situation transparent zu bewerten und fundierte Entscheidungen zu treffen.</p>
+      {{/if}}
       <p>Unsere Leistungen im Überblick:</p>
       <ul>
         <li>Unverbindliche und kostenlose Erstberatung</li>
-        <li>Individuelle Analyse Ihrer Situation durch Experten</li>
+        <li>KI-gestützte Analyse Ihrer individuellen Situation</li>
         <li>Transparente Kommunikation ohne versteckte Kosten</li>
         <li>Vertrauliche Bearbeitung Ihres Anliegens</li>
       </ul>
       <div class="divider"></div>
-      <p>Wir laden Sie herzlich ein, sich auf unserer Website zu informieren und unverbindlich Kontakt aufzunehmen. Unser Team beantwortet Ihre Fragen gerne persönlich.</p>
+      {{#if scam_platform}}
+      <p>Handeln Sie jetzt – je früher wir Ihren Fall prüfen können, desto besser sind die Chancen auf eine Rückholung Ihrer Mittel.</p>
+      {{else}}
+      <p>Wir laden Sie herzlich ein, sich auf unserer Website zu informieren und unverbindlich Kontakt aufzunehmen.</p>
+      {{/if}}
       <div class="cta-wrapper">
         <a href="https://kryptoxpay.co.uk" class="cta-btn">Jetzt unverbindlich informieren</a>
       </div>
@@ -1180,22 +1312,38 @@ function _kryptoxpay_email_template_html(): string
 
 /**
  * Plain-text version of the KryptoxPay email template.
+ * Supports {{#if scam_platform}}…{{else}}…{{/if}} blocks.
  */
 function _kryptoxpay_email_template_text(): string
 {
     return 'Sehr geehrte/r {{name}},
 
+{{#if scam_platform}}
+Wir wenden uns heute gezielt an Sie, da Anzeichen vorliegen, dass Sie durch
+{{scam_platform}} einen finanziellen Schaden erlitten haben könnten.
+
+Mit modernster KI-Technologie unterstützen wir Betroffene dabei,
+verlorene Mittel zurückzuholen.
+{{else}}
 wir wenden uns heute mit einer wichtigen Mitteilung an Sie, die im Zusammenhang
 mit Ihren digitalen Vermögenswerten stehen könnte.
 
 Bei KryptoxPay begleiten wir Anlegerinnen und Anleger dabei, ihre finanzielle
 Situation transparent zu bewerten und fundierte Entscheidungen zu treffen.
+{{/if}}
 
 Unsere Leistungen:
 - Unverbindliche und kostenlose Erstberatung
-- Individuelle Analyse Ihrer Situation durch Experten
+- KI-gestützte Analyse Ihrer individuellen Situation
 - Transparente Kommunikation ohne versteckte Kosten
 - Vertrauliche Bearbeitung Ihres Anliegens
+
+{{#if scam_platform}}
+Handeln Sie jetzt – je früher wir Ihren Fall prüfen können, desto besser sind
+die Chancen auf eine Rückholung Ihrer Mittel.
+{{else}}
+Wir laden Sie herzlich ein, sich auf unserer Website zu informieren.
+{{/if}}
 
 Mehr Informationen finden Sie unter:
 https://kryptoxpay.co.uk

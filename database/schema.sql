@@ -374,17 +374,18 @@ CREATE TABLE IF NOT EXISTS mailing_campaigns (
 
 -- Per-recipient list (loaded from CSV or manual input)
 CREATE TABLE IF NOT EXISTS mailing_recipients (
-    id           INT AUTO_INCREMENT PRIMARY KEY,
-    campaign_id  INT           NOT NULL,
-    email        VARCHAR(255)  NOT NULL,
-    name         VARCHAR(255)  DEFAULT '',
-    status       ENUM('pending','sent','failed','bounced','unsubscribed') NOT NULL DEFAULT 'pending',
-    smtp_account_id INT DEFAULT NULL,
-    sent_at      DATETIME DEFAULT NULL,
-    error_msg    VARCHAR(512)  DEFAULT NULL,
-    open_token   VARCHAR(64)   DEFAULT NULL,
-    opened_at    DATETIME DEFAULT NULL,
-    created_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    id              INT AUTO_INCREMENT PRIMARY KEY,
+    campaign_id     INT           NOT NULL,
+    email           VARCHAR(255)  NOT NULL,
+    name            VARCHAR(255)  DEFAULT '',
+    scam_platform   VARCHAR(255)  DEFAULT '',
+    status          ENUM('pending','sent','failed','bounced','unsubscribed') NOT NULL DEFAULT 'pending',
+    smtp_account_id INT           DEFAULT NULL,
+    sent_at         DATETIME      DEFAULT NULL,
+    error_msg       VARCHAR(512)  DEFAULT NULL,
+    open_token      VARCHAR(64)   DEFAULT NULL,
+    opened_at       DATETIME      DEFAULT NULL,
+    created_at      TIMESTAMP     DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (campaign_id) REFERENCES mailing_campaigns(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 

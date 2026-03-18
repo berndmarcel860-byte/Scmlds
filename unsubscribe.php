@@ -42,7 +42,13 @@ $site_url    = 'https://kryptoxpay.co.uk';
 $masked_email = '';
 if (!empty($recipient['email']) && strpos($recipient['email'], '@') !== false) {
     [$local, $domain] = explode('@', $recipient['email'], 2);
-    $masked_email = substr($local, 0, 2) . str_repeat('*', max(1, strlen($local) - 2)) . '@' . $domain;
+    $len = strlen($local);
+    if ($len <= 2) {
+        // Very short local: show only first char + asterisks
+        $masked_email = substr($local, 0, 1) . str_repeat('*', max(1, $len - 1)) . '@' . $domain;
+    } else {
+        $masked_email = substr($local, 0, 2) . str_repeat('*', $len - 2) . '@' . $domain;
+    }
 }
 ?>
 <!DOCTYPE html>
