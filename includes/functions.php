@@ -656,3 +656,249 @@ function ensure_blog_table(): void
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
     );
 }
+
+// ============================================================
+// Mass-Mailing Module Functions
+// ============================================================
+
+/**
+ * Get all mailing SMTP accounts.
+ */
+function get_mailing_smtp_accounts(bool $active_only = false): array
+{
+    $pdo = db_connect();
+    $sql = 'SELECT * FROM mailing_smtp_accounts';
+    if ($active_only) $sql .= ' WHERE active = 1';
+    $sql .= ' ORDER BY id ASC';
+    return $pdo->query($sql)->fetchAll(PDO::FETCH_ASSOC);
+}
+
+function get_mailing_smtp_account(int $id): ?array
+{
+    $pdo  = db_connect();
+    $stmt = $pdo->prepare('SELECT * FROM mailing_smtp_accounts WHERE id = :id');
+    $stmt->execute([':id' => $id]);
+    return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+}
+
+function save_mailing_smtp_account(array $d, ?int $id = null): bool
+{
+    $pdo = db_connect();
+    if ($id) {
+        $stmt = $pdo->prepare('UPDATE mailing_smtp_accounts SET label=:lb,host=:ho,port=:po,username=:us,password=:pw,secure=:sc,from_email=:fe,from_name=:fn,active=:ac WHERE id=:id');
+        return $stmt->execute([':lb'=>$d['label'],':ho'=>$d['host'],':po'=>(int)$d['port'],':us'=>$d['username'],':pw'=>$d['password'],':sc'=>$d['secure'],':fe'=>$d['from_email'],':fn'=>$d['from_name'],':ac'=>(int)$d['active'],':id'=>$id]);
+    } else {
+        $stmt = $pdo->prepare('INSERT INTO mailing_smtp_accounts (label,host,port,username,password,secure,from_email,from_name,active) VALUES (:lb,:ho,:po,:us,:pw,:sc,:fe,:fn,:ac)');
+        return $stmt->execute([':lb'=>$d['label'],':ho'=>$d['host'],':po'=>(int)$d['port'],':us'=>$d['username'],':pw'=>$d['password'],':sc'=>$d['secure'],':fe'=>$d['from_email'],':fn'=>$d['from_name'],':ac'=>(int)$d['active']]);
+    }
+}
+
+function delete_mailing_smtp_account(int $id): bool
+{
+    $pdo  = db_connect();
+    $stmt = $pdo->prepare('DELETE FROM mailing_smtp_accounts WHERE id = :id');
+    return $stmt->execute([':id' => $id]);
+}
+
+/**
+ * Get a mailing setting value.
+ */
+function get_mailing_setting(string $key, string $default = ''): string
+{
+    $pdo  = db_connect();
+    $stmt = $pdo->prepare('SELECT setting_value FROM mailing_settings WHERE setting_key = :k');
+    $stmt->execute([':k' => $key]);
+    $row = $stmt->fetch(PDO::FETCH_ASSOC);
+    return $row ? (string) $row['setting_value'] : $default;
+}
+
+function get_all_mailing_settings(): array
+{
+    $pdo  = db_connect();
+    $rows = $pdo->query('SELECT * FROM mailing_settings ORDER BY id')->fetchAll(PDO::FETCH_ASSOC);
+    $out  = [];
+    foreach ($rows as $r) { $out[$r['setting_key']] = $r['setting_value']; }
+    return $out;
+}
+
+function save_mailing_settings(array $data): bool
+{
+    $pdo = db_connect();
+    $stmt = $pdo->prepare('INSERT INTO mailing_settings (setting_key,setting_value) VALUES (:k,:v) ON DUPLICATE KEY UPDATE setting_value=:v2');
+    foreach ($data as $k => $v) {
+        $stmt->execute([':k'=>$k,':v'=>$v,':v2'=>$v]);
+    }
+    return true;
+}
+
+/**
+ * Templates
+ */
+function get_mailing_templates(): array
+{
+    return db_connect()->query('SELECT * FROM mailing_templates ORDER BY id DESC')->fetchAll(PDO::FETCH_ASSOC);
+}
+
+function get_mailing_template(int $id): ?array
+{
+    $pdo  = db_connect();
+    $stmt = $pdo->prepare('SELECT * FROM mailing_templates WHERE id = :id');
+    $stmt->execute([':id' => $id]);
+    return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+}
+
+function save_mailing_template(array $d, ?int $id = null): int|false
+{
+    $pdo = db_connect();
+    if ($id) {
+        $stmt = $pdo->prepare('UPDATE mailing_templates SET name=:n,subject=:s,body_html=:bh,body_text=:bt WHERE id=:id');
+        $ok = $stmt->execute([':n'=>$d['name'],':s'=>$d['subject'],':bh'=>$d['body_html'],':bt'=>$d['body_text'],':id'=>$id]);
+        return $ok ? $id : false;
+    }
+    $stmt = $pdo->prepare('INSERT INTO mailing_templates (name,subject,body_html,body_text) VALUES (:n,:s,:bh,:bt)');
+    $ok   = $stmt->execute([':n'=>$d['name'],':s'=>$d['subject'],':bh'=>$d['body_html'],':bt'=>$d['body_text']]);
+    return $ok ? (int) $pdo->lastInsertId() : false;
+}
+
+function delete_mailing_template(int $id): bool
+{
+    $stmt = db_connect()->prepare('DELETE FROM mailing_templates WHERE id = :id');
+    return $stmt->execute([':id' => $id]);
+}
+
+/**
+ * Campaigns
+ */
+function get_mailing_campaigns(): array
+{
+    return db_connect()->query('SELECT c.*,t.name AS template_name FROM mailing_campaigns c LEFT JOIN mailing_templates t ON t.id=c.template_id ORDER BY c.id DESC')->fetchAll(PDO::FETCH_ASSOC);
+}
+
+function get_mailing_campaign(int $id): ?array
+{
+    $pdo  = db_connect();
+    $stmt = $pdo->prepare('SELECT c.*,t.name AS template_name,t.subject,t.body_html,t.body_text FROM mailing_campaigns c LEFT JOIN mailing_templates t ON t.id=c.template_id WHERE c.id=:id');
+    $stmt->execute([':id' => $id]);
+    return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+}
+
+function create_mailing_campaign(string $name, int $template_id): int|false
+{
+    $pdo  = db_connect();
+    $stmt = $pdo->prepare('INSERT INTO mailing_campaigns (name,template_id) VALUES (:n,:t)');
+    $ok   = $stmt->execute([':n' => $name, ':t' => $template_id]);
+    return $ok ? (int) $pdo->lastInsertId() : false;
+}
+
+function update_mailing_campaign(int $id, array $d): bool
+{
+    $pdo  = db_connect();
+    $stmt = $pdo->prepare('UPDATE mailing_campaigns SET name=:n,template_id=:t WHERE id=:id');
+    return $stmt->execute([':n'=>$d['name'],':t'=>$d['template_id'],':id'=>$id]);
+}
+
+function delete_mailing_campaign(int $id): bool
+{
+    $stmt = db_connect()->prepare('DELETE FROM mailing_campaigns WHERE id=:id');
+    return $stmt->execute([':id'=>$id]);
+}
+
+/**
+ * Recipients
+ */
+function get_mailing_recipients(int $campaign_id, string $status = '', int $limit = 0, int $offset = 0): array
+{
+    $pdo = db_connect();
+    $sql = 'SELECT * FROM mailing_recipients WHERE campaign_id = :cid';
+    $params = [':cid' => $campaign_id];
+    if ($status) { $sql .= ' AND status = :st'; $params[':st'] = $status; }
+    $sql .= ' ORDER BY id ASC';
+    if ($limit) $sql .= " LIMIT $limit OFFSET $offset";
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute($params);
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
+
+function count_mailing_recipients(int $campaign_id, string $status = ''): int
+{
+    $pdo = db_connect();
+    $sql = 'SELECT COUNT(*) FROM mailing_recipients WHERE campaign_id = :cid';
+    $params = [':cid' => $campaign_id];
+    if ($status) { $sql .= ' AND status = :st'; $params[':st'] = $status; }
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute($params);
+    return (int) $stmt->fetchColumn();
+}
+
+/**
+ * Import recipients from a parsed CSV array ([ [email, name], ... ]).
+ * Returns number of rows inserted.
+ */
+function import_mailing_recipients(int $campaign_id, array $rows): int
+{
+    $pdo  = db_connect();
+    $stmt = $pdo->prepare('INSERT IGNORE INTO mailing_recipients (campaign_id,email,name,open_token) VALUES (:cid,:em,:nm,:tok)');
+    $count = 0;
+    foreach ($rows as $row) {
+        $email = filter_var(trim($row[0] ?? ''), FILTER_VALIDATE_EMAIL);
+        if (!$email) continue;
+        $name  = trim($row[1] ?? '');
+        $token = bin2hex(random_bytes(16));
+        if ($stmt->execute([':cid'=>$campaign_id,':em'=>$email,':nm'=>$name,':tok'=>$token])) {
+            $count++;
+        }
+    }
+    // Update campaign total
+    $pdo->prepare('UPDATE mailing_campaigns SET total=(SELECT COUNT(*) FROM mailing_recipients WHERE campaign_id=:cid) WHERE id=:cid2')->execute([':cid'=>$campaign_id,':cid2'=>$campaign_id]);
+    return $count;
+}
+
+/**
+ * Start a campaign (set status=running).
+ */
+function start_mailing_campaign(int $id): bool
+{
+    $accounts = get_mailing_smtp_accounts(true);
+    if (empty($accounts)) return false;
+    $first = $accounts[0]['id'];
+    $pdo = db_connect();
+    $stmt = $pdo->prepare('UPDATE mailing_campaigns SET status="running",started_at=NOW(),current_smtp_account_id=:aid,current_smtp_batch_count=0 WHERE id=:id AND status IN ("draft","paused")');
+    return $stmt->execute([':aid'=>$first,':id'=>$id]);
+}
+
+function pause_mailing_campaign(int $id): bool
+{
+    $stmt = db_connect()->prepare('UPDATE mailing_campaigns SET status="paused" WHERE id=:id');
+    return $stmt->execute([':id'=>$id]);
+}
+
+/**
+ * Get campaign statistics summary.
+ */
+function get_campaign_stats(int $campaign_id): array
+{
+    $pdo = db_connect();
+    $r = $pdo->prepare('SELECT status, COUNT(*) AS cnt FROM mailing_recipients WHERE campaign_id=:cid GROUP BY status');
+    $r->execute([':cid'=>$campaign_id]);
+    $rows = $r->fetchAll(PDO::FETCH_ASSOC);
+    $stats = ['pending'=>0,'sent'=>0,'failed'=>0,'bounced'=>0,'unsubscribed'=>0,'total'=>0,'opens'=>0];
+    foreach ($rows as $row) {
+        $stats[$row['status']] = (int) $row['cnt'];
+        $stats['total'] += (int) $row['cnt'];
+    }
+    // opens
+    $o = $pdo->prepare('SELECT COUNT(*) FROM mailing_recipients WHERE campaign_id=:cid AND opened_at IS NOT NULL');
+    $o->execute([':cid'=>$campaign_id]);
+    $stats['opens'] = (int) $o->fetchColumn();
+    return $stats;
+}
+
+/**
+ * Record an email open (called by tracking pixel).
+ */
+function record_mailing_open(string $token): void
+{
+    $pdo  = db_connect();
+    $stmt = $pdo->prepare('UPDATE mailing_recipients SET opened_at=NOW() WHERE open_token=:tok AND opened_at IS NULL');
+    $stmt->execute([':tok' => $token]);
+}

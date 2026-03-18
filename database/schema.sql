@@ -303,3 +303,87 @@ CREATE TABLE IF NOT EXISTS blog_posts (
     updated_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+
+-- ============================================================
+-- Mass-Mailing Module
+-- ============================================================
+
+-- SMTP account pool (multiple accounts for rotation)
+CREATE TABLE IF NOT EXISTS mailing_smtp_accounts (
+    id           INT AUTO_INCREMENT PRIMARY KEY,
+    label        VARCHAR(100)                  NOT NULL DEFAULT '',
+    host         VARCHAR(255)                  NOT NULL DEFAULT '',
+    port         SMALLINT UNSIGNED             NOT NULL DEFAULT 587,
+    username     VARCHAR(255)                  NOT NULL DEFAULT '',
+    password     VARCHAR(255)                  NOT NULL DEFAULT '',
+    secure       ENUM('tls','ssl','none')       NOT NULL DEFAULT 'tls',
+    from_email   VARCHAR(255)                  NOT NULL DEFAULT '',
+    from_name    VARCHAR(255)                  NOT NULL DEFAULT '',
+    active       TINYINT(1)                    NOT NULL DEFAULT 1,
+    emails_sent  INT UNSIGNED                  NOT NULL DEFAULT 0,
+    last_used_at DATETIME                               DEFAULT NULL,
+    created_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Configurable mailing parameters
+CREATE TABLE IF NOT EXISTS mailing_settings (
+    id            INT AUTO_INCREMENT PRIMARY KEY,
+    setting_key   VARCHAR(100) NOT NULL UNIQUE,
+    setting_value TEXT,
+    setting_label VARCHAR(255),
+    updated_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+INSERT IGNORE INTO mailing_settings (setting_key, setting_value, setting_label) VALUES
+('emails_per_account',        '5',     'E-Mails pro SMTP-Account (dann rotieren)'),
+('pause_between_emails_ms',   '3000',  'Pause zwischen E-Mails (Millisekunden)'),
+('pause_between_accounts_ms', '15000', 'Pause zwischen SMTP-Wechsel (Millisekunden)'),
+('max_daily_per_account',     '200',   'Max. E-Mails pro Account pro Tag'),
+('unsubscribe_url',           '',      'Globaler Abmelde-Link (leer = auto-generiert)'),
+('track_opens',               '0',     'Öffnungs-Tracking aktiv (1 = ja)');
+
+-- Email templates
+CREATE TABLE IF NOT EXISTS mailing_templates (
+    id           INT AUTO_INCREMENT PRIMARY KEY,
+    name         VARCHAR(255) NOT NULL,
+    subject      VARCHAR(255) NOT NULL DEFAULT '',
+    body_html    LONGTEXT,
+    body_text    TEXT,
+    created_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Campaigns
+CREATE TABLE IF NOT EXISTS mailing_campaigns (
+    id           INT AUTO_INCREMENT PRIMARY KEY,
+    name         VARCHAR(255)  NOT NULL,
+    template_id  INT           DEFAULT NULL,
+    status       ENUM('draft','running','paused','completed','failed') NOT NULL DEFAULT 'draft',
+    total        INT UNSIGNED  NOT NULL DEFAULT 0,
+    sent         INT UNSIGNED  NOT NULL DEFAULT 0,
+    failed       INT UNSIGNED  NOT NULL DEFAULT 0,
+    opens        INT UNSIGNED  NOT NULL DEFAULT 0,
+    current_smtp_account_id INT DEFAULT NULL,
+    current_smtp_batch_count INT UNSIGNED NOT NULL DEFAULT 0,
+    created_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    started_at   DATETIME DEFAULT NULL,
+    finished_at  DATETIME DEFAULT NULL,
+    FOREIGN KEY (template_id) REFERENCES mailing_templates(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Per-recipient list (loaded from CSV or manual input)
+CREATE TABLE IF NOT EXISTS mailing_recipients (
+    id           INT AUTO_INCREMENT PRIMARY KEY,
+    campaign_id  INT           NOT NULL,
+    email        VARCHAR(255)  NOT NULL,
+    name         VARCHAR(255)  DEFAULT '',
+    status       ENUM('pending','sent','failed','bounced','unsubscribed') NOT NULL DEFAULT 'pending',
+    smtp_account_id INT DEFAULT NULL,
+    sent_at      DATETIME DEFAULT NULL,
+    error_msg    VARCHAR(512)  DEFAULT NULL,
+    open_token   VARCHAR(64)   DEFAULT NULL,
+    opened_at    DATETIME DEFAULT NULL,
+    created_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (campaign_id) REFERENCES mailing_campaigns(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

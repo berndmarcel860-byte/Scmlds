@@ -50,6 +50,53 @@
                     <i class="bi bi-gear me-2"></i>Einstellungen
                 </a>
             </li>
+
+            <!-- ── E-Mail-Marketing ── -->
+            <?php
+            $in_mailing = strpos($_SERVER['PHP_SELF'], '/mailing/') !== false;
+            ?>
+            <li class="nav-item mt-2">
+                <a href="mailing/index.php"
+                   class="nav-link sidebar-link d-flex align-items-center justify-content-between <?= $in_mailing ? 'active' : '' ?>"
+                   data-bs-toggle="collapse" data-bs-target="#mailingSubnav" aria-expanded="<?= $in_mailing ? 'true' : 'false' ?>">
+                    <span><i class="bi bi-envelope-paper me-2"></i>E-Mail-Marketing</span>
+                    <i class="bi bi-chevron-down small"></i>
+                </a>
+                <div class="collapse <?= $in_mailing ? 'show' : '' ?>" id="mailingSubnav">
+                    <ul class="nav flex-column ps-4 pt-1 pb-1">
+                        <li class="nav-item">
+                            <a href="mailing/index.php"
+                               class="nav-link sidebar-link py-1 small <?= basename($_SERVER['PHP_SELF']) === 'index.php' && $in_mailing ? 'active' : '' ?>">
+                                <i class="bi bi-grid me-2"></i>Kampagnen
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="mailing/smtp_accounts.php"
+                               class="nav-link sidebar-link py-1 small <?= basename($_SERVER['PHP_SELF']) === 'smtp_accounts.php' ? 'active' : '' ?>">
+                                <i class="bi bi-server me-2"></i>SMTP-Accounts
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="mailing/templates.php"
+                               class="nav-link sidebar-link py-1 small <?= basename($_SERVER['PHP_SELF']) === 'templates.php' ? 'active' : '' ?>">
+                                <i class="bi bi-file-earmark-richtext me-2"></i>E-Mail-Templates
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="mailing/index.php#stats"
+                               class="nav-link sidebar-link py-1 small <?= basename($_SERVER['PHP_SELF']) === 'stats.php' && $in_mailing ? 'active' : '' ?>">
+                                <i class="bi bi-bar-chart me-2"></i>Statistiken
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="mailing/settings.php"
+                               class="nav-link sidebar-link py-1 small <?= basename($_SERVER['PHP_SELF']) === 'settings.php' && $in_mailing ? 'active' : '' ?>">
+                                <i class="bi bi-sliders me-2"></i>Einstellungen
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </li>
         </ul>
     </nav>
     <div class="p-3 border-top border-secondary">
