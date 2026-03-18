@@ -1012,10 +1012,88 @@ function parse_csv_file_to_recipient_rows($fh): array
 }
 
 /**
+ * Validate a single email address for import deliverability.
+ *
+ * Checks performed (in order):
+ *  1. RFC syntax via filter_var(FILTER_VALIDATE_EMAIL)
+ *  2. Domain has at least one MX record (or an A/AAAA record as fallback)
+ *     – only when $check_mx = true
+ *
+ * @param  string $email     The raw email string to validate.
+ * @param  bool   $check_mx  Whether to perform a DNS MX lookup (default true).
+ * @return string  Empty string = valid; non-empty = reason code:
+ *                 'invalid_syntax'  – fails RFC syntax check
+ *                 'no_mx'           – domain has no MX or A record
+ */
+function validate_email_for_import(string $email, bool $check_mx = true): string
+{
+    $email = trim($email);
+    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        return 'invalid_syntax';
+    }
+    if ($check_mx) {
+        $domain = substr($email, strrpos($email, '@') + 1);
+        if (!checkdnsrr($domain, 'MX') && !checkdnsrr($domain, 'A') && !checkdnsrr($domain, 'AAAA')) {
+            return 'no_mx';
+        }
+    }
+    return '';
+}
+
+/**
+ * Filter an array of recipient rows by email validity.
+ *
+ * Accepts both associative rows (with 'email' key) and legacy positional rows.
+ * Performs per-domain MX caching to avoid redundant DNS lookups when many
+ * addresses share the same domain (e.g., gmail.com).
+ *
+ * @param  array  $rows      Rows from parse_csv_with_column_map() or manual input.
+ * @param  bool   $check_mx  Whether to check MX records (default true).
+ * @return array{
+ *   valid:   array,
+ *   skipped: array<array{email:string, reason:string}>
+ * }
+ */
+function filter_rows_by_email_validity(array $rows, bool $check_mx = true): array
+{
+    $mx_cache = [];   // domain → bool
+    $valid    = [];
+    $skipped  = [];
+
+    foreach ($rows as $row) {
+        $email = trim(isset($row['email']) ? ($row['email'] ?? '') : ($row[0] ?? ''));
+
+        // 1. Syntax
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            $skipped[] = ['email' => $email, 'reason' => 'invalid_syntax'];
+            continue;
+        }
+
+        // 2. MX (cached per domain)
+        if ($check_mx) {
+            $domain = substr($email, strrpos($email, '@') + 1);
+            if (!isset($mx_cache[$domain])) {
+                $mx_cache[$domain] = (
+                    checkdnsrr($domain, 'MX') ||
+                    checkdnsrr($domain, 'A')  ||
+                    checkdnsrr($domain, 'AAAA')
+                );
+            }
+            if (!$mx_cache[$domain]) {
+                $skipped[] = ['email' => $email, 'reason' => 'no_mx'];
+                continue;
+            }
+        }
+
+        $valid[] = $row;
+    }
+
+    return ['valid' => $valid, 'skipped' => $skipped];
+}
+
+/**
  * Import recipients from a parsed CSV array.
  *
- * Each $row must be an associative array with keys:
- *   'email'         – required
  *   'name'          – optional full name
  *   'scam_platform' – optional platform where the lead lost money
  *

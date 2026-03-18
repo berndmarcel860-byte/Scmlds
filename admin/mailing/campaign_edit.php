@@ -14,11 +14,36 @@ $campaign          = null;
 $cid               = (int) ($_GET['id'] ?? 0);
 $show_column_mapper = false;
 $csv_preview_info  = null;
+$val_skipped       = [];   // filled after import validation
 
 if ($cid) {
     $campaign = get_mailing_campaign($cid);
     if (!$campaign) { header('Location: index.php'); exit; }
 }
+
+/**
+ * Build a human-readable import result message.
+ *
+ * @param int   $imported  Number of rows successfully inserted.
+ * @param array $skipped   Array of ['email'=>…, 'reason'=>…] from filter_rows_by_email_validity().
+ * @return string  HTML-safe summary string.
+ */
+function _import_summary_msg(int $imported, array $skipped): string
+{
+    $total_skipped = count($skipped);
+    $syntax_errors = count(array_filter($skipped, fn($s) => $s['reason'] === 'invalid_syntax'));
+    $mx_errors     = count(array_filter($skipped, fn($s) => $s['reason'] === 'no_mx'));
+
+    $parts = ["<strong>$imported</strong> Empfänger importiert"];
+    if ($total_skipped) {
+        $detail = [];
+        if ($syntax_errors) $detail[] = "$syntax_errors ungültige Syntax";
+        if ($mx_errors)     $detail[] = "$mx_errors kein MX-Eintrag";
+        $parts[] = "<strong>$total_skipped</strong> abgelehnt (" . implode(', ', $detail) . ")";
+    }
+    return implode(' · ', $parts) . '.';
+}
+
 
 // ── Handle POST ───────────────────────────────────────────────────────────────
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -52,8 +77,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // Store raw CSV bytes in session (small files only; warn for large ones)
             $csv_bytes = file_get_contents($tmp_src);
             if ($csv_bytes !== false) {
-                $_SESSION['csv_import_data'] = base64_encode($csv_bytes);
-                $_SESSION['csv_import_cid']  = $cid;
+                $_SESSION['csv_import_data']       = base64_encode($csv_bytes);
+                $_SESSION['csv_import_cid']        = $cid;
+                $_SESSION['csv_import_validate_mx'] = !empty($_POST['validate_mx']) ? '1' : '0';
                 // Get preview for UI
                 $fh_prev = fopen($tmp_src, 'r');
                 $csv_preview_info = read_csv_preview($fh_prev, 5);
@@ -69,13 +95,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
-    // ── Phase 2: Column mapping submitted → import ────────────────────────────
+    // ── Phase 2: Column mapping submitted → validate + import ────────────────
     if ($action === 'import_csv' && $cid) {
-        $imported = 0;
+        $imported    = 0;
+        $val_skipped = [];   // collected by filter_rows_by_email_validity
 
         if (!empty($_SESSION['csv_import_data']) && (int)($_SESSION['csv_import_cid'] ?? 0) === $cid) {
             // Recover CSV from session
             $csv_bytes = base64_decode($_SESSION['csv_import_data']);
+            $do_mx     = ($_SESSION['csv_import_validate_mx'] ?? '0') === '1';
             $fh = fopen('php://memory', 'r+');
             fwrite($fh, $csv_bytes);
             rewind($fh);
@@ -89,14 +117,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $col_map[(int)$idx] = $field;
             }
 
-            $rows     = parse_csv_with_column_map($fh, $col_map, $has_header, $delim);
+            $rows = parse_csv_with_column_map($fh, $col_map, $has_header, $delim);
             fclose($fh);
+            unset($_SESSION['csv_import_data'], $_SESSION['csv_import_cid'], $_SESSION['csv_import_validate_mx']);
+
+            // ── E-Mail-Validierung ────────────────────────────────────────────
+            $result      = filter_rows_by_email_validity($rows, $do_mx);
+            $rows        = $result['valid'];
+            $val_skipped = $result['skipped'];
+
             $imported = import_mailing_recipients($cid, $rows);
-            unset($_SESSION['csv_import_data'], $_SESSION['csv_import_cid']);
-            $msg = "$imported Empfänger importiert.";
             $campaign = get_mailing_campaign($cid);
+            $msg      = _import_summary_msg($imported, $val_skipped);
 
         } elseif (!empty(trim($_POST['manual_emails'] ?? ''))) {
+            $do_mx = !empty($_POST['validate_mx']);
+
             // Manual paste: one address per line, optional comma/tab-separated name
             $lines = preg_split('/[\r\n]+/', trim($_POST['manual_emails']));
             $rows  = [];
@@ -113,9 +149,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
                 $rows[] = ['email'=>$email,'name'=>$name,'scam_platform'=>$platform];
             }
+
+            // ── E-Mail-Validierung ────────────────────────────────────────────
+            $result      = filter_rows_by_email_validity($rows, $do_mx);
+            $rows        = $result['valid'];
+            $val_skipped = $result['skipped'];
+
             $imported = import_mailing_recipients($cid, $rows);
-            $msg = "$imported Empfänger importiert.";
             $campaign = get_mailing_campaign($cid);
+            $msg      = _import_summary_msg($imported, $val_skipped);
         } else {
             $msg_type = 'danger';
             $msg = 'Bitte eine CSV-Datei hochladen oder E-Mail-Adressen einfügen.';
@@ -186,8 +228,34 @@ $sample_recipients = $cid ? get_mailing_recipients($cid, '', 10, 0) : [];
 
         <?php if ($msg): ?>
         <div class="alert alert-<?= $msg_type ?> alert-dismissible fade show">
-            <?= htmlspecialchars($msg) ?><button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            <?= $msg /* trusted HTML from _import_summary_msg() */ ?>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
+        <?php if (!empty($val_skipped)): ?>
+        <div class="alert alert-warning py-2 px-3">
+            <details>
+                <summary class="small fw-semibold" style="cursor:pointer">
+                    <i class="bi bi-exclamation-triangle me-1"></i><?= count($val_skipped) ?> abgelehnte Adressen anzeigen
+                </summary>
+                <div class="mt-2" style="max-height:200px;overflow-y:auto">
+                    <table class="table table-sm table-borderless mb-0" style="font-size:.8em">
+                        <thead class="table-light"><tr><th>E-Mail</th><th>Grund</th></tr></thead>
+                        <tbody>
+                        <?php
+                        $reason_labels = ['invalid_syntax'=>'Ungültige Syntax', 'no_mx'=>'Kein MX-Eintrag'];
+                        foreach ($val_skipped as $s):
+                        ?>
+                        <tr>
+                            <td class="font-monospace"><?= htmlspecialchars($s['email']) ?></td>
+                            <td class="text-danger"><?= htmlspecialchars($reason_labels[$s['reason']] ?? $s['reason']) ?></td>
+                        </tr>
+                        <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </details>
+        </div>
+        <?php endif; ?>
         <?php endif; ?>
 
         <div class="row g-4">
@@ -330,6 +398,18 @@ $sample_recipients = $cid ? get_mailing_recipients($cid, '', 10, 0) : [];
                                 </table>
                             </div>
 
+                            <div class="alert alert-info py-2 px-3 small mb-3 d-flex align-items-start gap-2">
+                                <i class="bi bi-shield-check fs-5 text-info"></i>
+                                <div>
+                                    <strong>E-Mail-Validierung</strong> läuft automatisch (Syntax-Check).
+                                    <?php if (($_SESSION['csv_import_validate_mx'] ?? '0') === '1'): ?>
+                                    DNS-MX-Check ist <strong>aktiv</strong> – Adressen ohne gültigen Mailserver werden herausgefiltert.
+                                    <?php else: ?>
+                                    DNS-MX-Check ist <strong>inaktiv</strong> – nur Syntax wird geprüft.
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+
                             <div class="d-flex gap-2">
                                 <button type="submit" class="btn btn-primary">
                                     <i class="bi bi-upload me-1"></i>Importieren
@@ -363,6 +443,13 @@ $sample_recipients = $cid ? get_mailing_recipients($cid, '', 10, 0) : [];
                                         <label class="form-label fw-semibold">CSV-Datei</label>
                                         <input type="file" name="csv_file" class="form-control" accept=".csv,.txt">
                                     </div>
+                                    <div class="form-check mb-3">
+                                        <input class="form-check-input" type="checkbox" name="validate_mx" id="csvValidateMx" value="1" checked>
+                                        <label class="form-check-label small" for="csvValidateMx">
+                                            <strong>DNS-Validierung (MX-Check)</strong> – Adressen ohne gültigen Mailserver herausfiltern
+                                            <span class="text-muted">(reduziert Bounce-Rate)</span>
+                                        </label>
+                                    </div>
                                     <button type="submit" class="btn btn-primary">
                                         <i class="bi bi-eye me-1"></i>Vorschau &amp; Spalten zuordnen
                                     </button>
@@ -381,6 +468,13 @@ $sample_recipients = $cid ? get_mailing_recipients($cid, '', 10, 0) : [];
                                     <div class="mb-3">
                                         <textarea name="manual_emails" class="form-control font-monospace" rows="8"
                                                   placeholder="max@mustermann.de,Max Mustermann,CryptoScamBroker&#10;anna@beispiel.de,Anna Schmidt&#10;Hans Müller <hans@mail.de>"></textarea>
+                                    </div>
+                                    <div class="form-check mb-3">
+                                        <input class="form-check-input" type="checkbox" name="validate_mx" id="manValidateMx" value="1" checked>
+                                        <label class="form-check-label small" for="manValidateMx">
+                                            <strong>DNS-Validierung (MX-Check)</strong>
+                                            <span class="text-muted">(reduziert Bounce-Rate)</span>
+                                        </label>
                                     </div>
                                     <button type="submit" class="btn btn-primary">
                                         <i class="bi bi-upload me-1"></i>Importieren
