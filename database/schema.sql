@@ -387,3 +387,12 @@ CREATE TABLE IF NOT EXISTS mailing_recipients (
     created_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (campaign_id) REFERENCES mailing_campaigns(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Seed: KryptoxPay professional German email template
+INSERT IGNORE INTO mailing_templates (name, subject, body_html, body_text)
+SELECT 'KryptoxPay – Professionell (DE)',
+       'Wichtige Information zu Ihren digitalen Vermögenswerten',
+       '<placeholder – see admin/mailing/templates.php for full HTML>',
+       'Sehr geehrte/r {{name}},\n\nwir möchten Sie auf eine wichtige Möglichkeit hinweisen.\n\nBitte besuchen Sie uns unter: {{site_url}}\n\nMit freundlichen Grüßen,\n{{sender_name}}\n{{company_name}}\n\nAbmelden: {{unsubscribe_url}}'
+FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM mailing_templates WHERE name = 'KryptoxPay – Professionell (DE)');

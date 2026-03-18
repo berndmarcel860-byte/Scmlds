@@ -831,7 +831,99 @@ function count_mailing_recipients(int $campaign_id, string $status = ''): int
 }
 
 /**
+ * Parse a raw CSV file handle into normalised [ [email, full_name], ... ] rows.
+ *
+ * Handles all common column layouts:
+ *   – email, name               (2 cols, name combined)
+ *   – email, firstname, lastname (3 cols, names separate)
+ *   – firstname, lastname, email (3 cols, email last)
+ *   – name, email               (2 cols, name first)
+ *   – email only                (1 col, no name)
+ *
+ * Also auto-detects comma vs. semicolon delimiter and optional header row.
+ *
+ * @param resource $fh  Open file handle (will be rewound).
+ * @return array        Array of [email_string, full_name_string] pairs.
+ */
+function parse_csv_file_to_recipient_rows($fh): array
+{
+    rewind($fh);
+
+    // ── 1. Detect delimiter ───────────────────────────────────────────────────
+    $sample = fread($fh, 4096);
+    rewind($fh);
+    $commas     = substr_count($sample, ',');
+    $semicolons = substr_count($sample, ';');
+    $tabs       = substr_count($sample, "\t");
+    $delim = ';';
+    if ($commas >= $semicolons && $commas >= $tabs)  $delim = ',';
+    elseif ($tabs > $semicolons)                     $delim = "\t";
+
+    // ── 2. Read all rows ──────────────────────────────────────────────────────
+    $raw = [];
+    while (($row = fgetcsv($fh, 0, $delim)) !== false) {
+        $row = array_map('trim', $row);
+        if (array_filter($row)) $raw[] = $row; // skip blank lines
+    }
+    if (empty($raw)) return [];
+
+    // ── 3. Detect header row ──────────────────────────────────────────────────
+    $header_patterns = '/^(e-?mail|name|vorname|nachname|first|last|firstname|lastname)/i';
+    $first = $raw[0];
+    $is_header = false;
+    foreach ($first as $cell) {
+        if (preg_match($header_patterns, trim($cell))) { $is_header = true; break; }
+    }
+    if ($is_header) array_shift($raw);
+    if (empty($raw)) return [];
+
+    // ── 4. Detect column layout from the first data row ───────────────────────
+    $sample_row = $raw[0];
+    $ncols      = count($sample_row);
+
+    // Find which column contains an email address
+    $email_col = -1;
+    foreach ($sample_row as $ci => $cell) {
+        if (filter_var($cell, FILTER_VALIDATE_EMAIL)) { $email_col = $ci; break; }
+    }
+    if ($email_col === -1) return []; // no email found at all
+
+    // ── 5. Determine name columns ─────────────────────────────────────────────
+    // Remaining non-email columns become the name
+    $name_cols = [];
+    for ($i = 0; $i < $ncols; $i++) {
+        if ($i !== $email_col) $name_cols[] = $i;
+    }
+
+    // ── 6. Normalise rows ─────────────────────────────────────────────────────
+    $out = [];
+    foreach ($raw as $row) {
+        $email = filter_var(trim($row[$email_col] ?? ''), FILTER_VALIDATE_EMAIL);
+        if (!$email) continue;
+
+        // Build full name from remaining columns
+        $parts = [];
+        foreach ($name_cols as $nc) {
+            $v = trim($row[$nc] ?? '');
+            if ($v !== '') $parts[] = $v;
+        }
+        $full_name = implode(' ', $parts);
+
+        // If the name looks like a combined "Lastname, Firstname" (comma inside), normalise
+        if (strpos($full_name, ',') !== false) {
+            [$ln, $fn] = explode(',', $full_name, 2);
+            $full_name = trim($fn) . ' ' . trim($ln);
+        }
+
+        $out[] = [$email, $full_name];
+    }
+    return $out;
+}
+
+/**
  * Import recipients from a parsed CSV array ([ [email, name], ... ]).
+ * The $rows array may come from parse_csv_file_to_recipient_rows() or from
+ * manually entered text; it must contain [email, optional_name] per entry.
  * Returns number of rows inserted.
  */
 function import_mailing_recipients(int $campaign_id, array $rows): int
@@ -901,4 +993,220 @@ function record_mailing_open(string $token): void
     $pdo  = db_connect();
     $stmt = $pdo->prepare('UPDATE mailing_recipients SET opened_at=NOW() WHERE open_token=:tok AND opened_at IS NULL');
     $stmt->execute([':tok' => $token]);
+}
+
+/**
+ * Ensure all mailing tables exist and seed default data.
+ * Called lazily on first visit to mailing module.
+ */
+function ensure_mailing_tables(): void
+{
+    $pdo = db_connect();
+
+    $pdo->exec("CREATE TABLE IF NOT EXISTS mailing_smtp_accounts (
+        id           INT AUTO_INCREMENT PRIMARY KEY,
+        label        VARCHAR(100)                  NOT NULL DEFAULT '',
+        host         VARCHAR(255)                  NOT NULL DEFAULT '',
+        port         SMALLINT UNSIGNED             NOT NULL DEFAULT 587,
+        username     VARCHAR(255)                  NOT NULL DEFAULT '',
+        password     VARCHAR(255)                  NOT NULL DEFAULT '',
+        secure       ENUM('tls','ssl','none')       NOT NULL DEFAULT 'tls',
+        from_email   VARCHAR(255)                  NOT NULL DEFAULT '',
+        from_name    VARCHAR(255)                  NOT NULL DEFAULT '',
+        active       TINYINT(1)                    NOT NULL DEFAULT 1,
+        emails_sent  INT UNSIGNED                  NOT NULL DEFAULT 0,
+        last_used_at DATETIME                               DEFAULT NULL,
+        created_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
+    $pdo->exec("CREATE TABLE IF NOT EXISTS mailing_settings (
+        id            INT AUTO_INCREMENT PRIMARY KEY,
+        setting_key   VARCHAR(100) NOT NULL UNIQUE,
+        setting_value TEXT,
+        setting_label VARCHAR(255),
+        updated_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
+    $defaults = [
+        ['emails_per_account',        '5',     'E-Mails pro SMTP-Account (dann rotieren)'],
+        ['pause_between_emails_ms',   '3000',  'Pause zwischen E-Mails (Millisekunden)'],
+        ['pause_between_accounts_ms', '15000', 'Pause zwischen SMTP-Wechsel (Millisekunden)'],
+        ['max_daily_per_account',     '200',   'Max. E-Mails pro Account pro Tag'],
+        ['unsubscribe_url',           '',      'Globaler Abmelde-Link (leer = auto-generiert)'],
+        ['track_opens',               '0',     'Öffnungs-Tracking aktiv (1 = ja)'],
+    ];
+    $ins = $pdo->prepare('INSERT IGNORE INTO mailing_settings (setting_key,setting_value,setting_label) VALUES (?,?,?)');
+    foreach ($defaults as $d) { $ins->execute($d); }
+
+    $pdo->exec("CREATE TABLE IF NOT EXISTS mailing_templates (
+        id         INT AUTO_INCREMENT PRIMARY KEY,
+        name       VARCHAR(255) NOT NULL,
+        subject    VARCHAR(255) NOT NULL DEFAULT '',
+        body_html  LONGTEXT,
+        body_text  TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
+    $pdo->exec("CREATE TABLE IF NOT EXISTS mailing_campaigns (
+        id           INT AUTO_INCREMENT PRIMARY KEY,
+        name         VARCHAR(255)  NOT NULL,
+        template_id  INT           DEFAULT NULL,
+        status       ENUM('draft','running','paused','completed','failed') NOT NULL DEFAULT 'draft',
+        total        INT UNSIGNED  NOT NULL DEFAULT 0,
+        sent         INT UNSIGNED  NOT NULL DEFAULT 0,
+        failed       INT UNSIGNED  NOT NULL DEFAULT 0,
+        opens        INT UNSIGNED  NOT NULL DEFAULT 0,
+        current_smtp_account_id INT DEFAULT NULL,
+        current_smtp_batch_count INT UNSIGNED NOT NULL DEFAULT 0,
+        created_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        started_at   DATETIME DEFAULT NULL,
+        finished_at  DATETIME DEFAULT NULL
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
+    $pdo->exec("CREATE TABLE IF NOT EXISTS mailing_recipients (
+        id           INT AUTO_INCREMENT PRIMARY KEY,
+        campaign_id  INT           NOT NULL,
+        email        VARCHAR(255)  NOT NULL,
+        name         VARCHAR(255)  DEFAULT '',
+        status       ENUM('pending','sent','failed','bounced','unsubscribed') NOT NULL DEFAULT 'pending',
+        smtp_account_id INT DEFAULT NULL,
+        sent_at      DATETIME DEFAULT NULL,
+        error_msg    VARCHAR(512)  DEFAULT NULL,
+        open_token   VARCHAR(64)   DEFAULT NULL,
+        opened_at    DATETIME DEFAULT NULL,
+        created_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
+    // Seed the KryptoxPay professional German template if not already present
+    $check = $pdo->query("SELECT COUNT(*) FROM mailing_templates WHERE name = 'KryptoxPay – Professionell (DE)'")->fetchColumn();
+    if (!$check) {
+        $html = _kryptoxpay_email_template_html();
+        $text = _kryptoxpay_email_template_text();
+        $pdo->prepare('INSERT INTO mailing_templates (name,subject,body_html,body_text) VALUES (?,?,?,?)')->execute([
+            'KryptoxPay – Professionell (DE)',
+            'Wichtige Information zu Ihren digitalen Vermögenswerten',
+            $html,
+            $text,
+        ]);
+    }
+}
+
+/**
+ * Returns the full HTML of the KryptoxPay professional German email template.
+ */
+function _kryptoxpay_email_template_html(): string
+{
+    return '<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<title>{{company_name}}</title>
+<style>
+  body,table,td,a{-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%}
+  body{margin:0;padding:0;background-color:#f2f4f7;font-family:\'Helvetica Neue\',Helvetica,Arial,sans-serif}
+  .email-wrapper{width:100%;background:#f2f4f7;padding:30px 0}
+  .email-content{max-width:600px;margin:0 auto;background:#ffffff;border-radius:10px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.08)}
+  .header{background:#0d2744;padding:32px 40px;text-align:center}
+  .header-logo{font-size:24px;font-weight:700;color:#ffffff;letter-spacing:-0.5px;text-decoration:none;display:block}
+  .header-logo span{color:#f0a500}
+  .header-tagline{margin:6px 0 0;font-size:12px;color:#7fa8d4;letter-spacing:1px;text-transform:uppercase}
+  .body{padding:38px 40px;color:#374151;font-size:15px;line-height:1.8}
+  .body h2{margin:0 0 18px;font-size:20px;color:#0d2744;font-weight:700}
+  .body p{margin:0 0 16px}
+  .body ul{padding-left:20px;margin:0 0 16px}
+  .body ul li{margin-bottom:6px}
+  .divider{height:1px;background:#e8edf2;margin:24px 0}
+  .cta-wrapper{text-align:center;margin:28px 0}
+  .cta-btn{display:inline-block;background:#f0a500;color:#ffffff!important;padding:14px 36px;border-radius:6px;font-size:15px;font-weight:700;text-decoration:none;letter-spacing:0.3px}
+  .footer{background:#f8fafc;padding:22px 40px;border-top:1px solid #e8edf2}
+  .footer p{margin:0 0 6px;font-size:12px;color:#9ca3af;text-align:center;line-height:1.6}
+  .footer a{color:#9ca3af;text-decoration:underline}
+  @media only screen and (max-width:620px){
+    .email-content,.header,.body,.footer{border-radius:0!important}
+    .body,.header,.footer{padding:24px 20px!important}
+  }
+</style>
+</head>
+<body>
+<div class="email-wrapper">
+  <div class="email-content">
+    <div class="header">
+      <a class="header-logo" href="https://kryptoxpay.co.uk">Kryptox<span>Pay</span></a>
+      <p class="header-tagline">Digitale Vermögensverwaltung &amp; Beratung</p>
+    </div>
+    <div class="body">
+      <h2>Sehr geehrte/r {{name}},</h2>
+      <p>wir wenden uns heute mit einer wichtigen Mitteilung an Sie, die im Zusammenhang mit Ihren digitalen Vermögenswerten stehen könnte.</p>
+      <p>Bei <strong>KryptoxPay</strong> begleiten wir Anlegerinnen und Anleger dabei, ihre finanzielle Situation transparent zu bewerten und fundierte Entscheidungen zu treffen. Unser Team aus erfahrenen Fachleuten steht Ihnen mit Sachverstand und Diskretion zur Seite.</p>
+      <p>Unsere Leistungen im Überblick:</p>
+      <ul>
+        <li>Unverbindliche und kostenlose Erstberatung</li>
+        <li>Individuelle Analyse Ihrer Situation durch Experten</li>
+        <li>Transparente Kommunikation ohne versteckte Kosten</li>
+        <li>Vertrauliche Bearbeitung Ihres Anliegens</li>
+      </ul>
+      <div class="divider"></div>
+      <p>Wir laden Sie herzlich ein, sich auf unserer Website zu informieren und unverbindlich Kontakt aufzunehmen. Unser Team beantwortet Ihre Fragen gerne persönlich.</p>
+      <div class="cta-wrapper">
+        <a href="https://kryptoxpay.co.uk" class="cta-btn">Jetzt unverbindlich informieren</a>
+      </div>
+      <div class="divider"></div>
+      <p style="font-size:14px;color:#374151">
+        Mit freundlichen Grüßen,<br>
+        <strong style="color:#0d2744">{{sender_name}}</strong><br>
+        KryptoxPay<br>
+        <a href="https://kryptoxpay.co.uk" style="color:#0d2744">https://kryptoxpay.co.uk</a>
+      </p>
+    </div>
+    <div class="footer">
+      <p>Sie erhalten diese E-Mail, da Sie sich für digitale Finanzthemen interessiert haben oder früher Kontakt mit uns aufgenommen haben.</p>
+      <p>
+        <a href="{{unsubscribe_url}}">Abmelden</a> &nbsp;&middot;&nbsp;
+        <a href="https://kryptoxpay.co.uk/datenschutz">Datenschutz</a> &nbsp;&middot;&nbsp;
+        <a href="https://kryptoxpay.co.uk/impressum">Impressum</a>
+      </p>
+      <p>KryptoxPay &nbsp;&middot;&nbsp; <a href="https://kryptoxpay.co.uk">https://kryptoxpay.co.uk</a></p>
+      {{open_tracker}}
+    </div>
+  </div>
+</div>
+</body>
+</html>';
+}
+
+/**
+ * Plain-text version of the KryptoxPay email template.
+ */
+function _kryptoxpay_email_template_text(): string
+{
+    return 'Sehr geehrte/r {{name}},
+
+wir wenden uns heute mit einer wichtigen Mitteilung an Sie, die im Zusammenhang
+mit Ihren digitalen Vermögenswerten stehen könnte.
+
+Bei KryptoxPay begleiten wir Anlegerinnen und Anleger dabei, ihre finanzielle
+Situation transparent zu bewerten und fundierte Entscheidungen zu treffen.
+
+Unsere Leistungen:
+- Unverbindliche und kostenlose Erstberatung
+- Individuelle Analyse Ihrer Situation durch Experten
+- Transparente Kommunikation ohne versteckte Kosten
+- Vertrauliche Bearbeitung Ihres Anliegens
+
+Mehr Informationen finden Sie unter:
+https://kryptoxpay.co.uk
+
+Mit freundlichen Grüßen,
+{{sender_name}}
+KryptoxPay
+https://kryptoxpay.co.uk
+
+---
+Sie erhalten diese E-Mail, da Sie sich für digitale Finanzthemen interessiert haben.
+Abmelden: {{unsubscribe_url}}
+Datenschutz: https://kryptoxpay.co.uk/datenschutz';
 }

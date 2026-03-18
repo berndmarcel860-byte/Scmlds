@@ -46,42 +46,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // CSV import
     if ($action === 'import_csv' && $cid) {
         $imported = 0;
-        $errors   = [];
 
         if (isset($_FILES['csv_file']) && $_FILES['csv_file']['error'] === UPLOAD_ERR_OK) {
             $tmp = $_FILES['csv_file']['tmp_name'];
-            $rows = [];
             if (($fh = fopen($tmp, 'r')) !== false) {
-                // Detect and skip header row
-                $first = fgetcsv($fh, 1000, ',') ?: fgetcsv($fh, 1000, ';');
-                $is_header = $first && preg_match('/^(e-?mail|email|mail|name|vorname|erste)/i', $first[0]);
-                if (!$is_header && $first) {
-                    $rows[] = $first; // first row is data
-                }
-                while (($row = fgetcsv($fh, 1000, ',')) !== false) {
-                    $rows[] = $row;
-                }
-                // Also try semicolon delimiter if only 1 column found
-                if (count($rows) < 2 || (count($rows[0] ?? []) < 2)) {
-                    rewind($fh);
-                    $rows = [];
-                    while (($row = fgetcsv($fh, 1000, ';')) !== false) {
-                        $rows[] = $row;
-                    }
-                    if (!$is_header && !empty($rows)) array_shift($rows);
-                }
+                $rows = parse_csv_file_to_recipient_rows($fh);
                 fclose($fh);
+                $imported = import_mailing_recipients($cid, $rows);
             }
-            $imported = import_mailing_recipients($cid, $rows);
             $msg = "$imported Empfänger importiert.";
             $campaign = get_mailing_campaign($cid);
         } elseif (!empty(trim($_POST['manual_emails'] ?? ''))) {
-            // Manual paste
-            $lines = preg_split('/[\r\n,;]+/', trim($_POST['manual_emails']));
+            // Manual paste: one address per line, optional comma/tab-separated name
+            $lines = preg_split('/[\r\n]+/', trim($_POST['manual_emails']));
             $rows  = [];
             foreach ($lines as $line) {
-                $parts = preg_split('/[\t;,]/', trim($line), 2);
-                $rows[] = [$parts[0], $parts[1] ?? ''];
+                $line  = trim($line);
+                if ($line === '') continue;
+                // Allow:  "email"  or  "email,name"  or  "email;name"  or  "email\tname"
+                $parts = preg_split('/[,;\t]+/', $line, 2);
+                $email = trim($parts[0]);
+                $name  = trim($parts[1] ?? '');
+                // Also handle "Name <email>" format
+                if (preg_match('/^(.+?)\s*<([^>]+)>$/', $line, $m)) {
+                    $name  = trim($m[1]);
+                    $email = trim($m[2]);
+                }
+                $rows[] = [$email, $name];
             }
             $imported = import_mailing_recipients($cid, $rows);
             $msg = "$imported Empfänger importiert.";
@@ -247,17 +238,29 @@ $sample_recipients = $cid ? get_mailing_recipients($cid, '', 10, 0) : [];
                             <input type="hidden" name="action" value="import_csv">
                             <div class="tab-content">
                                 <div class="tab-pane fade show active" id="tabCsv">
-                                    <p class="text-muted small">CSV-Format: <code>email,name</code> (Komma oder Semikolon getrennt). Erste Zeile kann Header sein.</p>
+                                    <p class="text-muted small mb-1">Der Importer erkennt automatisch:</p>
+                                    <ul class="text-muted small mb-2">
+                                        <li><code>email, name</code> (Name kombiniert)</li>
+                                        <li><code>email, vorname, nachname</code> (Namen getrennt)</li>
+                                        <li><code>vorname, nachname, email</code> (E-Mail am Ende)</li>
+                                        <li>Komma-, Semikolon- und Tab-Trennung</li>
+                                        <li>Optionale Kopfzeile wird automatisch erkannt und übersprungen</li>
+                                    </ul>
                                     <div class="mb-3">
                                         <label class="form-label fw-semibold">CSV-Datei</label>
                                         <input type="file" name="csv_file" class="form-control" accept=".csv,.txt">
                                     </div>
                                 </div>
                                 <div class="tab-pane fade" id="tabManual">
-                                    <p class="text-muted small">Eine Adresse pro Zeile: <code>email@example.com,Name</code> oder nur E-Mail.</p>
+                                    <p class="text-muted small">Eine Adresse pro Zeile. Unterstützte Formate:</p>
+                                    <ul class="text-muted small mb-2">
+                                        <li><code>email@example.com</code></li>
+                                        <li><code>email@example.com,Max Mustermann</code></li>
+                                        <li><code>Max Mustermann &lt;email@example.com&gt;</code></li>
+                                    </ul>
                                     <div class="mb-3">
                                         <textarea name="manual_emails" class="form-control font-monospace" rows="8"
-                                                  placeholder="max@mustermann.de,Max Mustermann&#10;anna@beispiel.de"></textarea>
+                                                  placeholder="max@mustermann.de,Max Mustermann&#10;anna@beispiel.de&#10;Hans Müller <hans@mail.de>"></textarea>
                                     </div>
                                 </div>
                             </div>

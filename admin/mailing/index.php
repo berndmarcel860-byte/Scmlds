@@ -8,6 +8,9 @@ require_once __DIR__ . '/../../includes/functions.php';
 
 admin_check();
 
+// Ensure DB tables + seed default data on first visit
+ensure_mailing_tables();
+
 // ── Handle actions ────────────────────────────────────────────────────────────
 $msg      = '';
 $msg_type = 'success';

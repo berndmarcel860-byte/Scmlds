@@ -44,41 +44,110 @@ if (isset($_GET['edit'])) { $edit = get_mailing_template((int) $_GET['edit']); }
 
 $templates = get_mailing_templates();
 
-// Default spam-safe template HTML
+// Professional German email template for kryptoxpay.co.uk
 $default_html = <<<'HTML'
 <!DOCTYPE html>
 <html lang="de">
-<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<title>{{company_name}}</title>
 <style>
-  body{font-family:Arial,Helvetica,sans-serif;background:#f4f4f4;margin:0;padding:0}
-  .wrap{max-width:600px;margin:30px auto;background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.08)}
-  .header{background:#1a3c5e;color:#fff;padding:30px 40px;text-align:center}
-  .header h1{margin:0;font-size:22px;font-weight:700}
-  .body{padding:30px 40px;color:#333;line-height:1.7}
-  .body h2{color:#1a3c5e;font-size:18px}
-  .cta{display:inline-block;background:#e8a020;color:#fff!important;padding:12px 28px;border-radius:5px;text-decoration:none;font-weight:700;margin:20px 0}
-  .footer{background:#f8f8f8;padding:20px 40px;font-size:12px;color:#888;text-align:center;border-top:1px solid #e5e5e5}
-  .footer a{color:#888}
+  /* Reset */
+  body,table,td,a{-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%}
+  table,td{mso-table-lspace:0pt;mso-table-rspace:0pt}
+  img{-ms-interpolation-mode:bicubic;border:0;outline:none;text-decoration:none}
+  /* Layout */
+  body{margin:0;padding:0;background-color:#f2f4f7;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif}
+  .email-wrapper{width:100%;background:#f2f4f7;padding:30px 0}
+  .email-content{max-width:600px;margin:0 auto;background:#ffffff;border-radius:10px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.08)}
+  /* Header */
+  .header{background:#0d2744;padding:32px 40px;text-align:center}
+  .header-logo{font-size:24px;font-weight:700;color:#ffffff;letter-spacing:-0.5px;text-decoration:none}
+  .header-logo span{color:#f0a500}
+  .header-tagline{margin:6px 0 0;font-size:12px;color:#7fa8d4;letter-spacing:1px;text-transform:uppercase}
+  /* Body */
+  .body{padding:38px 40px;color:#374151;font-size:15px;line-height:1.8}
+  .body h2{margin:0 0 18px;font-size:20px;color:#0d2744;font-weight:700}
+  .body p{margin:0 0 16px}
+  .body ul{padding-left:20px;margin:0 0 16px}
+  .body ul li{margin-bottom:6px}
+  /* Divider */
+  .divider{height:1px;background:#e8edf2;margin:24px 0}
+  /* CTA button */
+  .cta-wrapper{text-align:center;margin:28px 0}
+  .cta-btn{display:inline-block;background:#f0a500;color:#ffffff!important;padding:14px 36px;border-radius:6px;font-size:15px;font-weight:700;text-decoration:none;letter-spacing:0.3px}
+  /* Signature */
+  .signature{font-size:14px;color:#374151}
+  .signature strong{color:#0d2744}
+  /* Footer */
+  .footer{background:#f8fafc;padding:22px 40px;border-top:1px solid #e8edf2}
+  .footer p{margin:0 0 6px;font-size:12px;color:#9ca3af;text-align:center;line-height:1.6}
+  .footer a{color:#9ca3af;text-decoration:underline}
+  /* Responsive */
+  @media only screen and (max-width:620px){
+    .email-content,.header,.body,.footer{border-radius:0!important}
+    .body,.header,.footer{padding:24px 20px!important}
+  }
 </style>
 </head>
 <body>
-<div class="wrap">
-  <div class="header">
-    <h1>{{company_name}}</h1>
-  </div>
-  <div class="body">
-    <h2>Sehr geehrte/r {{name}},</h2>
-    <p>Schreiben Sie hier Ihren Nachrichtentext. Achten Sie auf eine professionelle Sprache und vermeiden Sie typische Spam-Trigger-Wörter.</p>
-    <p>Erklären Sie klar den Mehrwert Ihres Angebots für den Empfänger.</p>
-    <p style="text-align:center">
-      <a href="{{site_url}}" class="cta">Jetzt informieren</a>
-    </p>
-    <p>Mit freundlichen Grüßen,<br><strong>{{sender_name}}</strong><br>{{company_name}}</p>
-  </div>
-  <div class="footer">
-    Sie erhalten diese E-Mail, weil Sie sich für unseren Dienst interessiert haben.<br>
-    <a href="{{unsubscribe_url}}">Abmelden</a> | <a href="{{site_url}}">{{site_url}}</a>
-    {{open_tracker}}
+<div class="email-wrapper">
+  <div class="email-content">
+
+    <!-- Header -->
+    <div class="header">
+      <div class="header-logo">{{company_name}}</div>
+      <p class="header-tagline">Digitale Vermögensverwaltung &amp; Rückholung</p>
+    </div>
+
+    <!-- Body -->
+    <div class="body">
+      <h2>Sehr geehrte/r {{name}},</h2>
+
+      <p>wir wenden uns heute an Sie mit wichtigen Informationen, die für Ihre finanzielle Situation von Bedeutung sein könnten.</p>
+
+      <p>Unser Team bei <strong>{{company_name}}</strong> unterstützt Anleger dabei, ihre Situation zu bewerten und mögliche Handlungsoptionen zu prüfen. Mit unserer langjährigen Erfahrung im Bereich digitaler Vermögenswerte stehen wir Ihnen als vertrauenswürdiger Ansprechpartner zur Verfügung.</p>
+
+      <p>Was wir für Sie tun können:</p>
+      <ul>
+        <li>Kostenlose und unverbindliche Erstberatung</li>
+        <li>Transparente Analyse Ihrer individuellen Situation</li>
+        <li>Professionelle Unterstützung durch erfahrene Fachleute</li>
+        <li>Diskrete und vertrauliche Bearbeitung Ihres Anliegens</li>
+      </ul>
+
+      <div class="divider"></div>
+
+      <p>Wenn Sie mehr erfahren möchten oder Fragen zu Ihrer Situation haben, stehen wir Ihnen gerne zur Verfügung. Eine unverbindliche Kontaktaufnahme ist der erste Schritt.</p>
+
+      <div class="cta-wrapper">
+        <a href="{{site_url}}" class="cta-btn">Jetzt unverbindlich informieren</a>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="signature">
+        <p>Mit freundlichen Grüßen,<br>
+        <strong>{{sender_name}}</strong><br>
+        {{company_name}}<br>
+        <a href="{{site_url}}" style="color:#0d2744">{{site_url}}</a></p>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+      <p>Sie erhalten diese E-Mail, da Sie sich für Finanzthemen interessiert haben oder früher Kontakt mit uns aufgenommen haben.</p>
+      <p>
+        <a href="{{unsubscribe_url}}">Abmelden</a> &nbsp;|&nbsp;
+        <a href="{{site_url}}/datenschutz">Datenschutz</a> &nbsp;|&nbsp;
+        <a href="{{site_url}}/impressum">Impressum</a>
+      </p>
+      <p>{{company_name}} &nbsp;&middot;&nbsp; <a href="{{site_url}}">{{site_url}}</a></p>
+      {{open_tracker}}
+    </div>
+
   </div>
 </div>
 </body>
