@@ -33,3 +33,4 @@ if ($target_url && preg_match('/^https?:\/\//i', $target_url)) {
 }
 
 header('Location: ' . $redirect_to, true, 302);
+exit;
