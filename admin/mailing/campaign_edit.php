@@ -26,20 +26,16 @@ if ($cid) {
  *
  * @param int   $imported  Number of rows successfully inserted.
  * @param array $skipped   Array of ['email'=>…, 'reason'=>…] from filter_rows_by_email_validity().
+ * @param int   $valid_count   Count of valid rows.
+ * @param int   $invalid_count Count of invalid rows (still imported with flag).
  * @return string  HTML-safe summary string.
  */
-function _import_summary_msg(int $imported, array $skipped): string
+function _import_summary_msg(int $imported, array $skipped, int $valid_count = 0, int $invalid_count = 0): string
 {
-    $total_skipped = count($skipped);
-    $syntax_errors = count(array_filter($skipped, fn($s) => $s['reason'] === 'invalid_syntax'));
-    $mx_errors     = count(array_filter($skipped, fn($s) => $s['reason'] === 'no_mx'));
-
     $parts = ["<strong>$imported</strong> Empfänger importiert"];
-    if ($total_skipped) {
-        $detail = [];
-        if ($syntax_errors) $detail[] = "$syntax_errors ungültige Syntax";
-        if ($mx_errors)     $detail[] = "$mx_errors kein MX-Eintrag";
-        $parts[] = "<strong>$total_skipped</strong> abgelehnt (" . implode(', ', $detail) . ")";
+    if ($valid_count || $invalid_count) {
+        $parts[] = "<span class='text-success'><strong>$valid_count</strong> gültig</span>";
+        $parts[] = "<span class='text-danger'><strong>$invalid_count</strong> ungültig</span> (werden nicht versendet)";
     }
     return implode(' · ', $parts) . '.';
 }
@@ -123,12 +119,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             // ── E-Mail-Validierung ────────────────────────────────────────────
             $result      = filter_rows_by_email_validity($rows, $do_mx);
-            $rows        = $result['valid'];
+            $all_rows    = array_merge($result['valid'], $result['invalid']);
             $val_skipped = $result['skipped'];
 
-            $imported = import_mailing_recipients($cid, $rows);
+            $imported = import_mailing_recipients($cid, $all_rows);
             $campaign = get_mailing_campaign($cid);
-            $msg      = _import_summary_msg($imported, $val_skipped);
+            $msg      = _import_summary_msg($imported, $val_skipped, count($result['valid']), count($result['invalid']));
 
         } elseif (!empty(trim($_POST['manual_emails'] ?? ''))) {
             $do_mx = !empty($_POST['validate_mx']);
@@ -152,12 +148,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             // ── E-Mail-Validierung ────────────────────────────────────────────
             $result      = filter_rows_by_email_validity($rows, $do_mx);
-            $rows        = $result['valid'];
+            $all_rows    = array_merge($result['valid'], $result['invalid']);
             $val_skipped = $result['skipped'];
 
-            $imported = import_mailing_recipients($cid, $rows);
+            $imported = import_mailing_recipients($cid, $all_rows);
             $campaign = get_mailing_campaign($cid);
-            $msg      = _import_summary_msg($imported, $val_skipped);
+            $msg      = _import_summary_msg($imported, $val_skipped, count($result['valid']), count($result['invalid']));
         } else {
             $msg_type = 'danger';
             $msg = 'Bitte eine CSV-Datei hochladen oder E-Mail-Adressen einfügen.';
@@ -177,7 +173,7 @@ if (isset($_GET['created'])) $msg = 'Kampagne erstellt. Jetzt Empfänger importi
 
 $templates = get_mailing_templates();
 $stats = $cid ? get_campaign_stats($cid) : null;
-$sample_recipients = $cid ? get_mailing_recipients($cid, '', 10, 0) : [];
+$sample_recipients = $cid ? get_mailing_recipients($cid, '', 10, 0, '') : [];
 ?>
 <!DOCTYPE html>
 <html lang="de">
@@ -502,17 +498,25 @@ $sample_recipients = $cid ? get_mailing_recipients($cid, '', 10, 0) : [];
                 <div class="card shadow-sm border-0 mt-4">
                     <div class="card-header bg-white py-2 d-flex justify-content-between align-items-center">
                         <h6 class="fw-semibold mb-0 small">Empfänger-Vorschau (10 von <?= number_format($stats['total'] ?? 0) ?>)</h6>
-                        <a href="stats.php?id=<?= $cid ?>#recipients" class="btn btn-link btn-sm p-0">Alle anzeigen</a>
+                        <div class="d-flex gap-2">
+                            <a href="leads.php?campaign_id=<?= $cid ?>" class="btn btn-link btn-sm p-0 text-primary">Alle Leads</a>
+                            <a href="stats.php?id=<?= $cid ?>#recipients" class="btn btn-link btn-sm p-0">Statistiken</a>
+                        </div>
                     </div>
                     <div class="table-responsive">
                         <table class="table table-sm table-hover mb-0">
-                            <thead class="table-light"><tr><th>E-Mail</th><th>Name</th><th>Plattform</th><th>Status</th></tr></thead>
+                            <thead class="table-light"><tr><th>E-Mail</th><th>Name</th><th>Plattform</th><th>Gültigkeit</th><th>Status</th></tr></thead>
                             <tbody>
-                            <?php foreach ($sample_recipients as $r): ?>
-                            <tr>
+                            <?php foreach ($sample_recipients as $r):
+                                $validity = $r['email_validity'] ?? 'valid';
+                                $vc = $validity === 'valid' ? 'success' : 'danger';
+                                $vl = $validity === 'valid' ? 'Gültig' : 'Ungültig';
+                            ?>
+                            <tr class="<?= $validity === 'invalid' ? 'text-muted' : '' ?>">
                                 <td class="small"><?= htmlspecialchars($r['email']) ?></td>
                                 <td class="small text-muted"><?= htmlspecialchars($r['name']) ?></td>
                                 <td class="small text-muted"><?= htmlspecialchars($r['scam_platform'] ?? '') ?></td>
+                                <td><span class="badge bg-<?= $vc ?>-subtle text-<?= $vc ?>" style="font-size:.7em"><?= $vl ?></span></td>
                                 <td><span class="badge bg-<?= ['pending'=>'secondary','sent'=>'success','failed'=>'danger'][$r['status']] ?? 'secondary' ?>" style="font-size:.7em"><?= $r['status'] ?></span></td>
                             </tr>
                             <?php endforeach; ?>

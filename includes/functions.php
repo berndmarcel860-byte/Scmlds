@@ -806,12 +806,13 @@ function delete_mailing_campaign(int $id): bool
 /**
  * Recipients
  */
-function get_mailing_recipients(int $campaign_id, string $status = '', int $limit = 0, int $offset = 0): array
+function get_mailing_recipients(int $campaign_id, string $status = '', int $limit = 0, int $offset = 0, string $validity = 'valid'): array
 {
     $pdo = db_connect();
     $sql = 'SELECT * FROM mailing_recipients WHERE campaign_id = :cid';
     $params = [':cid' => $campaign_id];
     if ($status) { $sql .= ' AND status = :st'; $params[':st'] = $status; }
+    if ($validity) { $sql .= ' AND email_validity = :ev'; $params[':ev'] = $validity; }
     $sql .= ' ORDER BY id ASC';
     if ($limit) $sql .= " LIMIT $limit OFFSET $offset";
     $stmt = $pdo->prepare($sql);
@@ -819,12 +820,13 @@ function get_mailing_recipients(int $campaign_id, string $status = '', int $limi
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
 
-function count_mailing_recipients(int $campaign_id, string $status = ''): int
+function count_mailing_recipients(int $campaign_id, string $status = '', string $validity = 'valid'): int
 {
     $pdo = db_connect();
     $sql = 'SELECT COUNT(*) FROM mailing_recipients WHERE campaign_id = :cid';
     $params = [':cid' => $campaign_id];
     if ($status) { $sql .= ' AND status = :st'; $params[':st'] = $status; }
+    if ($validity) { $sql .= ' AND email_validity = :ev'; $params[':ev'] = $validity; }
     $stmt = $pdo->prepare($sql);
     $stmt->execute($params);
     return (int) $stmt->fetchColumn();
@@ -1041,7 +1043,10 @@ function validate_email_for_import(string $email, bool $check_mx = true): string
 }
 
 /**
- * Filter an array of recipient rows by email validity.
+ * Validate email validity for an array of recipient rows.
+ *
+ * All rows are returned; each row gets an injected '_validity' key set to
+ * 'valid' or 'invalid'.  Invalid rows also get an '_invalid_reason' key.
  *
  * Accepts both associative rows (with 'email' key) and legacy positional rows.
  * Performs per-domain MX caching to avoid redundant DNS lookups when many
@@ -1051,6 +1056,7 @@ function validate_email_for_import(string $email, bool $check_mx = true): string
  * @param  bool   $check_mx  Whether to check MX records (default true).
  * @return array{
  *   valid:   array,
+ *   invalid: array,
  *   skipped: array<array{email:string, reason:string}>
  * }
  */
@@ -1058,14 +1064,19 @@ function filter_rows_by_email_validity(array $rows, bool $check_mx = true): arra
 {
     $mx_cache = [];   // domain → bool
     $valid    = [];
-    $skipped  = [];
+    $invalid  = [];
+    $skipped  = [];   // kept for backwards-compat / summary display
 
     foreach ($rows as $row) {
         $email = trim(isset($row['email']) ? ($row['email'] ?? '') : ($row[0] ?? ''));
 
         // 1. Syntax
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            $skipped[] = ['email' => $email, 'reason' => 'invalid_syntax'];
+            $reason  = 'invalid_syntax';
+            $skipped[] = ['email' => $email, 'reason' => $reason];
+            $row['_validity']       = 'invalid';
+            $row['_invalid_reason'] = $reason;
+            $invalid[] = $row;
             continue;
         }
 
@@ -1080,15 +1091,20 @@ function filter_rows_by_email_validity(array $rows, bool $check_mx = true): arra
                 );
             }
             if (!$mx_cache[$domain]) {
-                $skipped[] = ['email' => $email, 'reason' => 'no_mx'];
+                $reason  = 'no_mx';
+                $skipped[] = ['email' => $email, 'reason' => $reason];
+                $row['_validity']       = 'invalid';
+                $row['_invalid_reason'] = $reason;
+                $invalid[] = $row;
                 continue;
             }
         }
 
+        $row['_validity'] = 'valid';
         $valid[] = $row;
     }
 
-    return ['valid' => $valid, 'skipped' => $skipped];
+    return ['valid' => $valid, 'invalid' => $invalid, 'skipped' => $skipped];
 }
 
 /**
@@ -1096,6 +1112,11 @@ function filter_rows_by_email_validity(array $rows, bool $check_mx = true): arra
  *
  *   'name'          – optional full name
  *   'scam_platform' – optional platform where the lead lost money
+ *   '_validity'     – 'valid' or 'invalid' (set by filter_rows_by_email_validity)
+ *
+ * ALL rows (valid and invalid) are inserted so the admin can see them all on
+ * the Leads page.  Only recipients with email_validity='valid' are picked
+ * by the batch sender.
  *
  * Legacy positional arrays [ email, name ] are also accepted for backwards compatibility.
  *
@@ -1105,29 +1126,40 @@ function import_mailing_recipients(int $campaign_id, array $rows): int
 {
     $pdo  = db_connect();
     $stmt = $pdo->prepare(
-        'INSERT IGNORE INTO mailing_recipients (campaign_id,email,name,scam_platform,open_token) ' .
-        'VALUES (:cid,:em,:nm,:sp,:tok)'
+        'INSERT IGNORE INTO mailing_recipients (campaign_id,email,name,scam_platform,email_validity,open_token,click_token) ' .
+        'VALUES (:cid,:em,:nm,:sp,:ev,:tok,:ctok)'
     );
     $count = 0;
     foreach ($rows as $row) {
         // Support both associative and legacy positional format
         if (isset($row['email'])) {
-            $email    = filter_var(trim($row['email'] ?? ''), FILTER_VALIDATE_EMAIL);
-            $name     = trim($row['name']          ?? '');
-            $platform = trim($row['scam_platform'] ?? '');
+            $raw_email = trim($row['email'] ?? '');
+            $name      = trim($row['name']          ?? '');
+            $platform  = trim($row['scam_platform'] ?? '');
+            $validity  = $row['_validity'] ?? 'valid';
         } else {
-            $email    = filter_var(trim($row[0] ?? ''), FILTER_VALIDATE_EMAIL);
-            $name     = trim($row[1] ?? '');
-            $platform = trim($row[2] ?? '');
+            $raw_email = trim($row[0] ?? '');
+            $name      = trim($row[1] ?? '');
+            $platform  = trim($row[2] ?? '');
+            $validity  = $row['_validity'] ?? 'valid';
         }
-        if (!$email) continue;
-        $token = bin2hex(random_bytes(16));
-        if ($stmt->execute([':cid'=>$campaign_id,':em'=>$email,':nm'=>$name,':sp'=>$platform,':tok'=>$token])) {
+        // For invalid rows we keep the raw email string (even if not RFC-valid)
+        // For valid rows we additionally run filter_var as a safety net
+        if ($validity === 'valid') {
+            $email = filter_var($raw_email, FILTER_VALIDATE_EMAIL);
+            if (!$email) continue;
+        } else {
+            $email = $raw_email;
+            if ($email === '') continue;
+        }
+        $token  = bin2hex(random_bytes(16));
+        $ctoken = bin2hex(random_bytes(16));
+        if ($stmt->execute([':cid'=>$campaign_id,':em'=>$email,':nm'=>$name,':sp'=>$platform,':ev'=>$validity,':tok'=>$token,':ctok'=>$ctoken])) {
             $count++;
         }
     }
     // Update campaign total
-    $pdo->prepare('UPDATE mailing_campaigns SET total=(SELECT COUNT(*) FROM mailing_recipients WHERE campaign_id=:cid) WHERE id=:cid2')
+    $pdo->prepare('UPDATE mailing_campaigns SET total=(SELECT COUNT(*) FROM mailing_recipients WHERE campaign_id=:cid AND email_validity="valid") WHERE id=:cid2')
         ->execute([':cid'=>$campaign_id,':cid2'=>$campaign_id]);
     return $count;
 }
@@ -1157,18 +1189,26 @@ function pause_mailing_campaign(int $id): bool
 function get_campaign_stats(int $campaign_id): array
 {
     $pdo = db_connect();
-    $r = $pdo->prepare('SELECT status, COUNT(*) AS cnt FROM mailing_recipients WHERE campaign_id=:cid GROUP BY status');
+    $r = $pdo->prepare('SELECT status, COUNT(*) AS cnt FROM mailing_recipients WHERE campaign_id=:cid AND email_validity="valid" GROUP BY status');
     $r->execute([':cid'=>$campaign_id]);
     $rows = $r->fetchAll(PDO::FETCH_ASSOC);
-    $stats = ['pending'=>0,'sent'=>0,'failed'=>0,'bounced'=>0,'unsubscribed'=>0,'total'=>0,'opens'=>0];
+    $stats = ['pending'=>0,'sent'=>0,'failed'=>0,'bounced'=>0,'unsubscribed'=>0,'total'=>0,'opens'=>0,'clicks'=>0,'invalid'=>0];
     foreach ($rows as $row) {
         $stats[$row['status']] = (int) $row['cnt'];
         $stats['total'] += (int) $row['cnt'];
     }
     // opens
-    $o = $pdo->prepare('SELECT COUNT(*) FROM mailing_recipients WHERE campaign_id=:cid AND opened_at IS NOT NULL');
+    $o = $pdo->prepare('SELECT COUNT(*) FROM mailing_recipients WHERE campaign_id=:cid AND email_validity="valid" AND opened_at IS NOT NULL');
     $o->execute([':cid'=>$campaign_id]);
     $stats['opens'] = (int) $o->fetchColumn();
+    // clicks
+    $c = $pdo->prepare('SELECT COUNT(*) FROM mailing_recipients WHERE campaign_id=:cid AND email_validity="valid" AND clicked_at IS NOT NULL');
+    $c->execute([':cid'=>$campaign_id]);
+    $stats['clicks'] = (int) $c->fetchColumn();
+    // invalid count (for display)
+    $inv = $pdo->prepare('SELECT COUNT(*) FROM mailing_recipients WHERE campaign_id=:cid AND email_validity="invalid"');
+    $inv->execute([':cid'=>$campaign_id]);
+    $stats['invalid'] = (int) $inv->fetchColumn();
     return $stats;
 }
 
@@ -1180,6 +1220,26 @@ function record_mailing_open(string $token): void
     $pdo  = db_connect();
     $stmt = $pdo->prepare('UPDATE mailing_recipients SET opened_at=NOW() WHERE open_token=:tok AND opened_at IS NULL');
     $stmt->execute([':tok' => $token]);
+}
+
+/**
+ * Record a link click (called by track_click.php).
+ * Increments click_count and sets clicked_at on first click.
+ * Returns the target URL stored in the click token, or NULL if not found.
+ */
+function record_mailing_click(string $token): ?string
+{
+    $pdo  = db_connect();
+    $stmt = $pdo->prepare('SELECT id FROM mailing_recipients WHERE click_token=:tok LIMIT 1');
+    $stmt->execute([':tok' => $token]);
+    $row = $stmt->fetch(PDO::FETCH_ASSOC);
+    if (!$row) return null;
+    $pdo->prepare(
+        'UPDATE mailing_recipients
+         SET click_count=click_count+1, clicked_at=COALESCE(clicked_at,NOW())
+         WHERE click_token=:tok'
+    )->execute([':tok' => $token]);
+    return 'found';
 }
 
 /**
@@ -1258,12 +1318,16 @@ function ensure_mailing_tables(): void
         email           VARCHAR(255)  NOT NULL,
         name            VARCHAR(255)  DEFAULT '',
         scam_platform   VARCHAR(255)  DEFAULT '',
+        email_validity  ENUM('valid','invalid') NOT NULL DEFAULT 'valid',
         status          ENUM('pending','sent','failed','bounced','unsubscribed') NOT NULL DEFAULT 'pending',
         smtp_account_id INT           DEFAULT NULL,
         sent_at         DATETIME      DEFAULT NULL,
         error_msg       VARCHAR(512)  DEFAULT NULL,
         open_token      VARCHAR(64)   DEFAULT NULL,
         opened_at       DATETIME      DEFAULT NULL,
+        click_token     VARCHAR(64)   DEFAULT NULL,
+        clicked_at      DATETIME      DEFAULT NULL,
+        click_count     INT UNSIGNED  NOT NULL DEFAULT 0,
         created_at      TIMESTAMP     DEFAULT CURRENT_TIMESTAMP
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
 
@@ -1273,6 +1337,20 @@ function ensure_mailing_tables(): void
     } catch (\PDOException $e) {
         // Column already exists — ignore duplicate column error
     }
+    // Add email_validity column (migration for existing installations)
+    try {
+        $pdo->exec("ALTER TABLE mailing_recipients ADD COLUMN email_validity ENUM('valid','invalid') NOT NULL DEFAULT 'valid' AFTER scam_platform");
+    } catch (\PDOException $e) { /* already exists */ }
+    // Add click tracking columns (migration for existing installations)
+    try {
+        $pdo->exec("ALTER TABLE mailing_recipients ADD COLUMN click_token VARCHAR(64) DEFAULT NULL AFTER opened_at");
+    } catch (\PDOException $e) { /* already exists */ }
+    try {
+        $pdo->exec("ALTER TABLE mailing_recipients ADD COLUMN clicked_at DATETIME DEFAULT NULL AFTER click_token");
+    } catch (\PDOException $e) { /* already exists */ }
+    try {
+        $pdo->exec("ALTER TABLE mailing_recipients ADD COLUMN click_count INT UNSIGNED NOT NULL DEFAULT 0 AFTER clicked_at");
+    } catch (\PDOException $e) { /* already exists */ }
 
     // Seed the KryptoxPay professional German template if not already present
     $check = $pdo->query("SELECT COUNT(*) FROM mailing_templates WHERE name = 'KryptoxPay – Professionell (DE)'")->fetchColumn();

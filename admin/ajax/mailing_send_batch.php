@@ -131,7 +131,7 @@ if ($batch_count >= $emails_per_account) {
 // ── Get next pending recipients (1 at a time to keep response fast) ───────────
 $stmt = $pdo->prepare(
     'SELECT * FROM mailing_recipients
-     WHERE campaign_id = :cid AND status = "pending"
+     WHERE campaign_id = :cid AND status = "pending" AND email_validity = "valid"
      ORDER BY id ASC LIMIT 1'
 );
 $stmt->execute([':cid' => $campaign_id]);
@@ -203,6 +203,24 @@ $raw_subj = resolve_platform_conditional($raw_subj, $scam_platform);
 $subject   = str_replace(array_keys($vars), array_values($vars), $raw_subj);
 $body_html = str_replace(array_keys($vars), array_values($vars), $raw_html);
 $body_text = str_replace(array_keys($vars), array_values($vars), $raw_text);
+
+// ── Inject click-tracking wrapper around links ────────────────────────────────
+$click_token = $recipient['click_token'] ?? '';
+if ($click_token) {
+    $body_html = preg_replace_callback(
+        '/<a\s([^>]*?)href=["\']([^"\']+)["\']([^>]*?)>/i',
+        function ($m) use ($site_url, $click_token) {
+            $href = $m[2];
+            // Skip unsubscribe links and tracking links
+            if (strpos($href, 'unsubscribe') !== false || strpos($href, 'track_') !== false) {
+                return $m[0];
+            }
+            $tracked = $site_url . '/track_click.php?t=' . urlencode($click_token) . '&url=' . urlencode($href);
+            return '<a ' . $m[1] . 'href="' . htmlspecialchars($tracked, ENT_QUOTES) . '"' . $m[3] . '>';
+        },
+        $body_html
+    );
+}
 
 // ── Send email ────────────────────────────────────────────────────────────────
 $sent_now   = 0;

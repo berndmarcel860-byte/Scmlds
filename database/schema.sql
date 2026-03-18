@@ -379,12 +379,16 @@ CREATE TABLE IF NOT EXISTS mailing_recipients (
     email           VARCHAR(255)  NOT NULL,
     name            VARCHAR(255)  DEFAULT '',
     scam_platform   VARCHAR(255)  DEFAULT '',
+    email_validity  ENUM('valid','invalid') NOT NULL DEFAULT 'valid',
     status          ENUM('pending','sent','failed','bounced','unsubscribed') NOT NULL DEFAULT 'pending',
     smtp_account_id INT           DEFAULT NULL,
     sent_at         DATETIME      DEFAULT NULL,
     error_msg       VARCHAR(512)  DEFAULT NULL,
     open_token      VARCHAR(64)   DEFAULT NULL,
     opened_at       DATETIME      DEFAULT NULL,
+    click_token     VARCHAR(64)   DEFAULT NULL,
+    clicked_at      DATETIME      DEFAULT NULL,
+    click_count     INT UNSIGNED  NOT NULL DEFAULT 0,
     created_at      TIMESTAMP     DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (campaign_id) REFERENCES mailing_campaigns(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

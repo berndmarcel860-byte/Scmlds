@@ -83,6 +83,12 @@
                             </a>
                         </li>
                         <li class="nav-item">
+                            <a href="mailing/leads.php"
+                               class="nav-link sidebar-link py-1 small <?= basename($_SERVER['PHP_SELF']) === 'leads.php' && $in_mailing ? 'active' : '' ?>">
+                                <i class="bi bi-people me-2"></i>Leads / Kontakte
+                            </a>
+                        </li>
+                        <li class="nav-item">
                             <a href="mailing/index.php#stats"
                                class="nav-link sidebar-link py-1 small <?= basename($_SERVER['PHP_SELF']) === 'stats.php' && $in_mailing ? 'active' : '' ?>">
                                 <i class="bi bi-bar-chart me-2"></i>Statistiken
