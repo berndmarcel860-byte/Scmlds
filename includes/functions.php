@@ -633,28 +633,12 @@ function slugify(string $text): string
 }
 
 /**
- * Ensure the blog_posts table exists (forward-compatible migration).
+ * No-op: blog_posts table is created by database/migrate.sql.
+ * Kept for call-site compatibility.
  */
 function ensure_blog_table(): void
 {
-    $pdo = db_connect();
-    $pdo->exec(
-        "CREATE TABLE IF NOT EXISTS blog_posts (
-            id              INT AUTO_INCREMENT PRIMARY KEY,
-            title           VARCHAR(255) NOT NULL,
-            slug            VARCHAR(255) NOT NULL UNIQUE,
-            excerpt         TEXT,
-            content         LONGTEXT,
-            meta_title      VARCHAR(255),
-            meta_description TEXT,
-            meta_keywords   TEXT,
-            featured_image  VARCHAR(512),
-            status          ENUM('draft','published') NOT NULL DEFAULT 'draft',
-            published_at    DATETIME DEFAULT NULL,
-            created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            updated_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
-    );
+    // Schema is managed by database/migrate.sql
 }
 
 // ============================================================
@@ -1243,38 +1227,14 @@ function record_mailing_click(string $token): ?string
 }
 
 /**
- * Ensure all mailing tables exist and seed default data.
- * Called lazily on first visit to mailing module.
+ * Seed default mailing data.
+ * Schema (CREATE TABLE / ALTER TABLE) is managed by database/migrate.sql.
  */
 function ensure_mailing_tables(): void
 {
     $pdo = db_connect();
 
-    $pdo->exec("CREATE TABLE IF NOT EXISTS mailing_smtp_accounts (
-        id           INT AUTO_INCREMENT PRIMARY KEY,
-        label        VARCHAR(100)                  NOT NULL DEFAULT '',
-        host         VARCHAR(255)                  NOT NULL DEFAULT '',
-        port         SMALLINT UNSIGNED             NOT NULL DEFAULT 587,
-        username     VARCHAR(255)                  NOT NULL DEFAULT '',
-        password     VARCHAR(255)                  NOT NULL DEFAULT '',
-        secure       ENUM('tls','ssl','none')       NOT NULL DEFAULT 'tls',
-        from_email   VARCHAR(255)                  NOT NULL DEFAULT '',
-        from_name    VARCHAR(255)                  NOT NULL DEFAULT '',
-        active       TINYINT(1)                    NOT NULL DEFAULT 1,
-        emails_sent  INT UNSIGNED                  NOT NULL DEFAULT 0,
-        last_used_at DATETIME                               DEFAULT NULL,
-        created_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
-
-    $pdo->exec("CREATE TABLE IF NOT EXISTS mailing_settings (
-        id            INT AUTO_INCREMENT PRIMARY KEY,
-        setting_key   VARCHAR(100) NOT NULL UNIQUE,
-        setting_value TEXT,
-        setting_label VARCHAR(255),
-        updated_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
-
+    // Seed default mailing settings (idempotent)
     $defaults = [
         ['emails_per_account',        '5',     'E-Mails pro SMTP-Account (dann rotieren)'],
         ['pause_between_emails_ms',   '3000',  'Pause zwischen E-Mails (Millisekunden)'],
@@ -1285,72 +1245,6 @@ function ensure_mailing_tables(): void
     ];
     $ins = $pdo->prepare('INSERT IGNORE INTO mailing_settings (setting_key,setting_value,setting_label) VALUES (?,?,?)');
     foreach ($defaults as $d) { $ins->execute($d); }
-
-    $pdo->exec("CREATE TABLE IF NOT EXISTS mailing_templates (
-        id         INT AUTO_INCREMENT PRIMARY KEY,
-        name       VARCHAR(255) NOT NULL,
-        subject    VARCHAR(255) NOT NULL DEFAULT '',
-        body_html  LONGTEXT,
-        body_text  TEXT,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
-
-    $pdo->exec("CREATE TABLE IF NOT EXISTS mailing_campaigns (
-        id           INT AUTO_INCREMENT PRIMARY KEY,
-        name         VARCHAR(255)  NOT NULL,
-        template_id  INT           DEFAULT NULL,
-        status       ENUM('draft','running','paused','completed','failed') NOT NULL DEFAULT 'draft',
-        total        INT UNSIGNED  NOT NULL DEFAULT 0,
-        sent         INT UNSIGNED  NOT NULL DEFAULT 0,
-        failed       INT UNSIGNED  NOT NULL DEFAULT 0,
-        opens        INT UNSIGNED  NOT NULL DEFAULT 0,
-        current_smtp_account_id INT DEFAULT NULL,
-        current_smtp_batch_count INT UNSIGNED NOT NULL DEFAULT 0,
-        created_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        started_at   DATETIME DEFAULT NULL,
-        finished_at  DATETIME DEFAULT NULL
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
-
-    $pdo->exec("CREATE TABLE IF NOT EXISTS mailing_recipients (
-        id              INT AUTO_INCREMENT PRIMARY KEY,
-        campaign_id     INT           NOT NULL,
-        email           VARCHAR(255)  NOT NULL,
-        name            VARCHAR(255)  DEFAULT '',
-        scam_platform   VARCHAR(255)  DEFAULT '',
-        email_validity  ENUM('valid','invalid') NOT NULL DEFAULT 'valid',
-        status          ENUM('pending','sent','failed','bounced','unsubscribed') NOT NULL DEFAULT 'pending',
-        smtp_account_id INT           DEFAULT NULL,
-        sent_at         DATETIME      DEFAULT NULL,
-        error_msg       VARCHAR(512)  DEFAULT NULL,
-        open_token      VARCHAR(64)   DEFAULT NULL,
-        opened_at       DATETIME      DEFAULT NULL,
-        click_token     VARCHAR(64)   DEFAULT NULL,
-        clicked_at      DATETIME      DEFAULT NULL,
-        click_count     INT UNSIGNED  NOT NULL DEFAULT 0,
-        created_at      TIMESTAMP     DEFAULT CURRENT_TIMESTAMP
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
-
-    // Add scam_platform column to existing tables that pre-date this migration
-    try {
-        $pdo->exec("ALTER TABLE mailing_recipients ADD COLUMN scam_platform VARCHAR(255) DEFAULT '' AFTER name");
-    } catch (\PDOException $e) {
-        // Column already exists — ignore duplicate column error
-    }
-    // Add email_validity column (migration for existing installations)
-    try {
-        $pdo->exec("ALTER TABLE mailing_recipients ADD COLUMN email_validity ENUM('valid','invalid') NOT NULL DEFAULT 'valid' AFTER scam_platform");
-    } catch (\PDOException $e) { /* already exists */ }
-    // Add click tracking columns (migration for existing installations)
-    try {
-        $pdo->exec("ALTER TABLE mailing_recipients ADD COLUMN click_token VARCHAR(64) DEFAULT NULL AFTER opened_at");
-    } catch (\PDOException $e) { /* already exists */ }
-    try {
-        $pdo->exec("ALTER TABLE mailing_recipients ADD COLUMN clicked_at DATETIME DEFAULT NULL AFTER click_token");
-    } catch (\PDOException $e) { /* already exists */ }
-    try {
-        $pdo->exec("ALTER TABLE mailing_recipients ADD COLUMN click_count INT UNSIGNED NOT NULL DEFAULT 0 AFTER clicked_at");
-    } catch (\PDOException $e) { /* already exists */ }
 
     // Seed the KryptoxPay professional German template if not already present
     $check = $pdo->query("SELECT COUNT(*) FROM mailing_templates WHERE name = 'KryptoxPay – Professionell (DE)'")->fetchColumn();
