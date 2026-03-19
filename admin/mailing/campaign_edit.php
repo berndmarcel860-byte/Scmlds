@@ -437,10 +437,10 @@ $sample_recipients = $cid ? get_mailing_recipients($cid, '', 10, 0, '') : [];
                                     <input type="hidden" name="action" value="csv_preview">
                                     <div class="mb-3">
                                         <label class="form-label fw-semibold">CSV-Datei</label>
-                                        <input type="file" name="csv_file" class="form-control" accept=".csv,.txt">
+                                        <input type="file" name="csv_file" class="form-control" accept=".csv,.txt,text/csv,text/plain,application/csv,application/vnd.ms-excel">
                                     </div>
                                     <div class="form-check mb-3">
-                                        <input class="form-check-input" type="checkbox" name="validate_mx" id="csvValidateMx" value="1" checked>
+                                        <input class="form-check-input" type="checkbox" name="validate_mx" id="csvValidateMx" value="1">
                                         <label class="form-check-label small" for="csvValidateMx">
                                             <strong>DNS-Validierung (MX-Check)</strong> – Adressen ohne gültigen Mailserver herausfiltern
                                             <span class="text-muted">(reduziert Bounce-Rate)</span>
@@ -466,7 +466,7 @@ $sample_recipients = $cid ? get_mailing_recipients($cid, '', 10, 0, '') : [];
                                                   placeholder="max@mustermann.de,Max Mustermann,CryptoScamBroker&#10;anna@beispiel.de,Anna Schmidt&#10;Hans Müller <hans@mail.de>"></textarea>
                                     </div>
                                     <div class="form-check mb-3">
-                                        <input class="form-check-input" type="checkbox" name="validate_mx" id="manValidateMx" value="1" checked>
+                                        <input class="form-check-input" type="checkbox" name="validate_mx" id="manValidateMx" value="1">
                                         <label class="form-check-label small" for="manValidateMx">
                                             <strong>DNS-Validierung (MX-Check)</strong>
                                             <span class="text-muted">(reduziert Bounce-Rate)</span>
