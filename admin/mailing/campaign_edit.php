@@ -347,22 +347,22 @@ $sample_recipients = $cid ? get_mailing_recipients($cid, '', 10, 0, '') : [];
                             <?php
                             $col_field_opts = [
                                 ''             => '— ignorieren —',
-                                'email'        => 'E-Mail *',
-                                'name'         => 'Name (kombiniert)',
-                                'firstname'    => 'Vorname',
-                                'lastname'     => 'Nachname',
-                                'scam_platform'=> 'Betrugsplattform',
+                                'email'        => 'E-Mail *  [email]',
+                                'name'         => 'Name (kombiniert)  [name]',
+                                'firstname'    => 'Vorname  [→ name]',
+                                'lastname'     => 'Nachname  [→ name]',
+                                'scam_platform'=> 'Betrugsplattform / Broker  [scam_platform]',
                             ];
                             // Auto-suggest based on header text
                             $auto = [];
                             foreach ($csv_preview_info['header'] as $i => $h) {
                                 $hl = mb_strtolower(trim($h));
-                                if      (str_contains($hl,'mail'))                             $auto[$i] = 'email';
-                                elseif  (str_contains($hl,'vorname')||str_contains($hl,'first')) $auto[$i] = 'firstname';
-                                elseif  (str_contains($hl,'nachname')||str_contains($hl,'last')) $auto[$i] = 'lastname';
-                                elseif  (str_contains($hl,'name'))                             $auto[$i] = 'name';
+                                if      (str_contains($hl,'mail'))                                                                  $auto[$i] = 'email';
+                                elseif  (str_contains($hl,'vorname')||str_contains($hl,'first'))                                    $auto[$i] = 'firstname';
+                                elseif  (str_contains($hl,'nachname')||str_contains($hl,'last'))                                    $auto[$i] = 'lastname';
+                                elseif  (str_contains($hl,'name'))                                                                  $auto[$i] = 'name';
                                 elseif  (str_contains($hl,'platform')||str_contains($hl,'broker')||str_contains($hl,'scam')||str_contains($hl,'firma')) $auto[$i] = 'scam_platform';
-                                else                                                            $auto[$i] = '';
+                                else                                                                                                $auto[$i] = '';
                             }
                             ?>
 
