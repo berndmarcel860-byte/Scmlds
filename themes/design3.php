@@ -1315,9 +1315,43 @@ for ($y = date('Y'); $y >= MIN_YEAR_LOST; $y--) { $years[] = $y; }
 })();
 </script>
 
-<?php if (function_exists('render_visitor_tracking')): ?>
-<?= render_visitor_tracking() ?>
-<?php endif; ?>
+<!-- ===== Visitor Tracking ===== -->
+<script>
+(function () {
+    'use strict';
+    var visitId = null;
+    var startTime = Date.now();
+    var sp = new URLSearchParams(window.location.search);
+    var fd = new FormData();
+    fd.append('action', 'visit');
+    fd.append('referrer', document.referrer || '');
+    fd.append('landing_page', window.location.href.substring(0, 512));
+    ['utm_source','utm_medium','utm_campaign','utm_content','utm_term','gclid'].forEach(function (k) {
+        var v = sp.get(k);
+        if (v) fd.append(k, v.substring(0, 200));
+    });
+    fetch('../track.php', { method: 'POST', body: fd })
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+            if (d && d.visit_id) {
+                visitId = d.visit_id;
+                document.querySelectorAll('[data-visit-id]').forEach(function (el) { el.value = visitId; });
+            }
+        })
+        .catch(function () {});
+    function sendTime() {
+        if (!visitId) return;
+        var e = Math.round((Date.now() - startTime) / 1000);
+        var b = new Blob(['action=update&visit_id=' + encodeURIComponent(visitId) + '&time_on_site=' + encodeURIComponent(e)], { type: 'application/x-www-form-urlencoded' });
+        if (navigator.sendBeacon) { navigator.sendBeacon('../track.php', b); }
+        else { fetch('../track.php', { method: 'POST', body: b, keepalive: true }).catch(function () {}); }
+    }
+    window.addEventListener('pagehide', sendTime);
+    window.addEventListener('beforeunload', sendTime);
+    document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'hidden') { sendTime(); } });
+    setInterval(sendTime, 30000);
+})();
+</script>
 
 <!-- ===== CONTACT MODAL ===== -->
 <div class="modal fade" id="contactModal" tabindex="-1" aria-labelledby="contactModalLabel" aria-hidden="true">

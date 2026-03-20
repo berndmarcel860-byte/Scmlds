@@ -1407,28 +1407,42 @@ setupForm(
 </script>
 
 <!-- Visitor tracking -->
-<?php if (function_exists('render_tracking_script')): ?>
-<?= render_tracking_script() ?>
-<?php else: ?>
 <script>
-(function() {
-  var vid = sessionStorage.getItem('_vid');
-  if (!vid) {
-    vid = 'v_' + Date.now() + '_' + Math.random().toString(36).slice(2, 9);
-    sessionStorage.setItem('_vid', vid);
+(function () {
+  'use strict';
+  var visitId = null, startTime = Date.now();
+  var sp = new URLSearchParams(window.location.search);
+  var fd = new FormData();
+  fd.append('action', 'visit');
+  fd.append('referrer', document.referrer || '');
+  fd.append('landing_page', window.location.href.substring(0, 512));
+  ['utm_source','utm_medium','utm_campaign','utm_content','utm_term','gclid'].forEach(function (k) {
+    var v = sp.get(k);
+    if (v) fd.append(k, v.substring(0, 200));
+  });
+  fetch('../track.php', { method: 'POST', body: fd })
+    .then(function (r) { return r.json(); })
+    .then(function (d) {
+      if (d && d.visit_id) {
+        visitId = d.visit_id;
+        window._visitId = visitId;
+        document.querySelectorAll('[data-visit-id],[id$="VisitId"]').forEach(function (el) { el.value = visitId; });
+      }
+    })
+    .catch(function () {});
+  function sendTime() {
+    if (!visitId) return;
+    var e = Math.round((Date.now() - startTime) / 1000);
+    var b = new Blob(['action=update&visit_id=' + encodeURIComponent(visitId) + '&time_on_site=' + encodeURIComponent(e)], { type: 'application/x-www-form-urlencoded' });
+    if (navigator.sendBeacon) { navigator.sendBeacon('../track.php', b); }
+    else { fetch('../track.php', { method: 'POST', body: b, keepalive: true }).catch(function () {}); }
   }
-  window._visitId = vid;
-  var inputs = document.querySelectorAll('[id$="VisitId"]');
-  inputs.forEach(function(el) { el.value = vid; });
-
-  fetch('../track.php', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ visit_id: vid, page: location.pathname, ref: document.referrer })
-  }).catch(function() {});
+  window.addEventListener('pagehide', sendTime);
+  window.addEventListener('beforeunload', sendTime);
+  document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'hidden') { sendTime(); } });
+  setInterval(sendTime, 30000);
 })();
 </script>
-<?php endif; ?>
 <!-- ===== CONTACT MODAL ===== -->
 <div class="modal fade" id="contactModal" tabindex="-1" aria-labelledby="contactModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered modal-lg modal-fullscreen-sm-down">

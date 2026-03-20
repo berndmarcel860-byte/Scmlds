@@ -1003,7 +1003,9 @@ setTimeout(function(){
 'use strict';
 var visitId=null,startTime=Date.now();
 (function logVisit(){
-  var fd=new FormData();fd.append('action','visit');fd.append('referrer',document.referrer||'');
+  var sp=new URLSearchParams(window.location.search);
+  var fd=new FormData();fd.append('action','visit');fd.append('referrer',document.referrer||'');fd.append('landing_page',window.location.href.substring(0,512));
+  ['utm_source','utm_medium','utm_campaign','utm_content','utm_term','gclid'].forEach(function(k){var v=sp.get(k);if(v)fd.append(k,v.substring(0,200));});
   fetch('../track.php',{method:'POST',body:fd})
     .then(function(r){return r.json();})
     .then(function(d){if(d&&d.visit_id){visitId=d.visit_id;document.querySelectorAll('[data-visit-id]').forEach(function(el){el.value=visitId;});}})

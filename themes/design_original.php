@@ -1765,9 +1765,15 @@ $error   = isset($_GET['error'])   ? htmlspecialchars($_GET['error'], ENT_QUOTES
     var startTime = Date.now();
 
     // Log the visit and get a visit_id back
+    var sp = new URLSearchParams(window.location.search);
     var body = new FormData();
     body.append('action', 'visit');
     body.append('referrer', document.referrer || '');
+    body.append('landing_page', window.location.href.substring(0, 512));
+    ['utm_source','utm_medium','utm_campaign','utm_content','utm_term','gclid'].forEach(function (k) {
+        var v = sp.get(k);
+        if (v) body.append(k, v.substring(0, 200));
+    });
     fetch('../track.php', { method: 'POST', body: body })
         .then(function (r) { return r.json(); })
         .then(function (data) {
