@@ -1258,6 +1258,19 @@ function ensure_mailing_tables(): void
             $text,
         ]);
     }
+
+    // Seed the KryptoxPay "last reminder" German template if not already present
+    $check2 = $pdo->query("SELECT COUNT(*) FROM mailing_templates WHERE name = 'KryptoxPay – Letzte Erinnerung (DE)'")->fetchColumn();
+    if (!$check2) {
+        $html2 = _kryptoxpay_reminder_template_html();
+        $text2 = _kryptoxpay_reminder_template_text();
+        $pdo->prepare('INSERT INTO mailing_templates (name,subject,body_html,body_text) VALUES (?,?,?,?)')->execute([
+            'KryptoxPay – Letzte Erinnerung (DE)',
+            'Letzte Erinnerung: Ihre Möglichkeit zur Rückholung verlorener Gelder',
+            $html2,
+            $text2,
+        ]);
+    }
 }
 
 /**
@@ -1405,6 +1418,163 @@ https://kryptoxpay.co.uk
 
 ---
 Sie erhalten diese E-Mail, da Sie sich für digitale Finanzthemen interessiert haben.
+Abmelden: {{unsubscribe_url}}
+Datenschutz: https://kryptoxpay.co.uk/datenschutz';
+}
+
+/**
+ * HTML body of the KryptoxPay "last reminder" German notification template.
+ */
+function _kryptoxpay_reminder_template_html(): string
+{
+    return '<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<title>{{company_name}}</title>
+<style>
+  body,table,td,a{-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%}
+  body{margin:0;padding:0;background-color:#f2f4f7;font-family:\'Helvetica Neue\',Helvetica,Arial,sans-serif}
+  .email-wrapper{width:100%;background:#f2f4f7;padding:30px 0}
+  .email-content{max-width:600px;margin:0 auto;background:#ffffff;border-radius:10px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.08)}
+  .header{background:#7b1e1e;padding:32px 40px;text-align:center}
+  .header-logo{font-size:24px;font-weight:700;color:#ffffff;letter-spacing:-0.5px;text-decoration:none;display:block}
+  .header-logo span{color:#f0a500}
+  .header-tagline{margin:6px 0 0;font-size:12px;color:#e8b4b4;letter-spacing:1px;text-transform:uppercase}
+  .urgency-banner{background:#fde8e8;border-left:4px solid #c0392b;padding:16px 20px;margin:0;border-radius:0}
+  .urgency-banner p{margin:0;font-size:14px;color:#7b1e1e;font-weight:600}
+  .body{padding:38px 40px;color:#374151;font-size:15px;line-height:1.8}
+  .body h2{margin:0 0 18px;font-size:20px;color:#7b1e1e;font-weight:700}
+  .body p{margin:0 0 16px}
+  .body ul{padding-left:20px;margin:0 0 16px}
+  .body ul li{margin-bottom:6px}
+  .divider{height:1px;background:#e8edf2;margin:24px 0}
+  .highlight-box{background:#fff8e1;border:1px solid #f0a500;border-radius:8px;padding:18px 20px;margin:20px 0}
+  .highlight-box p{margin:0;font-size:14px;color:#5a4000;line-height:1.7}
+  .cta-wrapper{text-align:center;margin:28px 0}
+  .cta-btn{display:inline-block;background:#c0392b;color:#ffffff!important;padding:16px 40px;border-radius:6px;font-size:16px;font-weight:700;text-decoration:none;letter-spacing:0.3px}
+  .footer{background:#f8fafc;padding:22px 40px;border-top:1px solid #e8edf2}
+  .footer p{margin:0 0 6px;font-size:12px;color:#9ca3af;text-align:center;line-height:1.6}
+  .footer a{color:#9ca3af;text-decoration:underline}
+  @media only screen and (max-width:620px){
+    .email-content,.header,.body,.footer{border-radius:0!important}
+    .body,.header,.footer{padding:24px 20px!important}
+  }
+</style>
+</head>
+<body>
+<div class="email-wrapper">
+  <div class="email-content">
+    <div class="header">
+      <a class="header-logo" href="https://kryptoxpay.co.uk">Kryptox<span>Pay</span></a>
+      <p class="header-tagline">KI-gestützte Kapitalrückholung &amp; Beratung</p>
+    </div>
+    <div class="urgency-banner">
+      <p>&#128680;&nbsp; Letzte Erinnerung – Bitte lesen Sie diese Nachricht sorgfältig.</p>
+    </div>
+    <div class="body">
+      <h2>Sehr geehrte/r {{name}},</h2>
+      <p>dies ist unsere <strong>letzte Erinnerung</strong> an Sie bezüglich der Möglichkeit, Ihre verlorenen Gelder zurückzuholen.</p>
+      {{#if scam_platform}}
+      <p>Wie bereits mitgeteilt, haben wir Hinweise darauf, dass Sie durch die Plattform <strong>{{scam_platform}}</strong> einen erheblichen finanziellen Verlust erlitten haben könnten. Unsere Experten stehen bereit, Ihren Fall zu prüfen.</p>
+      {{else}}
+      <p>Wie bereits in unserer vorherigen Nachricht erwähnt, möchten wir Ihnen eine letzte Gelegenheit geben, sich über unsere Kapitalrückholungsdienste zu informieren.</p>
+      {{/if}}
+      <div class="highlight-box">
+        <p><strong>&#9203; Zeitkritisch:</strong> Jeder Tag ohne Handeln kann die Chancen auf eine erfolgreiche Rückholung verringern. Verfahren verjähren, Konten werden gesperrt, Spuren verlieren sich. Handeln Sie jetzt.</p>
+      </div>
+      <p>Was wir für Sie tun können:</p>
+      <ul>
+        <li><strong>Kostenlose und unverbindliche Erstbewertung</strong> Ihres Falles</li>
+        <li>Prüfung aller rechtlichen und technischen Rückholungswege</li>
+        <li>Diskreter und vertraulicher Umgang mit Ihren Daten</li>
+        <li>Keine Vorabkosten – Sie zahlen nur im Erfolgsfall</li>
+      </ul>
+      <div class="divider"></div>
+      {{#if scam_platform}}
+      <p>Viele Betroffene von <strong>{{scam_platform}}</strong> haben bereits erfolgreich mit uns zusammengearbeitet. Verpassen Sie diese Chance nicht.</p>
+      {{else}}
+      <p>Viele unserer Mandanten hätten sich gewünscht, früher gehandelt zu haben. Lassen Sie diese Chance nicht ungenutzt verstreichen.</p>
+      {{/if}}
+      <div class="cta-wrapper">
+        <a href="https://kryptoxpay.co.uk" class="cta-btn">Jetzt kostenlos Erstberatung anfordern</a>
+      </div>
+      <div class="divider"></div>
+      <p style="font-size:14px;color:#374151">
+        Mit freundlichen Grüßen,<br>
+        <strong style="color:#7b1e1e">{{sender_name}}</strong><br>
+        KryptoxPay – Kapitalrückholung<br>
+        <a href="https://kryptoxpay.co.uk" style="color:#7b1e1e">https://kryptoxpay.co.uk</a>
+      </p>
+      <p style="font-size:12px;color:#9ca3af;margin-top:12px">
+        Diese Nachricht wird nicht erneut gesendet. Sollten Sie bereits Kontakt aufgenommen haben, bitten wir Sie, diese E-Mail zu ignorieren.
+      </p>
+    </div>
+    <div class="footer">
+      <p>Sie erhalten diese E-Mail, da Sie sich für digitale Finanzthemen interessiert haben oder früher Kontakt mit uns aufgenommen haben.</p>
+      <p>
+        <a href="{{unsubscribe_url}}">Abmelden</a> &nbsp;&middot;&nbsp;
+        <a href="https://kryptoxpay.co.uk/datenschutz">Datenschutz</a> &nbsp;&middot;&nbsp;
+        <a href="https://kryptoxpay.co.uk/impressum">Impressum</a>
+      </p>
+      <p>KryptoxPay &nbsp;&middot;&nbsp; <a href="https://kryptoxpay.co.uk">https://kryptoxpay.co.uk</a></p>
+      {{open_tracker}}
+    </div>
+  </div>
+</div>
+</body>
+</html>';
+}
+
+/**
+ * Plain-text version of the KryptoxPay "last reminder" German notification template.
+ */
+function _kryptoxpay_reminder_template_text(): string
+{
+    return 'Sehr geehrte/r {{name}},
+
+dies ist unsere LETZTE ERINNERUNG an Sie bezüglich der Möglichkeit,
+Ihre verlorenen Gelder zurückzuholen.
+
+{{#if scam_platform}}
+Wie bereits mitgeteilt, haben wir Hinweise darauf, dass Sie durch die Plattform
+{{scam_platform}} einen erheblichen finanziellen Verlust erlitten haben könnten.
+{{else}}
+Wie in unserer vorherigen Nachricht erwähnt, möchten wir Ihnen eine letzte
+Gelegenheit geben, sich über unsere Kapitalrückholungsdienste zu informieren.
+{{/if}}
+
+⚠ ZEITKRITISCH: Jeder Tag ohne Handeln kann die Chancen auf eine erfolgreiche
+Rückholung verringern. Verfahren verjähren, Konten werden gesperrt,
+Spuren verlieren sich. Handeln Sie jetzt.
+
+Was wir für Sie tun können:
+- Kostenlose und unverbindliche Erstbewertung Ihres Falles
+- Prüfung aller rechtlichen und technischen Rückholungswege
+- Diskreter und vertraulicher Umgang mit Ihren Daten
+- Keine Vorabkosten – Sie zahlen nur im Erfolgsfall
+
+{{#if scam_platform}}
+Viele Betroffene von {{scam_platform}} haben bereits erfolgreich mit uns
+zusammengearbeitet. Verpassen Sie diese Chance nicht.
+{{else}}
+Viele unserer Mandanten hätten sich gewünscht, früher gehandelt zu haben.
+Lassen Sie diese Chance nicht ungenutzt verstreichen.
+{{/if}}
+
+Jetzt kostenlos Erstberatung anfordern:
+https://kryptoxpay.co.uk
+
+Diese Nachricht wird nicht erneut gesendet.
+
+Mit freundlichen Grüßen,
+{{sender_name}}
+KryptoxPay – Kapitalrückholung
+https://kryptoxpay.co.uk
+
+---
 Abmelden: {{unsubscribe_url}}
 Datenschutz: https://kryptoxpay.co.uk/datenschutz';
 }

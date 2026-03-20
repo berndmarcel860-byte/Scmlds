@@ -167,6 +167,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $msg = 'Ausstehende Empfänger gelöscht.';
         $campaign = get_mailing_campaign($cid);
     }
+
+    // Reset non-openers → pending (re-send to recipients who were sent to but never opened)
+    if ($action === 'restart_non_openers' && $cid) {
+        $pdo = db_connect();
+        $stmt = $pdo->prepare(
+            'UPDATE mailing_recipients
+             SET status="pending", sent_at=NULL, error_msg=NULL
+             WHERE campaign_id=:cid AND status="sent" AND opened_at IS NULL AND email_validity="valid"'
+        );
+        $stmt->execute([':cid' => $cid]);
+        $n = $stmt->rowCount();
+        $msg = "<strong>$n</strong> Nicht-Öffner zurückgesetzt – bereit zum erneuten Versand.";
+        $campaign = get_mailing_campaign($cid);
+    }
+
+    // Reset failed recipients → pending
+    if ($action === 'retry_failed' && $cid) {
+        $pdo = db_connect();
+        $stmt = $pdo->prepare(
+            'UPDATE mailing_recipients
+             SET status="pending", sent_at=NULL, error_msg=NULL
+             WHERE campaign_id=:cid AND status="failed" AND email_validity="valid"'
+        );
+        $stmt->execute([':cid' => $cid]);
+        $n = $stmt->rowCount();
+        $msg = "<strong>$n</strong> fehlgeschlagene Empfänger zurückgesetzt – bereit zum erneuten Versand.";
+        $campaign = get_mailing_campaign($cid);
+    }
 }
 
 if (isset($_GET['created'])) $msg = 'Kampagne erstellt. Jetzt Empfänger importieren.';
@@ -320,6 +348,26 @@ $sample_recipients = $cid ? get_mailing_recipients($cid, '', 10, 0, '') : [];
                         <a href="stats.php?id=<?= $cid ?>" class="btn btn-outline-info btn-sm mt-3 w-100">
                             <i class="bi bi-bar-chart me-1"></i>Detaillierte Statistiken
                         </a>
+                        <?php if (($stats['sent'] ?? 0) > 0): ?>
+                        <div class="mt-2 d-flex gap-2">
+                            <form method="post" class="flex-fill"
+                                  onsubmit="return confirm('Alle gesendeten Nicht-Öffner zurück auf Ausstehend setzen?')">
+                                <input type="hidden" name="action" value="restart_non_openers">
+                                <button class="btn btn-outline-warning btn-sm w-100" title="Empfänger, die die E-Mail nicht geöffnet haben, erneut versenden">
+                                    <i class="bi bi-arrow-repeat me-1"></i>Nicht-Öffner neu senden
+                                </button>
+                            </form>
+                            <?php if (($stats['failed'] ?? 0) > 0): ?>
+                            <form method="post" class="flex-fill"
+                                  onsubmit="return confirm('Alle fehlgeschlagenen Empfänger zurück auf Ausstehend setzen?')">
+                                <input type="hidden" name="action" value="retry_failed">
+                                <button class="btn btn-outline-danger btn-sm w-100" title="Fehlgeschlagene Sendeversuche wiederholen">
+                                    <i class="bi bi-exclamation-triangle me-1"></i>Fehler wiederholen
+                                </button>
+                            </form>
+                            <?php endif; ?>
+                        </div>
+                        <?php endif; ?>
                     </div>
                 </div>
                 <?php endif; ?>
