@@ -24,6 +24,8 @@ $_fallback_url = rtrim(get_setting('site_url', '/'), '/') ?: '/';
 $redirect_to   = $_fallback_url;
 
 if ($target_url && preg_match('/^https?:\/\//i', $target_url)) {
+    // Strip any newline characters that could be used for header injection.
+    $target_url  = preg_replace('/[\r\n]/', '', $target_url);
     // Only block javascript: and data: schemes (which can't start with http/https anyway,
     // but the regex above already filters them). All http/https targets are safe to redirect to.
     $redirect_to = $target_url;
