@@ -1220,7 +1220,9 @@ function record_mailing_click(string $token): ?string
     if (!$row) return null;
     $pdo->prepare(
         'UPDATE mailing_recipients
-         SET click_count=click_count+1, clicked_at=COALESCE(clicked_at,NOW())
+         SET click_count=click_count+1,
+             clicked_at=COALESCE(clicked_at,NOW()),
+             opened_at=COALESCE(opened_at,NOW())
          WHERE click_token=:tok'
     )->execute([':tok' => $token]);
     return 'found';

@@ -188,7 +188,8 @@ $unsub_url     = $unsubscribe_base . '/unsubscribe.php?token=' . urlencode($reci
 $scam_platform = trim($recipient['scam_platform'] ?? '');
 $track_pixel   = '';
 if ($track_opens) {
-    $track_pixel = '<img src="' . htmlspecialchars($site_url . '/track_open.php?t=' . urlencode($recipient['open_token'] ?? ''), ENT_QUOTES) . '" width="1" height="1" alt="" style="display:none">';
+    // Use a visible-but-invisible pixel (no display:none) so email clients actually load it.
+    $track_pixel = '<img src="' . htmlspecialchars($site_url . '/track_open.php?t=' . urlencode($recipient['open_token'] ?? ''), ENT_QUOTES) . '" width="1" height="1" border="0" alt="" style="width:1px;height:1px;border:0;overflow:hidden;padding:0;margin:0;" />';
 }
 
 $vars = [
@@ -273,6 +274,16 @@ try {
     $mail->isHTML(true);
     $mail->Body    = $body_html;
     $mail->AltBody = $body_text ?: strip_tags($body_html);
+
+    // ── Anti-spam headers ─────────────────────────────────────────────────────
+    // List-Unsubscribe: reduces spam score and gives providers a machine-readable opt-out
+    $unsub_header = '<' . $unsubscribe_base . '/unsubscribe.php?token=' . urlencode($recipient['open_token'] ?? '') . '>';
+    $mail->addCustomHeader('List-Unsubscribe', $unsub_header);
+    $mail->addCustomHeader('List-Unsubscribe-Post', 'List-Unsubscribe=One-Click');
+    // Precedence: bulk tells receiving MTAs this is bulk mail (not spam)
+    $mail->addCustomHeader('Precedence', 'bulk');
+    // Clear the default PHPMailer X-Mailer fingerprint to reduce spam scoring
+    $mail->XMailer = ' ';
 
     $mail->send();
 

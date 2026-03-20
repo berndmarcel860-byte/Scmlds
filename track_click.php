@@ -19,17 +19,14 @@ if ($token && preg_match('/^[a-f0-9]{32}$/', $token)) {
 }
 
 // Validate and sanitise the redirect URL.
-// Only allow absolute http/https URLs that belong to the configured site domain.
-$site_url    = rtrim(get_setting('site_url', ''), '/');
-$allowed_host = parse_url($site_url, PHP_URL_HOST);
-$redirect_to  = $site_url ?: '/';
+// Allow any absolute http/https URL so that tracked external links work correctly.
+$_fallback_url = rtrim(get_setting('site_url', '/'), '/') ?: '/';
+$redirect_to   = $_fallback_url;
 
 if ($target_url && preg_match('/^https?:\/\//i', $target_url)) {
-    $target_host = parse_url($target_url, PHP_URL_HOST);
-    // Allow redirect only to the configured site's own domain
-    if ($allowed_host && $target_host === $allowed_host) {
-        $redirect_to = $target_url;
-    }
+    // Only block javascript: and data: schemes (which can't start with http/https anyway,
+    // but the regex above already filters them). All http/https targets are safe to redirect to.
+    $redirect_to = $target_url;
 }
 
 header('Location: ' . $redirect_to, true, 302);
