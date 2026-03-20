@@ -36,11 +36,14 @@ $acc_stats = $pdo->prepare(
 $acc_stats->execute([':cid' => $cid]);
 $account_breakdown = $acc_stats->fetchAll(PDO::FETCH_ASSOC);
 
-// Open rate / click rate
-$open_rate  = $stats['sent'] > 0 ? round($stats['opens']  / $stats['sent'] * 100, 1) : 0;
-$click_rate = $stats['sent'] > 0 ? round($stats['clicks'] / $stats['sent'] * 100, 1) : 0;
-$fail_rate  = $stats['total'] > 0 ? round($stats['failed'] / $stats['total'] * 100, 1) : 0;
-$done_rate  = $stats['total'] > 0 ? round($stats['sent']   / $stats['total'] * 100, 1) : 0;
+// Open rate / click rate / bounce rate
+$open_rate    = $stats['sent'] > 0 ? round($stats['opens']   / $stats['sent'] * 100, 1) : 0;
+$click_rate   = $stats['sent'] > 0 ? round($stats['clicks']  / $stats['sent'] * 100, 1) : 0;
+$fail_rate    = $stats['total'] > 0 ? round($stats['failed']  / $stats['total'] * 100, 1) : 0;
+$done_rate    = $stats['total'] > 0 ? round($stats['sent']    / $stats['total'] * 100, 1) : 0;
+// Bounce rate = hard bounces / (sent + bounced) – reflects deliverability quality
+$bounce_base  = $stats['sent'] + $stats['bounced'];
+$bounce_rate  = $bounce_base > 0 ? round($stats['bounced'] / $bounce_base * 100, 1) : 0;
 ?>
 <!DOCTYPE html>
 <html lang="de">
@@ -81,7 +84,8 @@ $done_rate  = $stats['total'] > 0 ? round($stats['sent']   / $stats['total'] * 1
                 ['secondary', 'Ungültig',         $stats['invalid'], null],
                 ['warning',   'Ausstehend',        $stats['pending'], null],
                 ['success',   'Gesendet',          $stats['sent'],    $done_rate . '%'],
-                ['danger',    'Fehler',             $stats['failed'],  $fail_rate . '%'],
+                ['danger',    'SMTP-Fehler',        $stats['failed'],  $fail_rate . '%'],
+                ['warning',   'Bounce',             $stats['bounced'], $bounce_rate > 0 ? $bounce_rate . '%' : null],
                 ['info',      'Geöffnet',           $stats['opens'],   $open_rate . '%'],
                 ['primary',   'Link geklickt',      $stats['clicks'],  $click_rate . '%'],
             ];
@@ -110,9 +114,10 @@ $done_rate  = $stats['total'] > 0 ? round($stats['sent']   / $stats['total'] * 1
                         <?php
                         $total = max(1, $stats['total']);
                         $bar_data = [
-                            ['success', 'Gesendet',   $stats['sent']],
-                            ['danger',  'Fehler',     $stats['failed']],
-                            ['warning', 'Ausstehend', $stats['pending']],
+                            ['success', 'Gesendet',       $stats['sent']],
+                            ['danger',  'SMTP-Fehler',    $stats['failed']],
+                            ['warning', 'Bounce',         $stats['bounced']],
+                            ['secondary', 'Ausstehend',  $stats['pending']],
                         ];
                         ?>
                         <div class="progress mb-3" style="height:24px">

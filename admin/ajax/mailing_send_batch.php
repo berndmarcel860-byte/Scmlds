@@ -156,6 +156,33 @@ if (!$recipient) {
     exit;
 }
 
+// ── Pre-send MX validity check ────────────────────────────────────────────────
+// Re-check the recipient's domain has a live MX/A record before we attempt SMTP.
+// If the domain resolves to nothing, mark it invalid so it won't be retried and
+// doesn't count as an SMTP failure (which inflates the bounce rate).
+$_pre_domain = substr($recipient['email'], strrpos($recipient['email'], '@') + 1);
+$_pre_valid  = checkdnsrr($_pre_domain, 'MX') || checkdnsrr($_pre_domain, 'A') || checkdnsrr($_pre_domain, 'AAAA');
+if (!$_pre_valid) {
+    $pdo->prepare('UPDATE mailing_recipients SET email_validity="invalid", error_msg=:err WHERE id=:id')
+        ->execute([':err' => 'Pre-send MX check failed: no mail server for ' . $_pre_domain, ':id' => $recipient['id']]);
+    $stats = get_campaign_stats($campaign_id);
+    echo json_encode([
+        'sent_now'        => 0,
+        'failed_now'      => 0,
+        'error_detail'    => 'Adresse übersprungen (kein MX): ' . $recipient['email'],
+        'active_smtp_id'  => $current_smtp_id,
+        'account_label'   => $account['label'] ?: $account['from_email'],
+        'account_rotated' => false,
+        'sent'            => $stats['sent'],
+        'failed'          => $stats['failed'],
+        'pending'         => $stats['pending'],
+        'done'            => false,
+        'no_pending'      => false,
+        'status_text'     => 'Ungültige Adresse übersprungen: ' . $recipient['email'],
+    ]);
+    exit;
+}
+
 // ── Build personalised email ──────────────────────────────────────────────────
 $unsub_url     = $unsubscribe_base . '/unsubscribe.php?token=' . urlencode($recipient['open_token'] ?? '');
 $scam_platform = trim($recipient['scam_platform'] ?? '');

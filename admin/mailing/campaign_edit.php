@@ -328,7 +328,7 @@ $sample_recipients = $cid ? get_mailing_recipients($cid, '', 10, 0, '') : [];
                     </div>
                     <div class="card-body">
                         <div class="row g-2 text-center">
-                            <?php $items = [['primary','Gesamt',$stats['total']],['warning','Ausstehend',$stats['pending']],['success','Gesendet',$stats['sent']],['danger','Fehler',$stats['failed']],['info','Geöffnet',$stats['opens']]]; ?>
+                            <?php $items = [['primary','Gesamt',$stats['total']],['warning','Ausstehend',$stats['pending']],['success','Gesendet',$stats['sent']],['danger','SMTP-Fehler',$stats['failed']],['warning','Bounce',$stats['bounced']],['info','Geöffnet',$stats['opens']]]; ?>
                             <?php foreach ($items as [$color,$label,$val]): ?>
                             <div class="col">
                                 <div class="border rounded-3 p-2">
