@@ -401,3 +401,35 @@ SELECT 'KryptoxPay – Professionell (DE)',
        'Sehr geehrte/r {{name}},\n\nwir möchten Sie auf eine wichtige Möglichkeit hinweisen.\n\nBitte besuchen Sie uns unter: {{site_url}}\n\nMit freundlichen Grüßen,\n{{sender_name}}\n{{company_name}}\n\nAbmelden: {{unsubscribe_url}}'
 FROM DUAL
 WHERE NOT EXISTS (SELECT 1 FROM mailing_templates WHERE name = 'KryptoxPay – Professionell (DE)');
+
+-- ============================================================
+-- Static Pages (Impressum, Datenschutz, Kontakt, AGB …)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS static_pages (
+    id               INT AUTO_INCREMENT PRIMARY KEY,
+    title            VARCHAR(255)   NOT NULL,
+    slug             VARCHAR(100)   NOT NULL UNIQUE,
+    content          LONGTEXT,
+    meta_title       VARCHAR(255)   DEFAULT '',
+    meta_description TEXT,
+    sort_order       TINYINT UNSIGNED NOT NULL DEFAULT 0,
+    created_at       TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at       TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ============================================================
+-- IP-Warmup Log (per SMTP account, per day)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS mailing_warmup_log (
+    id              INT AUTO_INCREMENT PRIMARY KEY,
+    smtp_account_id INT NOT NULL,
+    log_date        DATE NOT NULL,
+    target          INT UNSIGNED NOT NULL DEFAULT 0,
+    sent            INT UNSIGNED NOT NULL DEFAULT 0,
+    bounced         INT UNSIGNED NOT NULL DEFAULT 0,
+    opened          INT UNSIGNED NOT NULL DEFAULT 0,
+    day_number      TINYINT UNSIGNED NOT NULL DEFAULT 1,
+    notes           VARCHAR(512) DEFAULT '',
+    created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uniq_acct_date (smtp_account_id, log_date)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

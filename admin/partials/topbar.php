@@ -7,7 +7,7 @@
             <i class="bi bi-person-circle me-1"></i>
             <?= htmlspecialchars($_SESSION['admin_user'] ?? 'Admin', ENT_QUOTES, 'UTF-8') ?>
         </span>
-        <a href="logout.php" class="btn btn-sm btn-outline-danger">
+        <a href="/admin/logout.php" class="btn btn-sm btn-outline-danger">
             <i class="bi bi-box-arrow-right"></i>
         </a>
     </div>

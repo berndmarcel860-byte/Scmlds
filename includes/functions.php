@@ -1,6 +1,588 @@
 <?php
 require_once __DIR__ . '/db.php';
 
+// ============================================================
+// Spintax – {option1|option2|option3} random picker
+// ============================================================
+
+/**
+ * Recursively resolves spintax like {A|B|C} by randomly picking one option.
+ * Nested spintax is supported, e.g. {Hello {World|Earth}|Hi there}.
+ * Template variables like {{name}} are intentionally left untouched.
+ */
+function spintax(string $text): string
+{
+    // Use negative lookbehind/lookahead to skip {{double-brace}} template variables.
+    // (?<!\{)\{ — opening brace NOT preceded by another brace
+    // (?!\})  \} — closing brace NOT followed by another brace
+    while (preg_match('/(?<!\{)\{(?!\{)[^{}]+\}(?!\})/', $text)) {
+        $text = preg_replace_callback(
+            '/(?<!\{)\{(?!\{)([^{}]+)\}(?!\})/',
+            function (array $m): string {
+                $options = explode('|', $m[1]);
+                return $options[array_rand($options)];
+            },
+            $text
+        );
+    }
+    return $text;
+}
+
+// ============================================================
+// Static Pages (Impressum, Datenschutz, Kontakt, AGB …)
+// ============================================================
+
+function get_static_pages(): array
+{
+    $pdo = db_connect();
+    ensure_static_pages_table();
+    $stmt = $pdo->query('SELECT * FROM static_pages ORDER BY sort_order ASC, id ASC');
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
+
+function get_static_page(string $slug): ?array
+{
+    $pdo = db_connect();
+    ensure_static_pages_table();
+    $stmt = $pdo->prepare('SELECT * FROM static_pages WHERE slug = :slug LIMIT 1');
+    $stmt->execute([':slug' => $slug]);
+    $row = $stmt->fetch(PDO::FETCH_ASSOC);
+    return $row ?: null;
+}
+
+function save_static_page(array $d, ?int $id = null): bool
+{
+    $pdo = db_connect();
+    ensure_static_pages_table();
+    if ($id) {
+        $stmt = $pdo->prepare(
+            'UPDATE static_pages SET title=:title, slug=:slug, content=:content,
+             meta_title=:mt, meta_description=:md, sort_order=:so, updated_at=NOW()
+             WHERE id=:id'
+        );
+        return $stmt->execute([
+            ':title'   => $d['title'],
+            ':slug'    => $d['slug'],
+            ':content' => $d['content'],
+            ':mt'      => $d['meta_title']       ?? '',
+            ':md'      => $d['meta_description'] ?? '',
+            ':so'      => (int)($d['sort_order'] ?? 0),
+            ':id'      => $id,
+        ]);
+    }
+    $stmt = $pdo->prepare(
+        'INSERT INTO static_pages (title,slug,content,meta_title,meta_description,sort_order)
+         VALUES (:title,:slug,:content,:mt,:md,:so)'
+    );
+    return $stmt->execute([
+        ':title'   => $d['title'],
+        ':slug'    => $d['slug'],
+        ':content' => $d['content'],
+        ':mt'      => $d['meta_title']       ?? '',
+        ':md'      => $d['meta_description'] ?? '',
+        ':so'      => (int)($d['sort_order'] ?? 0),
+    ]);
+}
+
+function ensure_static_pages_table(): void
+{
+    static $done = false;
+    if ($done) return;
+    $done = true;
+    $pdo = db_connect();
+    $pdo->exec("CREATE TABLE IF NOT EXISTS static_pages (
+        id               INT AUTO_INCREMENT PRIMARY KEY,
+        title            VARCHAR(255) NOT NULL,
+        slug             VARCHAR(100) NOT NULL UNIQUE,
+        content          LONGTEXT,
+        meta_title       VARCHAR(255) DEFAULT '',
+        meta_description TEXT,
+        sort_order       TINYINT UNSIGNED NOT NULL DEFAULT 0,
+        created_at       TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at       TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
+    // Seed default pages if empty
+    $count = (int)$pdo->query('SELECT COUNT(*) FROM static_pages')->fetchColumn();
+    if ($count === 0) {
+        _seed_default_static_pages($pdo);
+    }
+}
+
+function _seed_default_static_pages(\PDO $pdo): void
+{
+    $pages = [
+        [
+            'title'            => 'Impressum',
+            'slug'             => 'impressum',
+            'meta_title'       => 'Impressum – VerlustRückholung',
+            'meta_description' => 'Angaben gemäß § 5 TMG',
+            'sort_order'       => 1,
+            'content'          => _default_page_impressum(),
+        ],
+        [
+            'title'            => 'Datenschutzerklärung',
+            'slug'             => 'datenschutz',
+            'meta_title'       => 'Datenschutzerklärung – VerlustRückholung',
+            'meta_description' => 'Informationen zum Datenschutz und zur Verarbeitung personenbezogener Daten.',
+            'sort_order'       => 2,
+            'content'          => _default_page_datenschutz(),
+        ],
+        [
+            'title'            => 'Kontakt',
+            'slug'             => 'kontakt',
+            'meta_title'       => 'Kontakt – VerlustRückholung',
+            'meta_description' => 'Nehmen Sie Kontakt mit unserem Team auf.',
+            'sort_order'       => 3,
+            'content'          => _default_page_kontakt(),
+        ],
+        [
+            'title'            => 'Allgemeine Geschäftsbedingungen',
+            'slug'             => 'agb',
+            'meta_title'       => 'AGB – VerlustRückholung',
+            'meta_description' => 'Allgemeine Geschäftsbedingungen der VerlustRückholung.',
+            'sort_order'       => 4,
+            'content'          => _default_page_agb(),
+        ],
+        [
+            'title'            => 'Über uns',
+            'slug'             => 'ueber-uns',
+            'meta_title'       => 'Über uns – VerlustRückholung',
+            'meta_description' => 'Erfahren Sie mehr über unser Team und unsere Mission.',
+            'sort_order'       => 5,
+            'content'          => _default_page_ueber_uns(),
+        ],
+    ];
+    $ins = $pdo->prepare(
+        'INSERT IGNORE INTO static_pages (title,slug,content,meta_title,meta_description,sort_order)
+         VALUES (:title,:slug,:content,:mt,:md,:so)'
+    );
+    foreach ($pages as $p) {
+        $ins->execute([
+            ':title' => $p['title'],
+            ':slug'  => $p['slug'],
+            ':content' => $p['content'],
+            ':mt'    => $p['meta_title'],
+            ':md'    => $p['meta_description'],
+            ':so'    => $p['sort_order'],
+        ]);
+    }
+}
+
+// ── Default page content ──────────────────────────────────────
+
+function _default_page_impressum(): string { return <<<HTML
+<h1>Impressum</h1>
+<p>Angaben gemäß § 5 TMG</p>
+
+<h2>Anbieter</h2>
+<p>
+    VerlustRückholung GmbH<br>
+    Musterstraße 1<br>
+    12345 Musterstadt<br>
+    Deutschland
+</p>
+
+<h2>Kontakt</h2>
+<p>
+    Telefon: +49 (0) 123 456789<br>
+    E-Mail: <a href="mailto:info@verlustrueckholung.de">info@verlustrueckholung.de</a>
+</p>
+
+<h2>Handelsregister</h2>
+<p>
+    Registergericht: Amtsgericht Musterstadt<br>
+    Registernummer: HRB 123456
+</p>
+
+<h2>Umsatzsteuer-Identifikationsnummer</h2>
+<p>
+    DE123456789 (gemäß § 27a Umsatzsteuergesetz)
+</p>
+
+<h2>Verantwortlich für den Inhalt nach § 18 Abs. 2 MStV</h2>
+<p>
+    Max Mustermann<br>
+    VerlustRückholung GmbH<br>
+    Musterstraße 1, 12345 Musterstadt
+</p>
+
+<h2>EU-Streitschlichtung</h2>
+<p>
+    Die Europäische Kommission stellt eine Plattform zur Online-Streitbeilegung (OS) bereit:
+    <a href="https://ec.europa.eu/consumers/odr/" target="_blank" rel="noopener">
+        https://ec.europa.eu/consumers/odr/
+    </a>.<br>
+    Unsere E-Mail-Adresse finden Sie oben im Impressum.
+</p>
+
+<h2>Verbraucherstreitbeilegung / Universalschlichtungsstelle</h2>
+<p>
+    Wir sind nicht bereit oder verpflichtet, an Streitbeilegungsverfahren vor einer
+    Verbraucherschlichtungsstelle teilzunehmen.
+</p>
+HTML;
+}
+
+function _default_page_datenschutz(): string { return <<<HTML
+<h1>Datenschutzerklärung</h1>
+
+<h2>1. Datenschutz auf einen Blick</h2>
+<h3>Allgemeine Hinweise</h3>
+<p>
+    Die folgenden Hinweise geben einen einfachen Überblick darüber, was mit Ihren personenbezogenen Daten
+    passiert, wenn Sie diese Website besuchen. Personenbezogene Daten sind alle Daten, mit denen Sie
+    persönlich identifiziert werden können. Ausführliche Informationen zum Thema Datenschutz entnehmen
+    Sie unserer unter diesem Text aufgeführten Datenschutzerklärung.
+</p>
+
+<h3>Datenerfassung auf dieser Website</h3>
+<p><strong>Wer ist verantwortlich für die Datenerfassung auf dieser Website?</strong><br>
+Die Datenverarbeitung auf dieser Website erfolgt durch den Websitebetreiber. Dessen Kontaktdaten
+können Sie dem Impressum dieser Website entnehmen.</p>
+
+<p><strong>Wie erfassen wir Ihre Daten?</strong><br>
+Ihre Daten werden zum einen dadurch erhoben, dass Sie uns diese mitteilen. Hierbei kann es sich z. B.
+um Daten handeln, die Sie in ein Kontaktformular eingeben. Andere Daten werden automatisch oder nach
+Ihrer Einwilligung beim Besuch der Website durch unsere IT-Systeme erfasst. Das sind vor allem
+technische Daten (z. B. Internetbrowser, Betriebssystem oder Uhrzeit des Seitenaufrufs).</p>
+
+<p><strong>Wofür nutzen wir Ihre Daten?</strong><br>
+Ein Teil der Daten wird erhoben, um eine fehlerfreie Bereitstellung der Website zu gewährleisten.
+Andere Daten können zur Analyse Ihres Nutzerverhaltens verwendet werden.</p>
+
+<h2>2. Hosting</h2>
+<p>
+    Wir hosten die Inhalte unserer Website bei folgendem Anbieter. Die Nutzung erfolgt auf Grundlage
+    von Art. 6 Abs. 1 lit. f DSGVO. Wir haben ein berechtigtes Interesse an einer möglichst zuverlässigen
+    Darstellung unserer Website.
+</p>
+
+<h2>3. Allgemeine Hinweise und Pflichtinformationen</h2>
+<h3>Datenschutz</h3>
+<p>
+    Die Betreiber dieser Seiten nehmen den Schutz Ihrer persönlichen Daten sehr ernst. Wir behandeln
+    Ihre personenbezogenen Daten vertraulich und entsprechend den gesetzlichen Datenschutzvorschriften
+    sowie dieser Datenschutzerklärung.
+</p>
+
+<h3>Hinweis zur verantwortlichen Stelle</h3>
+<p>
+    Die verantwortliche Stelle für die Datenverarbeitung auf dieser Website ist:<br>
+    VerlustRückholung GmbH<br>
+    Musterstraße 1, 12345 Musterstadt<br>
+    E-Mail: <a href="mailto:datenschutz@verlustrueckholung.de">datenschutz@verlustrueckholung.de</a>
+</p>
+
+<h3>Speicherdauer</h3>
+<p>
+    Soweit innerhalb dieser Datenschutzerklärung keine speziellere Speicherdauer genannt wurde,
+    verbleiben Ihre personenbezogenen Daten bei uns, bis der Zweck für die Datenverarbeitung
+    entfällt. Wenn Sie ein berechtigtes Löschersuchen geltend machen oder eine Einwilligung zur
+    Datenverarbeitung widerrufen, werden Ihre Daten gelöscht, sofern wir keine anderen rechtlich
+    zulässigen Gründe für die Speicherung Ihrer personenbezogenen Daten haben.
+</p>
+
+<h3>Ihre Rechte</h3>
+<p>
+    Sie haben jederzeit das Recht, unentgeltlich Auskunft über Herkunft, Empfänger und Zweck Ihrer
+    gespeicherten personenbezogenen Daten zu erhalten. Sie haben außerdem ein Recht, die Berichtigung
+    oder Löschung dieser Daten zu verlangen. Wenn Sie eine Einwilligung zur Datenverarbeitung erteilt
+    haben, können Sie diese Einwilligung jederzeit für die Zukunft widerrufen. Außerdem haben Sie das
+    Recht, unter bestimmten Umständen die Einschränkung der Verarbeitung Ihrer personenbezogenen Daten
+    zu verlangen. Des Weiteren steht Ihnen ein Beschwerderecht bei der zuständigen Aufsichtsbehörde zu.
+</p>
+<p>
+    Hierzu sowie zu weiteren Fragen zum Thema Datenschutz können Sie sich jederzeit an uns wenden.
+</p>
+
+<h2>4. Datenerfassung auf dieser Website</h2>
+<h3>Kontaktformular</h3>
+<p>
+    Wenn Sie uns per Kontaktformular Anfragen zukommen lassen, werden Ihre Angaben aus dem
+    Anfrageformular inklusive der von Ihnen dort angegebenen Kontaktdaten zwecks Bearbeitung
+    der Anfrage und für den Fall von Anschlussfragen bei uns gespeichert. Diese Daten geben
+    wir nicht ohne Ihre Einwilligung weiter. Die Verarbeitung dieser Daten erfolgt auf Grundlage
+    von Art. 6 Abs. 1 lit. b DSGVO.
+</p>
+
+<h3>Newsletter und E-Mail-Benachrichtigungen</h3>
+<p>
+    Wenn Sie unseren Newsletter beziehen möchten, benötigen wir von Ihnen eine E-Mail-Adresse
+    sowie Informationen, welche uns die Überprüfung gestatten, dass Sie der Inhaber der angegebenen
+    E-Mail-Adresse sind. Weitere Daten werden nicht erhoben. Diese Daten verwenden wir ausschließlich
+    für den Versand der angeforderten Informationen. Die Verarbeitung erfolgt auf Grundlage von
+    Art. 6 Abs. 1 lit. a DSGVO.
+</p>
+<p>
+    Sie können Ihre Einwilligung jederzeit widerrufen, indem Sie den Abmeldelink in jeder E-Mail
+    anklicken oder uns direkt per E-Mail kontaktieren.
+</p>
+HTML;
+}
+
+function _default_page_kontakt(): string { return <<<HTML
+<h1>Kontakt</h1>
+
+<p>
+    Sie möchten uns kontaktieren oder haben Fragen zu unseren Leistungen?
+    Wir stehen Ihnen gerne zur Verfügung. Bitte wählen Sie einen der folgenden Kontaktwege.
+</p>
+
+<div class="row g-4 mt-2">
+    <div class="col-md-6">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <h5 class="fw-bold"><i class="bi bi-envelope me-2 text-primary"></i>E-Mail</h5>
+                <p><a href="mailto:info@verlustrueckholung.de">info@verlustrueckholung.de</a></p>
+                <p class="text-muted small">Wir antworten in der Regel innerhalb von 24 Stunden.</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <h5 class="fw-bold"><i class="bi bi-telephone me-2 text-primary"></i>Telefon</h5>
+                <p><a href="tel:+4912345678">+49 (0) 123 456789</a></p>
+                <p class="text-muted small">Mo–Fr, 09:00 – 18:00 Uhr</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <h5 class="fw-bold"><i class="bi bi-geo-alt me-2 text-primary"></i>Adresse</h5>
+                <address class="mb-0">
+                    VerlustRückholung GmbH<br>
+                    Musterstraße 1<br>
+                    12345 Musterstadt<br>
+                    Deutschland
+                </address>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <h5 class="fw-bold"><i class="bi bi-clock me-2 text-primary"></i>Öffnungszeiten</h5>
+                <table class="table table-sm table-borderless mb-0">
+                    <tr><td>Montag – Freitag</td><td>09:00 – 18:00 Uhr</td></tr>
+                    <tr><td>Samstag</td><td>10:00 – 14:00 Uhr</td></tr>
+                    <tr><td>Sonntag</td><td>Geschlossen</td></tr>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="mt-5">
+    <h2>Direktanfrage</h2>
+    <p>
+        Für eine erste kostenlose Einschätzung Ihres Falles nutzen Sie bitte unser
+        <a href="/#kontakt">Anfrage-Formular auf der Startseite</a>.
+    </p>
+</div>
+HTML;
+}
+
+function _default_page_agb(): string { return <<<HTML
+<h1>Allgemeine Geschäftsbedingungen</h1>
+<p><em>Stand: Januar 2025</em></p>
+
+<h2>§ 1 Geltungsbereich</h2>
+<p>
+    Diese Allgemeinen Geschäftsbedingungen (AGB) gelten für alle Dienstleistungen der
+    VerlustRückholung GmbH (nachfolgend „Anbieter") gegenüber Verbrauchern und Unternehmern
+    (nachfolgend „Auftraggeber").
+</p>
+
+<h2>§ 2 Leistungsbeschreibung</h2>
+<p>
+    Der Anbieter erbringt Beratungs- und Unterstützungsleistungen im Bereich der Kapitalrückholung
+    nach Anlagebetrugsfällen. Die konkreten Leistungen werden im jeweiligen Einzelauftrag vereinbart.
+    Der Anbieter schuldet keinen bestimmten Erfolg (Werkvertrag), sondern sorgfältige Bearbeitung
+    (Dienstvertrag), soweit nicht ausdrücklich anderes vereinbart.
+</p>
+
+<h2>§ 3 Vertragsschluss</h2>
+<p>
+    Die Darstellung unserer Leistungen auf der Website stellt kein bindendes Angebot dar. Ein Vertrag
+    kommt erst durch die ausdrückliche schriftliche Bestätigung des Anbieters zustande.
+</p>
+
+<h2>§ 4 Vergütung</h2>
+<p>
+    Die Vergütung richtet sich nach dem jeweils vereinbarten Honorar. Sofern eine erfolgsabhängige
+    Vergütung vereinbart wurde, wird diese erst nach erfolgreicher Rückholung der Mittel fällig.
+    Alle Preise verstehen sich zzgl. der gesetzlichen Umsatzsteuer.
+</p>
+
+<h2>§ 5 Vertraulichkeit</h2>
+<p>
+    Beide Parteien verpflichten sich, alle im Rahmen der Zusammenarbeit erlangten vertraulichen
+    Informationen geheim zu halten und nur für die Zwecke der vereinbarten Leistungen zu verwenden.
+</p>
+
+<h2>§ 6 Haftungsbeschränkung</h2>
+<p>
+    Der Anbieter haftet für Vorsatz und grobe Fahrlässigkeit unbeschränkt. Für leichte Fahrlässigkeit
+    haftet der Anbieter nur bei der Verletzung wesentlicher Vertragspflichten, und zwar begrenzt auf
+    den vorhersehbaren, vertragstypischen Schaden. Eine weitergehende Haftung ist ausgeschlossen.
+</p>
+
+<h2>§ 7 Datenschutz</h2>
+<p>
+    Die Erhebung und Verarbeitung personenbezogener Daten erfolgt gemäß unserer
+    <a href="/datenschutz">Datenschutzerklärung</a>.
+</p>
+
+<h2>§ 8 Anwendbares Recht und Gerichtsstand</h2>
+<p>
+    Es gilt das Recht der Bundesrepublik Deutschland unter Ausschluss des UN-Kaufrechts.
+    Gerichtsstand für alle Streitigkeiten aus und im Zusammenhang mit diesem Vertrag ist,
+    soweit gesetzlich zulässig, der Sitz des Anbieters.
+</p>
+
+<h2>§ 9 Salvatorische Klausel</h2>
+<p>
+    Sollten einzelne Bestimmungen dieser AGB ganz oder teilweise unwirksam sein oder werden,
+    so berührt dies die Wirksamkeit der übrigen Bestimmungen nicht.
+</p>
+HTML;
+}
+
+function _default_page_ueber_uns(): string { return <<<HTML
+<h1>Über uns</h1>
+
+<p class="lead">
+    Wir helfen Opfern von Anlagebetrug dabei, ihr verloren geglaubtes Kapital zurückzuholen –
+    mit modernster KI-Technologie und langjähriger Erfahrung.
+</p>
+
+<h2>Unsere Mission</h2>
+<p>
+    Jährlich verlieren Tausende von Anlegerinnen und Anlegern erhebliche Summen durch betrügerische
+    Investment-Plattformen, unseriöse Broker und Krypto-Betrug. VerlustRückholung wurde gegründet,
+    um Betroffenen professionelle Unterstützung zu bieten und ihnen eine realistische Chance zu geben,
+    ihr Kapital zurückzuerhalten.
+</p>
+
+<h2>Unsere Stärken</h2>
+<ul>
+    <li><strong>KI-gestützte Analyse:</strong> Modernste Technologie hilft uns, Betrugsfälle schnell und präzise zu analysieren.</li>
+    <li><strong>Erfahrenes Team:</strong> Unsere Fachleute verfügen über jahrelange Erfahrung im Bereich Finanzrecht und digitale Forensik.</li>
+    <li><strong>Internationales Netzwerk:</strong> Wir arbeiten mit Anwälten und Behörden in über 30 Ländern zusammen.</li>
+    <li><strong>Transparenz:</strong> Sie werden in jedem Schritt des Verfahrens vollständig informiert.</li>
+    <li><strong>Erfolgsorientiert:</strong> Unsere Vergütung ist häufig erfolgsbasiert – wir verdienen, wenn Sie zurückbekommen.</li>
+</ul>
+
+<h2>Unsere Werte</h2>
+<p>
+    Vertrauen, Transparenz und Diskretion stehen im Mittelpunkt unserer Arbeit.
+    Wir behandeln jeden Fall mit größter Sorgfalt und vollständiger Vertraulichkeit.
+</p>
+
+<div class="row g-3 mt-3">
+    <div class="col-sm-6 col-lg-3 text-center">
+        <div class="display-6 fw-bold text-primary">87%</div>
+        <div class="text-muted small">Erfolgsquote</div>
+    </div>
+    <div class="col-sm-6 col-lg-3 text-center">
+        <div class="display-6 fw-bold text-primary">5.000+</div>
+        <div class="text-muted small">Bearbeitete Fälle</div>
+    </div>
+    <div class="col-sm-6 col-lg-3 text-center">
+        <div class="display-6 fw-bold text-primary">30+</div>
+        <div class="text-muted small">Länder</div>
+    </div>
+    <div class="col-sm-6 col-lg-3 text-center">
+        <div class="display-6 fw-bold text-primary">10 Jahre</div>
+        <div class="text-muted small">Erfahrung</div>
+    </div>
+</div>
+HTML;
+}
+
+// ============================================================
+// IP-Warmup System
+// ============================================================
+
+function ensure_warmup_table(): void
+{
+    static $done = false;
+    if ($done) return;
+    $done = true;
+    $pdo = db_connect();
+    $pdo->exec("CREATE TABLE IF NOT EXISTS mailing_warmup_log (
+        id              INT AUTO_INCREMENT PRIMARY KEY,
+        smtp_account_id INT NOT NULL,
+        log_date        DATE NOT NULL,
+        target          INT UNSIGNED NOT NULL DEFAULT 0,
+        sent            INT UNSIGNED NOT NULL DEFAULT 0,
+        bounced         INT UNSIGNED NOT NULL DEFAULT 0,
+        opened          INT UNSIGNED NOT NULL DEFAULT 0,
+        day_number      TINYINT UNSIGNED NOT NULL DEFAULT 1,
+        notes           VARCHAR(512) DEFAULT '',
+        created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE KEY uniq_acct_date (smtp_account_id, log_date)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+}
+
+function get_warmup_schedule(int $smtp_account_id): array
+{
+    ensure_warmup_table();
+    $pdo  = db_connect();
+    $stmt = $pdo->prepare(
+        'SELECT * FROM mailing_warmup_log WHERE smtp_account_id=:id ORDER BY log_date ASC'
+    );
+    $stmt->execute([':id' => $smtp_account_id]);
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
+
+function upsert_warmup_log(int $smtp_account_id, string $date, array $d): bool
+{
+    ensure_warmup_table();
+    $pdo = db_connect();
+    $stmt = $pdo->prepare(
+        'INSERT INTO mailing_warmup_log
+             (smtp_account_id, log_date, target, sent, bounced, opened, day_number, notes)
+         VALUES (:aid, :dt, :target, :sent, :bounced, :opened, :day, :notes)
+         ON DUPLICATE KEY UPDATE
+             target=VALUES(target), sent=VALUES(sent), bounced=VALUES(bounced),
+             opened=VALUES(opened), day_number=VALUES(day_number), notes=VALUES(notes)'
+    );
+    return $stmt->execute([
+        ':aid'     => $smtp_account_id,
+        ':dt'      => $date,
+        ':target'  => (int)($d['target']  ?? 0),
+        ':sent'    => (int)($d['sent']    ?? 0),
+        ':bounced' => (int)($d['bounced'] ?? 0),
+        ':opened'  => (int)($d['opened']  ?? 0),
+        ':day'     => (int)($d['day_number'] ?? 1),
+        ':notes'   => substr($d['notes'] ?? '', 0, 512),
+    ]);
+}
+
+/** Growth multiplier applied every 3 days during IP warmup (50% increase). */
+const WARMUP_GROWTH_RATE = 1.5;
+
+/**
+ * Generate a 30-day warmup schedule starting from $start_vol, growing by
+ * WARMUP_GROWTH_RATE every 3 days, capped at $max_vol.
+ */
+function generate_warmup_schedule(int $start_vol = 20, int $max_vol = 200): array
+{
+    $schedule = [];
+    $vol = $start_vol;
+    for ($day = 1; $day <= 30; $day++) {
+        $schedule[] = ['day' => $day, 'target' => min($vol, $max_vol)];
+        if ($day % 3 === 0) {
+            $vol = (int)round($vol * WARMUP_GROWTH_RATE);
+        }
+    }
+    return $schedule;
+}
+
 function sanitize(string $value): string {
     return htmlspecialchars(trim($value), ENT_QUOTES, 'UTF-8');
 }
@@ -1273,6 +1855,35 @@ function ensure_mailing_tables(): void
             $text2,
         ]);
     }
+
+    // Seed spintax rotation templates
+    $rotation_templates = [
+        [
+            'name'    => 'Rotation – Neutral / Safe (Spintax)',
+            'subject' => '{Kurze Frage zu Ihrer Erfahrung|Kurze Rückfrage|Allgemeine Frage zu digitalen Themen}',
+            'html'    => _rotation_template_1_html(),
+            'text'    => _rotation_template_1_text(),
+        ],
+        [
+            'name'    => 'Rotation – Soft Question Style (Spintax)',
+            'subject' => '{Ist das aktuell relevant für Sie?|Passt das aktuell bei Ihnen?|Kurze Nachfrage}',
+            'html'    => _rotation_template_2_html(),
+            'text'    => _rotation_template_2_text(),
+        ],
+        [
+            'name'    => 'Rotation – Brief Info Style (Spintax)',
+            'subject' => '{Ein kurzer Hinweis|Kurze Information für Sie|Kleine Rückmeldung}',
+            'html'    => _rotation_template_3_html(),
+            'text'    => _rotation_template_3_text(),
+        ],
+    ];
+    foreach ($rotation_templates as $rt) {
+        $cnt = $pdo->query("SELECT COUNT(*) FROM mailing_templates WHERE name=" . $pdo->quote($rt['name']))->fetchColumn();
+        if (!$cnt) {
+            $pdo->prepare('INSERT INTO mailing_templates (name,subject,body_html,body_text) VALUES (?,?,?,?)')
+                ->execute([$rt['name'], $rt['subject'], $rt['html'], $rt['text']]);
+        }
+    }
 }
 
 /**
@@ -1580,3 +2191,222 @@ https://kryptoxpay.co.uk
 Abmelden: {{unsubscribe_url}}
 Datenschutz: https://kryptoxpay.co.uk/datenschutz';
 }
+
+// ============================================================
+// Spintax Rotation Templates (3 variants)
+// ============================================================
+
+function _rotation_template_1_html(): string { return '<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{{company_name}}</title>
+<style>
+  body{margin:0;padding:0;background:#f2f4f7;font-family:Arial,Helvetica,sans-serif}
+  .wrap{max-width:600px;margin:24px auto;background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,.07)}
+  .hdr{background:#0d2744;padding:24px 32px;text-align:center}
+  .hdr-logo{color:#f0a500;font-size:20px;font-weight:700;text-decoration:none}
+  .body{padding:32px;color:#374151;font-size:15px;line-height:1.8}
+  .body p{margin:0 0 14px}
+  .cta{text-align:center;margin:24px 0}
+  .cta a{display:inline-block;background:#f0a500;color:#fff!important;padding:12px 32px;border-radius:6px;font-weight:700;text-decoration:none;font-size:15px}
+  .foot{background:#f8fafc;padding:18px 32px;border-top:1px solid #e8edf2;font-size:12px;color:#9ca3af;text-align:center}
+  .foot a{color:#9ca3af}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="hdr"><span class="hdr-logo">{{company_name}}</span></div>
+  <div class="body">
+    <p>{Guten Tag|Hallo} {{name}},</p>
+    <p>
+      {ich melde mich kurz|ich wollte mich kurz melden},
+      {da es aktuell vermehrt Themen rund um digitale Investitionen gibt|weil derzeit viele Fragen zu Online-Themen auftreten}.
+    </p>
+    <p>
+      {Möglicherweise hatten Sie bereits Berührungspunkte damit|Eventuell ist Ihnen das Thema bekannt}.
+    </p>
+    <p>
+      {Wir stellen dazu einige Informationen bereit|Wir bieten hierzu eine Übersicht},
+      {die bei der Einordnung helfen kann|zur besseren Orientierung}.
+    </p>
+    <div class="cta">
+      <a href="{{site_url}}">{Weitere Informationen|Zur Website|Mehr erfahren}</a>
+    </div>
+    <p>
+      {Falls nicht relevant, bitte ignorieren|Wenn das nicht passt, einfach ignorieren}.
+    </p>
+    <p>
+      {Viele Grüße|Beste Grüße}<br>
+      {{sender_name}}
+    </p>
+  </div>
+  <div class="foot">
+    <p><a href="{{unsubscribe_url}}">Abmelden</a> &nbsp;|&nbsp;
+       <a href="{{site_url}}/datenschutz">Datenschutz</a> &nbsp;|&nbsp;
+       <a href="{{site_url}}/impressum">Impressum</a></p>
+    <p>{{company_name}}</p>
+    {{open_tracker}}
+  </div>
+</div>
+</body>
+</html>';
+}
+
+function _rotation_template_1_text(): string { return '{Guten Tag|Hallo} {{name}},
+
+{ich melde mich kurz|ich wollte mich kurz melden}, {da es aktuell vermehrt Themen rund um digitale Investitionen gibt|weil derzeit viele Fragen zu Online-Themen auftreten}.
+
+{Möglicherweise hatten Sie bereits Berührungspunkte damit|Eventuell ist Ihnen das Thema bekannt}.
+
+{Wir stellen dazu einige Informationen bereit|Wir bieten hierzu eine Übersicht}, {die bei der Einordnung helfen kann|zur besseren Orientierung}.
+
+{Weitere Informationen|Zur Website}: {{site_url}}
+
+{Falls nicht relevant, bitte ignorieren|Wenn das nicht passt, einfach ignorieren}.
+
+{Viele Grüße|Beste Grüße}
+{{sender_name}}
+{{company_name}}
+
+Abmelden: {{unsubscribe_url}}'; }
+
+function _rotation_template_2_html(): string { return '<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{{company_name}}</title>
+<style>
+  body{margin:0;padding:0;background:#f2f4f7;font-family:Arial,Helvetica,sans-serif}
+  .wrap{max-width:600px;margin:24px auto;background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,.07)}
+  .hdr{background:#0d2744;padding:24px 32px;text-align:center}
+  .hdr-logo{color:#f0a500;font-size:20px;font-weight:700;text-decoration:none}
+  .body{padding:32px;color:#374151;font-size:15px;line-height:1.8}
+  .body p{margin:0 0 14px}
+  .cta{text-align:center;margin:24px 0}
+  .cta a{display:inline-block;background:#f0a500;color:#fff!important;padding:12px 32px;border-radius:6px;font-weight:700;text-decoration:none;font-size:15px}
+  .foot{background:#f8fafc;padding:18px 32px;border-top:1px solid #e8edf2;font-size:12px;color:#9ca3af;text-align:center}
+  .foot a{color:#9ca3af}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="hdr"><span class="hdr-logo">{{company_name}}</span></div>
+  <div class="body">
+    <p>Guten Tag {{name}},</p>
+    <p>
+      {ich wollte kurz nachfragen|kurze Rückfrage},
+      {ob das Thema digitale Investitionen für Sie aktuell relevant ist|ob Sie sich aktuell noch mit solchen Themen beschäftigen}.
+    </p>
+    <p>
+      {Falls ja, habe ich hier eine kleine Übersicht|Falls Interesse besteht, finden Sie hier weitere Infos}:
+    </p>
+    <div class="cta">
+      <a href="{{site_url}}">{Details ansehen|Zur Übersicht|Mehr Informationen}</a>
+    </div>
+    <p>Falls nicht, können Sie diese Nachricht einfach ignorieren.</p>
+    <p>
+      Freundliche Grüße<br>
+      {{sender_name}}
+    </p>
+  </div>
+  <div class="foot">
+    <p><a href="{{unsubscribe_url}}">Abmelden</a> &nbsp;|&nbsp;
+       <a href="{{site_url}}/datenschutz">Datenschutz</a> &nbsp;|&nbsp;
+       <a href="{{site_url}}/impressum">Impressum</a></p>
+    <p>{{company_name}}</p>
+    {{open_tracker}}
+  </div>
+</div>
+</body>
+</html>';
+}
+
+function _rotation_template_2_text(): string { return 'Guten Tag {{name}},
+
+{ich wollte kurz nachfragen|kurze Rückfrage}, {ob das Thema digitale Investitionen für Sie aktuell relevant ist|ob Sie sich aktuell noch mit solchen Themen beschäftigen}.
+
+{Falls ja, habe ich hier eine kleine Übersicht|Falls Interesse besteht, finden Sie hier weitere Infos}:
+{{site_url}}
+
+Falls nicht, können Sie diese Nachricht einfach ignorieren.
+
+Freundliche Grüße
+{{sender_name}}
+{{company_name}}
+
+Abmelden: {{unsubscribe_url}}'; }
+
+function _rotation_template_3_html(): string { return '<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{{company_name}}</title>
+<style>
+  body{margin:0;padding:0;background:#f2f4f7;font-family:Arial,Helvetica,sans-serif}
+  .wrap{max-width:600px;margin:24px auto;background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,.07)}
+  .hdr{background:#0d2744;padding:24px 32px;text-align:center}
+  .hdr-logo{color:#f0a500;font-size:20px;font-weight:700;text-decoration:none}
+  .body{padding:32px;color:#374151;font-size:15px;line-height:1.8}
+  .body p{margin:0 0 14px}
+  .cta{text-align:center;margin:24px 0}
+  .cta a{display:inline-block;background:#f0a500;color:#fff!important;padding:12px 32px;border-radius:6px;font-weight:700;text-decoration:none;font-size:15px}
+  .foot{background:#f8fafc;padding:18px 32px;border-top:1px solid #e8edf2;font-size:12px;color:#9ca3af;text-align:center}
+  .foot a{color:#9ca3af}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="hdr"><span class="hdr-logo">{{company_name}}</span></div>
+  <div class="body">
+    <p>{Guten Tag|Hallo} {{name}},</p>
+    <p>
+      {ich wollte Ihnen kurz eine Information zukommen lassen|kurze Info für Sie},
+      {die für Sie möglicherweise von Interesse ist|die aktuell viele beschäftigt}.
+    </p>
+    <p>
+      {Darf ich kurz nachfragen, ob das für Sie relevant ist?|Haben Sie dazu bereits eine Einschätzung?|Kurze Frage dazu}
+    </p>
+    <p>
+      {Bezug zu Ihren bisherigen Erfahrungen|Zu einem aktuellen Thema}:
+      {Wir bieten hierzu weiterführende Informationen an|Hier finden Sie alle relevanten Details}.
+    </p>
+    <div class="cta">
+      <a href="{{site_url}}">{Kurze Info ansehen|Mehr dazu erfahren|Zur Übersicht}</a>
+    </div>
+    <p>
+      {Viele Grüße|Mit freundlichen Grüßen}<br>
+      {{sender_name}}<br>
+      {{company_name}}
+    </p>
+  </div>
+  <div class="foot">
+    <p><a href="{{unsubscribe_url}}">Abmelden</a> &nbsp;|&nbsp;
+       <a href="{{site_url}}/datenschutz">Datenschutz</a> &nbsp;|&nbsp;
+       <a href="{{site_url}}/impressum">Impressum</a></p>
+    <p>{{company_name}}</p>
+    {{open_tracker}}
+  </div>
+</div>
+</body>
+</html>';
+}
+
+function _rotation_template_3_text(): string { return '{Guten Tag|Hallo} {{name}},
+
+{ich wollte Ihnen kurz eine Information zukommen lassen|kurze Info für Sie}, {die für Sie möglicherweise von Interesse ist|die aktuell viele beschäftigt}.
+
+{Darf ich kurz nachfragen, ob das für Sie relevant ist?|Haben Sie dazu bereits eine Einschätzung?|Kurze Frage dazu}
+
+{Bezug zu Ihren bisherigen Erfahrungen|Zu einem aktuellen Thema}: {Wir bieten hierzu weiterführende Informationen an|Hier finden Sie alle relevanten Details}.
+
+{Kurze Info ansehen|Mehr dazu erfahren}: {{site_url}}
+
+{Viele Grüße|Mit freundlichen Grüßen}
+{{sender_name}}
+{{company_name}}
+
+Abmelden: {{unsubscribe_url}}'; }

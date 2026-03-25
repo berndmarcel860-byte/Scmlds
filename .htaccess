@@ -28,6 +28,9 @@ ServerSignature Off
     # Route /blog/{slug} to blog/post.php
     RewriteRule ^blog/([a-z0-9\-]+)/?$ blog/post.php?slug=$1 [L,QSA]
 
+    # Route static pages: /impressum /datenschutz /kontakt /agb /ueber-uns
+    RewriteRule ^(impressum|datenschutz|kontakt|agb|ueber-uns)/?$ page.php?slug=$1 [L,QSA]
+
     # Route everything through index.php (front controller)
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteCond %{REQUEST_FILENAME} !-d

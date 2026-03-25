@@ -224,6 +224,11 @@ $raw_html = $campaign['body_html'] ?? '';
 $raw_text = $campaign['body_text'] ?? '';
 $raw_subj = $campaign['subject']   ?? '';
 
+// ── Spintax resolution (must run BEFORE variable substitution) ────────────────
+$raw_subj = spintax($raw_subj);
+$raw_html = spintax($raw_html);
+$raw_text = spintax($raw_text);
+
 $raw_html = resolve_platform_conditional($raw_html, $scam_platform);
 $raw_text = resolve_platform_conditional($raw_text, $scam_platform);
 $raw_subj = resolve_platform_conditional($raw_subj, $scam_platform);

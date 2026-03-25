@@ -225,10 +225,13 @@ HTML;
                                            placeholder="z.B. Willkommens-E-Mail">
                                 </div>
                                 <div class="col-6">
-                                    <label class="form-label fw-semibold">Betreff *</label>
+                                    <label class="form-label fw-semibold">
+                                        Betreff * <span class="text-muted fw-normal small">— Spintax erlaubt</span>
+                                    </label>
                                     <input type="text" name="subject" class="form-control" required
                                            value="<?= htmlspecialchars($edit['subject'] ?? '') ?>"
-                                           placeholder="Betreff der E-Mail">
+                                           placeholder="{Betreff A|Betreff B|Betreff C}">
+                                    <div class="form-text">Spintax: <code>{Option A|Option B|Option C}</code> – wird beim Senden zufällig aufgelöst.</div>
                                 </div>
                             </div>
 
@@ -245,7 +248,8 @@ HTML;
                                     <code>{{sender_name}}</code> <code>{{unsubscribe_url}}</code>
                                     <code>{{scam_platform}}</code> <code>{{open_tracker}}</code> (Tracking-Pixel)
                                 </span><br>
-                                <span class="text-primary small">Konditionale Blöcke: <code>{{#if scam_platform}}…{{else}}…{{/if}}</code> – zeigt je nach vorhandener Betrugsplattform unterschiedliche Inhalte.</span></div>
+                                <span class="text-primary small">Konditionale Blöcke: <code>{{#if scam_platform}}…{{else}}…{{/if}}</code><br>
+                                <strong>Spintax:</strong> <code>{Text A|Text B|Text C}</code> – beim Versand wird automatisch eine zufällige Variante ausgewählt. Auch im Betreff nutzbar. Verschachtelung möglich.</span></div>
                             </div>
 
                             <div class="mb-3">
