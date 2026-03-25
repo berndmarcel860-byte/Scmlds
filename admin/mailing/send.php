@@ -200,6 +200,7 @@ const PAUSE_ACCT   = <?= (int)($settings['pause_between_accounts_ms'] ?? 15000) 
 
 let running  = false;
 let stopping = false;
+let _cdSeq   = 0;   // monotonic counter for countdown line IDs
 
 function log(msg, cls = '') {
     const el  = document.getElementById('sendLog');
@@ -256,24 +257,26 @@ async function startSending() {
                 log(`${data.failed_now} fehlgeschlagen.`, 'log-err');
             }
             if (data.account_rotated) {
-                log(`SMTP-Account gewechselt. Pause ${PAUSE_ACCT/1000}s …`, 'log-warn');
-                await sleep(PAUSE_ACCT);
+                await countdown(PAUSE_ACCT, 'SMTP-Account gewechselt. Pause', 'log-warn');
+                // Auto-sync warmup after account rotation
+                syncWarmup();
                 continue;
             }
             if (data.done) {
-                log('Alle E-Mails versendet! Kampagne abgeschlossen.', 'log-info');
+                log('✅ Alle E-Mails versendet! Kampagne abgeschlossen.', 'log-info');
+                syncWarmup();
                 break;
             }
             if (data.no_pending) {
-                log('Keine ausstehenden Empfänger.', 'log-info');
+                log('ℹ️ Keine ausstehenden Empfänger.', 'log-info');
                 break;
             }
 
-            // Pause between emails
-            await sleep(PAUSE_EMAIL);
+            // Countdown pause between emails
+            await countdown(PAUSE_EMAIL, 'Nächste E-Mail in', 'log-info');
         } catch(e) {
-            log('Netzwerkfehler: ' + e.message, 'log-err');
-            await sleep(5000);
+            log('⚠️ Netzwerkfehler: ' + e.message, 'log-err');
+            await countdown(5000, 'Wiederholung in', 'log-warn');
         }
     }
 
@@ -285,7 +288,47 @@ async function startSending() {
 
 function stopSending() {
     stopping = true;
-    log('Stopp angefordert …', 'log-warn');
+    log('⏹️ Stopp angefordert …', 'log-warn');
+}
+
+/**
+ * Countdown timer that writes ticking seconds into the last log line.
+ * @param {number} ms   - total pause in milliseconds
+ * @param {string} label - prefix label
+ * @param {string} cls  - CSS class for the log line
+ */
+async function countdown(ms, label, cls = 'log-info') {
+    const el       = document.getElementById('sendLog');
+    const totalSec = Math.ceil(ms / 1000);
+    const now      = new Date().toLocaleTimeString('de');
+    // Append a new line we will overwrite in-place
+    const lineId   = 'cdline-' + (++_cdSeq);
+    el.innerHTML  += `<span id="${lineId}" class="${cls}">[${now}] ${label}: ${totalSec}s</span>\n`;
+    el.scrollTop   = el.scrollHeight;
+
+    for (let s = totalSec - 1; s >= 0 && running && !stopping; s--) {
+        await sleep(1000);
+        const line = document.getElementById(lineId);
+        if (line) {
+            line.textContent = `[${now}] ${label}: ${s}s`;
+        }
+    }
+}
+
+/**
+ * Auto-sync today's warmup log entry for the active SMTP account.
+ * Fire-and-forget — errors are non-fatal.
+ */
+function syncWarmup() {
+    fetch('../ajax/mailing_warmup_autosync.php', {
+        method: 'POST',
+        headers: {'Content-Type':'application/x-www-form-urlencoded'},
+        body: 'campaign_id=' + CAMPAIGN_ID
+    }).then(r => r.json()).then(d => {
+        if (d && d.synced) {
+            log(`🔥 IP-Warmup: ${d.synced} Account(s) für heute synchronisiert.`, 'log-info');
+        }
+    }).catch(() => {});
 }
 
 function sleep(ms) {

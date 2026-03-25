@@ -53,6 +53,24 @@ if (isset($_GET['edit'])) {
 }
 
 $accounts = get_mailing_smtp_accounts();
+
+// Delivery health per account: open rate, bounce rate, last 30 days
+$pdo = db_connect();
+$health_stmt = $pdo->prepare("
+    SELECT
+        r.smtp_account_id,
+        COUNT(CASE WHEN r.status = 'sent'                             THEN 1 END) AS sent,
+        COUNT(CASE WHEN r.status IN ('failed','bounced')              THEN 1 END) AS bad,
+        COUNT(CASE WHEN r.opened_at IS NOT NULL AND r.status='sent'   THEN 1 END) AS opened
+    FROM mailing_recipients r
+    WHERE r.sent_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+    GROUP BY r.smtp_account_id
+");
+$health_stmt->execute();
+$health_map = [];
+foreach ($health_stmt->fetchAll(PDO::FETCH_ASSOC) as $h) {
+    $health_map[(int)$h['smtp_account_id']] = $h;
+}
 ?>
 <!DOCTYPE html>
 <html lang="de">
@@ -194,12 +212,13 @@ $accounts = get_mailing_smtp_accounts();
                                     <th>Absender</th>
                                     <th class="text-center">Status</th>
                                     <th class="text-center">Versendet</th>
+                                    <th class="text-center">Delivery Health <small class="text-muted">(30d)</small></th>
                                     <th class="text-end">Aktionen</th>
                                 </tr>
                             </thead>
                             <tbody>
                             <?php if (empty($accounts)): ?>
-                            <tr><td colspan="6" class="text-center text-muted py-4">Noch keine Accounts konfiguriert.</td></tr>
+                            <tr><td colspan="7" class="text-center text-muted py-4">Noch keine Accounts konfiguriert.</td></tr>
                             <?php endif; ?>
                             <?php foreach ($accounts as $a): ?>
                             <tr>
@@ -214,6 +233,31 @@ $accounts = get_mailing_smtp_accounts();
                                     <?php endif; ?>
                                 </td>
                                 <td class="text-center"><?= number_format($a['emails_sent']) ?></td>
+                                <td class="text-center">
+                                    <?php
+                                    $h = $health_map[$a['id']] ?? null;
+                                    if (!$h || (int)$h['sent'] === 0):
+                                    ?>
+                                    <span class="text-muted small">—</span>
+                                    <?php else:
+                                        $open_r   = round((int)$h['opened'] / (int)$h['sent'] * 100, 1);
+                                        $bounce_r = round((int)$h['bad']    / (int)$h['sent'] * 100, 1);
+                                        // Score: 0-100  (open rate boosts, bounces reduce)
+                                        // Scoring: +2 per open-rate %, -5 per bounce/fail-rate % → 0–100 scale
+                                        $score    = max(0, min(100, (int)round($open_r * 2 - $bounce_r * 5)));
+                                        $badge    = $score >= 50 ? 'success' : ($score >= 20 ? 'warning' : 'danger');
+                                        $label    = $score >= 50 ? 'Inbox' : ($score >= 20 ? 'Grauzone' : 'Spam-Risiko');
+                                        $icon     = $score >= 50 ? 'envelope-check' : ($score >= 20 ? 'envelope-exclamation' : 'envelope-x');
+                                    ?>
+                                    <span class="badge bg-<?= $badge ?> d-flex align-items-center gap-1 justify-content-center"
+                                          title="Öffnungsrate: <?= $open_r ?>% | Bounce/Fehler: <?= $bounce_r ?>% | Score: <?= $score ?>/100">
+                                        <i class="bi bi-<?= $icon ?>"></i> <?= $label ?>
+                                    </span>
+                                    <div class="text-muted mt-1" style="font-size:.7rem">
+                                        Open <?= $open_r ?>% &nbsp;|&nbsp; Bounce <?= $bounce_r ?>%
+                                    </div>
+                                    <?php endif; ?>
+                                </td>
                                 <td class="text-end">
                                     <a href="smtp_accounts.php?edit=<?= $a['id'] ?>" class="btn btn-outline-secondary btn-sm"><i class="bi bi-pencil"></i></a>
                                     <form method="post" class="d-inline" onsubmit="return confirm('Account löschen?')">
