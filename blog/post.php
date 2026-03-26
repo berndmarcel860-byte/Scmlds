@@ -50,6 +50,8 @@ $published   = $post ? (date('Y-m-d', strtotime($post['published_at'] ?: $post['
     <meta name="keywords" content="<?= htmlspecialchars($meta_kw, ENT_QUOTES, 'UTF-8') ?>">
     <?php endif; ?>
     <link rel="canonical" href="<?= htmlspecialchars($canonical, ENT_QUOTES, 'UTF-8') ?>">
+    <link rel="alternate" hreflang="de"        href="<?= htmlspecialchars($canonical, ENT_QUOTES, 'UTF-8') ?>">
+    <link rel="alternate" hreflang="x-default" href="<?= htmlspecialchars($canonical, ENT_QUOTES, 'UTF-8') ?>">
     <meta name="robots" content="index, follow">
 
     <meta property="og:type"            content="article">
@@ -61,6 +63,7 @@ $published   = $post ? (date('Y-m-d', strtotime($post['published_at'] ?: $post['
     <meta property="og:locale"          content="de_DE">
     <?php if ($published): ?>
     <meta property="article:published_time" content="<?= $published ?>">
+    <meta property="article:modified_time"  content="<?= htmlspecialchars(date('Y-m-d\TH:i:sP', strtotime($post['updated_at'])), ENT_QUOTES, 'UTF-8') ?>">
     <?php endif; ?>
 
     <meta name="twitter:card"        content="summary_large_image">
@@ -84,7 +87,20 @@ $published   = $post ? (date('Y-m-d', strtotime($post['published_at'] ?: $post['
             "name": <?= json_encode($company) ?>,
             "logo": { "@type": "ImageObject", "url": <?= json_encode($site_url . '/assets/images/logo.png') ?> }
         },
-        "mainEntityOfPage": { "@type": "WebPage", "@id": <?= json_encode($canonical) ?> }
+        "mainEntityOfPage": { "@type": "WebPage", "@id": <?= json_encode($canonical) ?> },
+        "wordCount": <?= max(1, str_word_count(strip_tags($post['content'] ?? ''))) ?>,
+        "inLanguage": "de"
+    }
+    </script>
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+            { "@type": "ListItem", "position": 1, "name": "Startseite", "item": <?= json_encode($site_url . '/') ?> },
+            { "@type": "ListItem", "position": 2, "name": "Blog",       "item": <?= json_encode($site_url . '/blog/') ?> },
+            { "@type": "ListItem", "position": 3, "name": <?= json_encode($meta_title) ?>, "item": <?= json_encode($canonical) ?> }
+        ]
     }
     </script>
     <?php endif; ?>

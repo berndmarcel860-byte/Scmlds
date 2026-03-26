@@ -31,6 +31,8 @@ $ga_id       = get_setting('google_analytics_id', '');
     <title>Blog – <?= htmlspecialchars($company, ENT_QUOTES, 'UTF-8') ?></title>
     <meta name="description" content="Aktuelle Artikel und Tipps zu Anlagebetrug, Krypto-Betrug, Forex-Betrug und Kapitalrückholung von den Experten bei <?= htmlspecialchars($company, ENT_QUOTES, 'UTF-8') ?>.">
     <link rel="canonical" href="<?= htmlspecialchars($site_url . '/blog/', ENT_QUOTES, 'UTF-8') ?>">
+    <link rel="alternate" hreflang="de"        href="<?= htmlspecialchars($site_url . '/blog/', ENT_QUOTES, 'UTF-8') ?>">
+    <link rel="alternate" hreflang="x-default" href="<?= htmlspecialchars($site_url . '/blog/', ENT_QUOTES, 'UTF-8') ?>">
     <meta name="robots" content="index, follow">
 
     <meta property="og:type"       content="website">
@@ -39,6 +41,43 @@ $ga_id       = get_setting('google_analytics_id', '');
     <meta property="og:image"      content="<?= htmlspecialchars($og_image, ENT_QUOTES, 'UTF-8') ?>">
     <meta property="og:site_name"  content="<?= htmlspecialchars($company, ENT_QUOTES, 'UTF-8') ?>">
     <meta property="og:locale"     content="de_DE">
+
+    <!-- JSON-LD: Blog + BreadcrumbList -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "Blog",
+        "name": "<?= htmlspecialchars($company, ENT_QUOTES, 'UTF-8') ?> – Ratgeber",
+        "url": <?= json_encode($site_url . '/blog/') ?>,
+        "description": "Aktuelle Artikel zu Anlagebetrug, Krypto-Betrug, Forex-Betrug und Kapitalrückholung.",
+        "inLanguage": "de",
+        "publisher": {
+            "@type": "Organization",
+            "name": <?= json_encode($company) ?>,
+            "logo": { "@type": "ImageObject", "url": <?= json_encode($site_url . '/assets/images/logo.png') ?> }
+        },
+        "blogPost": [
+            <?php foreach (array_slice($posts, 0, 10) as $idx => $p): ?>
+            <?= $idx > 0 ? ',' : '' ?>{
+                "@type": "BlogPosting",
+                "headline": <?= json_encode($p['title'] ?? '') ?>,
+                "url": <?= json_encode($site_url . '/blog/' . ($p['slug'] ?? '')) ?>,
+                "datePublished": "<?= htmlspecialchars(date('Y-m-d', strtotime($p['published_at'] ?: ($p['created_at'] ?? 'now'))), ENT_QUOTES, 'UTF-8') ?>"
+            }
+            <?php endforeach; ?>
+        ]
+    }
+    </script>
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+            { "@type": "ListItem", "position": 1, "name": "Startseite", "item": <?= json_encode($site_url . '/') ?> },
+            { "@type": "ListItem", "position": 2, "name": "Blog",       "item": <?= json_encode($site_url . '/blog/') ?> }
+        ]
+    }
+    </script>
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">

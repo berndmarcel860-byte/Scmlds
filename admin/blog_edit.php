@@ -43,6 +43,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_post'])) {
         $result = save_blog_post($data, $is_new ? null : $id);
         if ($result !== false) {
             log_activity($is_new ? 'create_blog_post' : 'update_blog_post', "Blog post #$result");
+            // Notify search engines via IndexNow when post is published
+            if ($data['status'] === 'published') {
+                $GLOBALS['_indexnow_include'] = true;
+                $siteUrl = rtrim(get_setting('site_url', SITE_URL), '/');
+                $postSlug = $slug;
+                $indexnow_path = __DIR__ . '/../indexnow.php';
+                if (file_exists($indexnow_path)) {
+                    include_once $indexnow_path;
+                    if (function_exists('indexnow_submit')) {
+                        indexnow_submit([$siteUrl . '/blog/' . $postSlug]);
+                    }
+                }
+            }
             if ($is_new) {
                 header('Location: blog_edit.php?id=' . $result . '&saved=1');
                 exit;

@@ -67,7 +67,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $message  = 'Fehler beim Speichern der Telegram-Einstellungen.';
         }
     } elseif ($tab === 'seo') {
-        $seoKeys = ['og_image'];
+        $seoKeys = ['og_image', 'indexnow_key', 'google_analytics_id'];
         $seoData = [];
         foreach ($seoKeys as $k) {
             $seoData[$k] = trim($_POST[$k] ?? '');
@@ -407,18 +407,38 @@ $active_tab = $_POST['tab'] ?? ($_GET['tab'] ?? 'general');
                                    value="<?= htmlspecialchars($gen['og_image'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
                             <div class="form-text">Wird beim Teilen der Seite auf Facebook, LinkedIn, WhatsApp und Twitter angezeigt.</div>
                         </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold small">IndexNow API-Key <span class="text-muted fw-normal">(Bing / Yandex – Sofortindexierung)</span></label>
+                            <input type="text" name="indexnow_key" class="form-control font-monospace"
+                                   placeholder="z.B. a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4"
+                                   value="<?= htmlspecialchars($gen['indexnow_key'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
+                            <div class="form-text">
+                                Key generieren: <code>php -r "echo bin2hex(random_bytes(16));"</code>
+                                — Bing verifiziert den Key automatisch über <code>/indexnow.php?verify=1</code>.
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold small">Google Analytics Mess-ID</label>
+                            <input type="text" name="google_analytics_id" class="form-control font-monospace"
+                                   placeholder="G-XXXXXXXXXX"
+                                   value="<?= htmlspecialchars($gen['google_analytics_id'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
+                            <div class="form-text">GA4 Measurement-ID (z.B. G-XXXXXXXXXX). Wird auf allen Seiten eingebunden.</div>
+                        </div>
                         <div class="col-12">
                             <div class="alert alert-secondary py-2 px-3 mb-0">
                                 <h6 class="fw-bold mb-2"><i class="bi bi-lightbulb me-1"></i>SEO-Checkliste</h6>
                                 <ul class="mb-0 small">
                                     <li>✅ Canonical-Tag &amp; robots meta sind bereits gesetzt</li>
+                                    <li>✅ hreflang="de" + x-default auf allen Seiten vorhanden</li>
                                     <li>✅ Open Graph und Twitter Card meta tags sind vorhanden</li>
-                                    <li>✅ JSON-LD strukturierte Daten (LocalBusiness + FAQPage) sind eingebettet</li>
+                                    <li>✅ JSON-LD strukturierte Daten (Organization, FAQPage, Blog, BreadcrumbList) sind eingebettet</li>
                                     <li>✅ sitemap.xml wird automatisch generiert (<a href="/sitemap.xml" target="_blank">/sitemap.xml</a>)</li>
                                     <li>✅ robots.txt ist vorhanden (<a href="/robots.txt" target="_blank">/robots.txt</a>)</li>
-                                    <li>✅ HTTPS-Weiterleitung und www → non-www per .htaccess</li>
+                                    <li>✅ HTTPS-Weiterleitung ist konfiguriert</li>
+                                    <li>✅ IndexNow-Endpoint aktiv bei gesetztem API-Key (<a href="/indexnow.php?verify=1" target="_blank">/indexnow.php?verify=1</a>)</li>
                                     <li>⚠️ Reichen Sie die Sitemap in der <a href="https://search.google.com/search-console" target="_blank">Google Search Console</a> ein</li>
                                     <li>⚠️ Erstellen Sie ein 1200×630 px OG-Bild und hinterlegen Sie die URL oben</li>
+                                    <li>⚠️ Tragen Sie Ihre Domain in <a href="https://www.bing.com/webmasters" target="_blank">Bing Webmaster Tools</a> ein</li>
                                 </ul>
                             </div>
                         </div>

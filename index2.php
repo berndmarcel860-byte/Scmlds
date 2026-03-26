@@ -43,6 +43,8 @@ for ($y = date('Y'); $y >= MIN_YEAR_LOST; $y--) { $years[] = $y; }
     <meta name="keywords" content="<?= htmlspecialchars($meta_keywords, ENT_QUOTES, 'UTF-8') ?>">
     <?php endif; ?>
     <link rel="canonical" href="<?= htmlspecialchars($canonical_url, ENT_QUOTES, 'UTF-8') ?>">
+    <link rel="alternate" hreflang="de"        href="<?= htmlspecialchars($canonical_url, ENT_QUOTES, 'UTF-8') ?>">
+    <link rel="alternate" hreflang="x-default" href="<?= htmlspecialchars($canonical_url, ENT_QUOTES, 'UTF-8') ?>">
     <meta name="robots" content="<?= htmlspecialchars($robots_meta, ENT_QUOTES, 'UTF-8') ?>">
 
     <!-- ── Open Graph (Facebook / LinkedIn / WhatsApp) ───────── -->
