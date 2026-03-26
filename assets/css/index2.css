@@ -413,7 +413,7 @@
     .ring-fill  {
         fill: none; stroke: var(--accent); stroke-width: 9; stroke-linecap: round;
         stroke-dasharray: 366;
-stroke-dashoffset: 366;
+        stroke-dashoffset: 366;
         transition: stroke-dashoffset 1.8s cubic-bezier(.4,0,.2,1);
     }
     .ring-fill.animated { stroke-dashoffset: 47; }
