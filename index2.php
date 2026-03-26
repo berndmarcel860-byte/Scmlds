@@ -164,14 +164,28 @@ for ($y = date('Y'); $y >= MIN_YEAR_LOST; $y--) { $years[] = $y; }
     }
     </script>
 
-    <!-- Bootstrap 5.3 -->
+    <!-- Preconnect to CDN origins to reduce DNS/TLS latency -->
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    <!-- Bootstrap 5.3 – critical layout CSS, loaded synchronously -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Bootstrap Icons -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
-    <!-- AOS (Animate on Scroll) -->
-    <link href="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.css" rel="stylesheet">
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+    <!-- Bootstrap Icons – non-critical; deferred with print-media trick -->
+    <link rel="preload" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
+          as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"></noscript>
+
+    <!-- AOS – non-critical animation CSS; deferred -->
+    <link rel="preload" href="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.css"
+          as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.css"></noscript>
+
+    <!-- Google Fonts – non-critical; deferred + font-display:swap -->
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
+          as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"></noscript>
     <?php if ($ga_id): ?>
     <!-- Google Analytics -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=<?= htmlspecialchars($ga_id, ENT_QUOTES, 'UTF-8') ?>"></script>
@@ -184,10 +198,7 @@ for ($y = date('Y'); $y >= MIN_YEAR_LOST; $y--) { $years[] = $y; }
     <?php endif; ?>
 
     <style>
-    /* ============================================================
-       INDEX2.PHP – VerlustRückholung Professional Redesign
-       ============================================================ */
-    :root {
+:root {
         --primary:   #0d2b5e;
         --accent:    #f5a623;
         --accent-d:  #e6941a;
@@ -206,9 +217,7 @@ for ($y = date('Y'); $y >= MIN_YEAR_LOST; $y--) { $years[] = $y; }
         overflow-x: hidden;
         max-width: 100%;
     }
-
-    /* ── TYPOGRAPHY ─────────────────────────────────────────── */
-    .section-eyebrow {
+.section-eyebrow {
         display: inline-flex; align-items: center; gap: 6px;
         font-size: .8rem; font-weight: 700; letter-spacing: .1em;
         text-transform: uppercase; color: var(--accent);
@@ -218,9 +227,7 @@ for ($y = date('Y'); $y >= MIN_YEAR_LOST; $y--) { $years[] = $y; }
         content: ''; display: inline-block; width: 24px; height: 2px;
         background: var(--accent); border-radius: 2px;
     }
-
-    /* ── NAVBAR ─────────────────────────────────────────────── */
-    .navbar-v2 {
+.navbar-v2 {
         background: rgba(10, 22, 40, 0.95);
         backdrop-filter: blur(12px);
         -webkit-backdrop-filter: blur(12px);
@@ -239,9 +246,7 @@ for ($y = date('Y'); $y >= MIN_YEAR_LOST; $y--) { $years[] = $y; }
                    border-radius: 8px; border: none; font-size: .9rem; transition: all .2s; text-decoration: none; }
     .btn-cta-nav:hover { background: var(--accent-d); color: #000; transform: translateY(-1px);
                          box-shadow: 0 4px 16px rgba(245,166,35,.4); }
-
-    /* ── HERO ───────────────────────────────────────────────── */
-    .hero-v2 {
+.hero-v2 {
         min-height: 100vh;
         padding-top: 80px;
         background: linear-gradient(135deg, #06111e 0%, #0a1e36 40%, #0d2b5e 80%, #0a2050 100%);
@@ -249,9 +254,7 @@ for ($y = date('Y'); $y >= MIN_YEAR_LOST; $y--) { $years[] = $y; }
         display: flex; align-items: center;
         overflow: hidden;
     }
-
-    /* Animated shield/fund-recovery SVG background */
-    .hero-v2::before {
+.hero-v2::before {
         content: '';
         position: absolute; inset: 0;
         background-image:
@@ -259,9 +262,8 @@ for ($y = date('Y'); $y >= MIN_YEAR_LOST; $y--) { $years[] = $y; }
             radial-gradient(ellipse at 80% 20%, rgba(245,166,35,.08) 0%, transparent 50%);
         pointer-events: none;
     }
-    /* Animated canvas takes full hero background – see #heroCanvas */
-    /* Floating shield graphic */
-    .hero-shield-wrap {
+
+.hero-shield-wrap {
         position: absolute; right: 5%; top: 50%;
         transform: translateY(-50%);
         width: min(480px, 45vw);
@@ -269,9 +271,7 @@ for ($y = date('Y'); $y >= MIN_YEAR_LOST; $y--) { $years[] = $y; }
         pointer-events: none;
     }
     .hero-shield-wrap svg { width: 100%; height: auto; }
-
-    /* Floating stats pills */
-    .stat-pill {
+.stat-pill {
         position: absolute;
         background: rgba(255,255,255,.06);
         backdrop-filter: blur(8px);
@@ -290,9 +290,7 @@ for ($y = date('Y'); $y >= MIN_YEAR_LOST; $y--) { $years[] = $y; }
     .stat-pill:nth-child(2) { top: 38%; right: 55%; animation-delay: 1.3s; }
     .stat-pill:nth-child(3) { top: 60%; right: 44%; animation-delay: 2.6s; }
     @keyframes floatPill { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
-
-    /* Live dot */
-    .live-dot { width:8px;height:8px;border-radius:50%;background:#22c55e;
+.live-dot { width:8px;height:8px;border-radius:50%;background:#22c55e;
                 box-shadow:0 0 0 2px rgba(34,197,94,.3);
                 animation:livePulse 1.5s infinite; display:inline-block; }
     @keyframes livePulse { 0%,100%{box-shadow:0 0 0 2px rgba(34,197,94,.3)} 50%{box-shadow:0 0 0 6px rgba(34,197,94,.1)} }
@@ -307,15 +305,11 @@ for ($y = date('Y'); $y >= MIN_YEAR_LOST; $y--) { $years[] = $y; }
                      color: #fff; line-height: 1.1; letter-spacing: -.02em; }
     .hero-headline .highlight { color: var(--accent); position: relative; }
     .hero-sub { font-size: 1.1rem; color: rgba(255,255,255,.7); line-height: 1.75; max-width: 520px; }
-
-    /* Trust row */
-    .trust-row { display: flex; flex-wrap: wrap; gap: .75rem; align-items: center; margin-top: 1.5rem; }
+.trust-row { display: flex; flex-wrap: wrap; gap: .75rem; align-items: center; margin-top: 1.5rem; }
     .trust-item { display: flex; align-items: center; gap: .4rem;
                   color: rgba(255,255,255,.6); font-size: .82rem; font-weight: 500; }
     .trust-item i { color: var(--accent); }
-
-    /* Hero form card */
-    .hero-form-card {
+.hero-form-card {
         background: #fff;
         border-radius: 20px;
         padding: 2rem;
@@ -328,9 +322,7 @@ for ($y = date('Y'); $y >= MIN_YEAR_LOST; $y--) { $years[] = $y; }
         border-radius: 20px 20px 0 0;
         color: #fff;
     }
-
-    /* ── STATS BAND ─────────────────────────────────────────── */
-    .stats-band {
+.stats-band {
         background: var(--primary);
         padding: 2.5rem 0;
     }
@@ -338,9 +330,7 @@ for ($y = date('Y'); $y >= MIN_YEAR_LOST; $y--) { $years[] = $y; }
     .stat-card-v2 .num { font-size: 2.25rem; font-weight: 900; color: var(--accent); }
     .stat-card-v2 .lbl { color: rgba(255,255,255,.7); font-size: .88rem; font-weight: 500; margin-top: .25rem; }
     .stat-divider { width: 1px; background: rgba(255,255,255,.15); }
-
-    /* ── HOW IT WORKS ───────────────────────────────────────── */
-    .process-step {
+.process-step {
         background: #fff;
         border: 1px solid var(--border);
         border-radius: 16px;
@@ -367,9 +357,7 @@ for ($y = date('Y'); $y >= MIN_YEAR_LOST; $y--) { $years[] = $y; }
             color: var(--accent); font-size: 1.5rem; z-index: 1;
         }
     }
-
-    /* ── FEATURES ───────────────────────────────────────────── */
-    .feature-icon {
+.feature-icon {
         width: 64px; height: 64px;
         background: linear-gradient(135deg, rgba(13,43,94,.08), rgba(26,74,158,.12));
         border-radius: 16px;
@@ -382,9 +370,7 @@ for ($y = date('Y'); $y >= MIN_YEAR_LOST; $y--) { $years[] = $y; }
         background: linear-gradient(135deg, var(--primary), #1a4a9e);
         color: #fff; transform: scale(1.1);
     }
-
-    /* ── CASE TYPES ─────────────────────────────────────────── */
-    .case-card {
+.case-card {
         border: 2px solid var(--border);
         border-radius: 16px;
         padding: 1.5rem;
@@ -400,9 +386,7 @@ for ($y = date('Y'); $y >= MIN_YEAR_LOST; $y--) { $years[] = $y; }
         box-shadow: 0 12px 32px rgba(13,43,94,.12);
     }
     .case-icon { font-size: 2rem; margin-bottom: .75rem; }
-
-    /* ── TESTIMONIALS ───────────────────────────────────────── */
-    .testimonial-card {
+.testimonial-card {
         background: #fff;
         border: 1px solid var(--border);
         border-radius: 16px;
@@ -424,9 +408,7 @@ for ($y = date('Y'); $y >= MIN_YEAR_LOST; $y--) { $years[] = $y; }
         display: flex; align-items: center; justify-content: center;
         color: #fff; font-weight: 700; font-size: .9rem;
     }
-
-    /* ── MAIN FORM SECTION ──────────────────────────────────── */
-    .form-section-v2 {
+.form-section-v2 {
         background: linear-gradient(135deg, var(--bg-light), #eef2ff);
         padding: 6rem 0;
     }
@@ -460,9 +442,7 @@ for ($y = date('Y'); $y >= MIN_YEAR_LOST; $y--) { $years[] = $y; }
     .badge-form { background: rgba(13,43,94,.06); border: 1px solid rgba(13,43,94,.12);
                   color: var(--primary); border-radius: 50px; padding: .3rem .85rem;
                   font-size: .75rem; font-weight: 600; }
-
-    /* ── FAQ ─────────────────────────────────────────────────── */
-    .accordion-v2 .accordion-item {
+.accordion-v2 .accordion-item {
         border: 1px solid var(--border); border-radius: 12px !important;
         margin-bottom: .75rem; overflow: hidden;
     }
@@ -475,9 +455,7 @@ for ($y = date('Y'); $y >= MIN_YEAR_LOST; $y--) { $years[] = $y; }
         box-shadow: none;
     }
     .accordion-v2 .accordion-button::after { filter: none; }
-
-    /* ── FOOTER ─────────────────────────────────────────────── */
-    .footer-v2 {
+.footer-v2 {
         background: #06111e;
         color: rgba(255,255,255,.6);
         padding: 4rem 0 2rem;
@@ -487,9 +465,7 @@ for ($y = date('Y'); $y >= MIN_YEAR_LOST; $y--) { $years[] = $y; }
     .footer-link { color: rgba(255,255,255,.5); text-decoration: none; font-size: .875rem;
                    transition: color .2s; display: block; margin-bottom: .5rem; }
     .footer-link:hover { color: var(--accent); }
-
-    /* ── ENGAGEMENT MODAL ───────────────────────────────────── */
-    .eng-modal-content {
+.eng-modal-content {
         border: none; border-radius: 20px; overflow: hidden;
     }
     .eng-modal-left {
@@ -500,25 +476,19 @@ for ($y = date('Y'); $y >= MIN_YEAR_LOST; $y--) { $years[] = $y; }
     .eng-stat { color: #fff; margin-bottom: 1.25rem; }
     .eng-stat .val { font-size: 1.75rem; font-weight: 900; color: var(--accent); display: block; }
     .eng-stat .lbl { font-size: .8rem; color: rgba(255,255,255,.6); }
-
-    /* ── UTILITY ─────────────────────────────────────────────── */
-    .py-6 { padding-top: 5rem; padding-bottom: 5rem; }
+.py-6 { padding-top: 5rem; padding-bottom: 5rem; }
     .section-divider { height: 1px; background: var(--border); }
     @media (max-width: 767px) {
         .stat-pill { display: none; }
         .hero-shield-wrap { display: none; }
         .hero-v2 { min-height: auto; padding-top: 100px; padding-bottom: 2rem; }
     }
-
-    /* ── HERO CANVAS (AI particle network) ───────────────────── */
-    #heroCanvas {
+#heroCanvas {
         position: absolute; inset: 0;
         width: 100%; height: 100%;
         pointer-events: none; z-index: 0;
     }
-
-    /* ── 3D CARD HOVER ───────────────────────────────────────── */
-    .card-3d-wrap { perspective: 1200px; }
+.card-3d-wrap { perspective: 1200px; }
     .card-3d {
         transition: transform .6s cubic-bezier(.2,.8,.3,1),
                     box-shadow .6s ease;
@@ -528,9 +498,7 @@ for ($y = date('Y'); $y >= MIN_YEAR_LOST; $y--) { $years[] = $y; }
         transform: rotateY(8deg) rotateX(-4deg) scale(1.03);
         box-shadow: -12px 20px 40px rgba(13,43,94,.2);
     }
-
-    /* ── AI TERMINAL ─────────────────────────────────────────── */
-    .ai-terminal {
+.ai-terminal {
         background: #060d1a;
         border: 1px solid rgba(245,166,35,.25);
         border-radius: 16px;
@@ -565,9 +533,7 @@ for ($y = date('Y'); $y >= MIN_YEAR_LOST; $y--) { $years[] = $y; }
         border-radius: 1px;
     }
     @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
-
-    /* ── SCAN LINE ───────────────────────────────────────────── */
-    .scan-wrap { position: relative; overflow: hidden; }
+.scan-wrap { position: relative; overflow: hidden; }
     .scan-line {
         position: absolute; left: 0; right: 0; height: 2px;
         background: linear-gradient(90deg, transparent, rgba(34,197,94,.5), transparent);
@@ -580,9 +546,7 @@ for ($y = date('Y'); $y >= MIN_YEAR_LOST; $y--) { $years[] = $y; }
         95%  { opacity: 1; }
         100% { top: 100%; opacity: 0; }
     }
-
-    /* ── AI DEMO SECTION ─────────────────────────────────────── */
-    .ai-demo-section {
+.ai-demo-section {
         background: linear-gradient(180deg, #060d1a 0%, #0a1e36 100%);
         padding: 6rem 0;
         position: relative; overflow: hidden;
@@ -594,9 +558,7 @@ for ($y = date('Y'); $y >= MIN_YEAR_LOST; $y--) { $years[] = $y; }
                     radial-gradient(ellipse at 20% 80%, rgba(13,43,94,.5) 0%, transparent 50%);
         pointer-events: none;
     }
-
-    /* ── AI PROGRESS BARS ────────────────────────────────────── */
-    .ai-progress-wrap { margin-bottom: 1.1rem; }
+.ai-progress-wrap { margin-bottom: 1.1rem; }
     .ai-progress-track {
         height: 6px; border-radius: 3px;
         background: rgba(255,255,255,.08); overflow: hidden; margin-top: .4rem;
@@ -607,9 +569,7 @@ for ($y = date('Y'); $y >= MIN_YEAR_LOST; $y--) { $years[] = $y; }
         width: 0; transition: width 1.6s cubic-bezier(.4,0,.2,1) .2s;
     }
     .ai-progress-fill.animated { width: var(--pct, 0%); }
-
-    /* ── FLOATING 3D MINI CARDS ──────────────────────────────── */
-    .float-card {
+.float-card {
         background: rgba(255,255,255,.05);
         border: 1px solid rgba(255,255,255,.1);
         border-radius: 14px; padding: 1.1rem;
@@ -623,12 +583,8 @@ for ($y = date('Y'); $y >= MIN_YEAR_LOST; $y--) { $years[] = $y; }
         33%     { transform: translateY(-7px) rotate(.4deg); }
         66%     { transform: translateY(-3px) rotate(-.4deg); }
     }
-
-    /* ── GLOW ────────────────────────────────────────────────── */
-    .glow-gold { text-shadow: 0 0 20px rgba(245,166,35,.6), 0 0 40px rgba(245,166,35,.3); }
-
-    /* ── LIVE RECOVERY TICKER ────────────────────────────────── */
-    .ticker-wrap {
+.glow-gold { text-shadow: 0 0 20px rgba(245,166,35,.6), 0 0 40px rgba(245,166,35,.3); }
+.ticker-wrap {
         background: #06111e;
         border-top: 1px solid rgba(255,255,255,.06);
         border-bottom: 1px solid rgba(255,255,255,.06);
@@ -651,28 +607,24 @@ for ($y = date('Y'); $y >= MIN_YEAR_LOST; $y--) { $years[] = $y; }
     }
     .t-amount { color: var(--accent); font-weight: 700; }
     @keyframes tickerScroll { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
-
-    /* ── SVG SUCCESS RING ────────────────────────────────────── */
-    .ring-wrap { position: relative; width: 130px; height: 130px; margin: 0 auto 1rem; }
+.ring-wrap { position: relative; width: 130px; height: 130px; margin: 0 auto 1rem; }
     .ring-svg { transform: rotate(-90deg); }
     .ring-track { fill: none; stroke: rgba(255,255,255,.1); stroke-width: 9; }
     .ring-fill  {
         fill: none; stroke: var(--accent); stroke-width: 9; stroke-linecap: round;
-        stroke-dasharray: 366;        /* 2π × r=58.3 ≈ 366 */
-        stroke-dashoffset: 366;
+        stroke-dasharray: 366;
+stroke-dashoffset: 366;
         transition: stroke-dashoffset 1.8s cubic-bezier(.4,0,.2,1);
     }
-    .ring-fill.animated { stroke-dashoffset: 47; } /* 366*(1-0.87)=47.6 */
-    .ring-label {
+    .ring-fill.animated { stroke-dashoffset: 47; }
+.ring-label {
         position: absolute; inset: 0;
         display: flex; flex-direction: column;
         align-items: center; justify-content: center;
         font-weight: 900; color: var(--accent); font-size: 1.6rem; line-height: 1;
     }
     .ring-label small { font-size: .68rem; color: rgba(255,255,255,.55); font-weight: 500; margin-top: 2px; }
-
-    /* ── ENHANCED STATS BAND ─────────────────────────────────── */
-    .stats-band-v3 {
+.stats-band-v3 {
         background: linear-gradient(135deg, var(--primary) 0%, #1a4a9e 100%);
         padding: 3.5rem 0;
         position: relative; overflow: hidden;
@@ -686,9 +638,7 @@ for ($y = date('Y'); $y >= MIN_YEAR_LOST; $y--) { $years[] = $y; }
     .stat-v3 { text-align: center; }
     .stat-v3 .n { font-size: 2.5rem; font-weight: 900; color: var(--accent); line-height: 1; }
     .stat-v3 .l { color: rgba(255,255,255,.65); font-size: .85rem; font-weight: 500; margin-top: .35rem; }
-
-    /* ── TRUST BADGES ────────────────────────────────────────── */
-    .trust-badge-card {
+.trust-badge-card {
         display: flex; align-items: flex-start; gap: .85rem;
         background: #fff; border: 1px solid var(--border);
         border-radius: 14px; padding: 1.25rem 1.5rem;
@@ -706,9 +656,7 @@ for ($y = date('Y'); $y >= MIN_YEAR_LOST; $y--) { $years[] = $y; }
         border-radius: 12px;
         display: flex; align-items: center; justify-content: center;
     }
-
-    /* ── 3D HERO SHIELD ROTATE ───────────────────────────────── */
-    @keyframes shieldFloat {
+@keyframes shieldFloat {
         0%,100% { transform: translateY(-50%) rotate(0deg) scale(1); }
         25%     { transform: translateY(-52%) rotate(1deg) scale(1.01); }
         75%     { transform: translateY(-48%) rotate(-1deg) scale(0.99); }
@@ -722,16 +670,12 @@ for ($y = date('Y'); $y >= MIN_YEAR_LOST; $y--) { $years[] = $y; }
         animation: shieldFloat 8s ease-in-out infinite;
     }
     .hero-shield-wrap svg { width: 100%; height: auto; }
-
-    /* ── PARTICLE GLOW PULSE ─────────────────────────────────── */
-    @keyframes pulseGlow {
+@keyframes pulseGlow {
         0%,100% { box-shadow: 0 0 0 0 rgba(245,166,35,0); }
         50%     { box-shadow: 0 0 0 8px rgba(245,166,35,.15); }
     }
     .badge-pulse { animation: pulseGlow 3s ease-in-out infinite; }
-
-    /* ── FALL PRÜFEN MODAL (synced from index.php) ───────────── */
-    #fullFormModal .modal-xl { max-width: 900px; }
+#fullFormModal .modal-xl { max-width: 900px; }
     .fall-modal-content {
         border: none; border-radius: 20px; overflow: hidden;
         box-shadow: 0 24px 80px rgba(0,0,0,0.22);
@@ -805,9 +749,7 @@ for ($y = date('Y'); $y >= MIN_YEAR_LOST; $y--) { $years[] = $y; }
         box-shadow: 0 10px 28px rgba(245,166,35,0.45);
     }
     .letter-spacing { letter-spacing: 0.08em; }
-
-    /* ── ENGAGEMENT MODAL (synced from index.php) ────────────── */
-    .engagement-modal-content { border: none; border-radius: 20px; overflow: hidden; }
+.engagement-modal-content { border: none; border-radius: 20px; overflow: hidden; }
     .engagement-modal-body { padding: 0; }
     .engagement-left {
         background: linear-gradient(160deg, var(--dark) 0%, var(--primary) 100%);
@@ -827,20 +769,14 @@ for ($y = date('Y'); $y >= MIN_YEAR_LOST; $y--) { $years[] = $y; }
         background: rgba(0,0,0,0.15); border-radius: 50%; opacity: 0.7;
     }
     .engagement-close:hover { opacity: 1; }
-
-    /* ===== TRUST BANNER ===== */
-    .trust-banner { background: #fff; border-bottom: 1px solid #e9ecef; box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
-
-    /* ===== NEWS TICKER ===== */
-    .news-ticker-bar { background: linear-gradient(90deg, #0d2b5e 0%, #1a4a9e 100%); padding: 0; display: flex; align-items: center; height: 40px; overflow: hidden; }
+.trust-banner { background: #fff; border-bottom: 1px solid #e9ecef; box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
+.news-ticker-bar { background: linear-gradient(90deg, #0d2b5e 0%, #1a4a9e 100%); padding: 0; display: flex; align-items: center; height: 40px; overflow: hidden; }
     .news-ticker-label { flex-shrink: 0; background: var(--accent); color: #000; font-weight: 700; font-size: 0.75rem; padding: 0 14px; height: 100%; display: flex; align-items: center; text-transform: uppercase; letter-spacing: 0.05em; }
     .news-ticker-wrap { overflow: hidden; flex: 1; }
     .news-ticker-inner { display: inline-block; white-space: nowrap; font-size: 0.82rem; color: rgba(255,255,255,0.88); padding-left: 100%; animation: newsScroll 60s linear infinite; }
     .news-ticker-inner span { margin: 0 8px; }
     @keyframes newsScroll { 0% { transform: translateX(0); } 100% { transform: translateX(-100%); } }
-
-    /* ===== AI 3D CANVAS SECTION ===== */
-    .ai-section-3d { background: linear-gradient(135deg, #060e1f 0%, #0d2b5e 60%, #0f1e3d 100%); position: relative; overflow: hidden; }
+.ai-section-3d { background: linear-gradient(135deg, #060e1f 0%, #0d2b5e 60%, #0f1e3d 100%); position: relative; overflow: hidden; }
     .ai-section-3d::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse at 70% 50%, rgba(245,166,35,0.06) 0%, transparent 60%); pointer-events: none; }
     .ai-canvas-wrap { position: relative; border-radius: 20px; overflow: hidden; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); aspect-ratio: 4/3; }
     .ai-canvas-wrap canvas { width: 100%; height: 100%; display: block; }
@@ -852,36 +788,25 @@ for ($y = date('Y'); $y >= MIN_YEAR_LOST; $y--) { $years[] = $y; }
     .ai-step-item-3d { display: flex; align-items: flex-start; gap: 1rem; padding: 1rem; border-radius: 12px; border: 1px solid rgba(255,255,255,0.06); background: rgba(255,255,255,0.03); transition: all 0.4s ease; }
     .ai-step-item-3d.active, .ai-step-item-3d:hover { background: rgba(255,255,255,0.07); border-color: rgba(245,166,35,0.3); }
     .ai-step-icon-3d { width: 44px; height: 44px; min-width: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; }
-
-    /* ===== ADVANTAGE CARDS ===== */
-    .advantage-card { transition: transform 0.3s ease, box-shadow 0.3s ease; border: 1px solid transparent; }
+.advantage-card { transition: transform 0.3s ease, box-shadow 0.3s ease; border: 1px solid transparent; }
     .advantage-card:hover { transform: translateY(-6px); box-shadow: 0 12px 40px rgba(0,0,0,0.12) !important; border-color: var(--accent); }
     .advantage-icon { width: 70px; height: 70px; display: flex; align-items: center; justify-content: center; }
-
-    /* ===== SCAM CARDS rich ===== */
-    .scam-card { transition: all 0.3s ease; cursor: pointer; background: #fff; }
+.scam-card { transition: all 0.3s ease; cursor: pointer; background: #fff; }
     .scam-card:hover { transform: translateY(-4px); box-shadow: 0 8px 30px rgba(0,0,0,0.12); border-color: #1a4a9e !important; }
     .scam-icon { width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-
-    /* ===== STATISTICS SECTION ===== */
-    .stats-section { background: linear-gradient(135deg, #0d2b5e 0%, #1a4a9e 100%); position: relative; overflow: hidden; }
+.stats-section { background: linear-gradient(135deg, #0d2b5e 0%, #1a4a9e 100%); position: relative; overflow: hidden; }
     .stats-section::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse at center, rgba(245,166,35,0.08) 0%, transparent 70%); pointer-events: none; }
     .stat-card { background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.1); transition: transform 0.3s ease; }
     .stat-card:hover { transform: translateY(-4px); background: rgba(255,255,255,0.12); }
     .stat-number { line-height: 1; display: inline-block; }
     .stat-unit { display: inline-block; vertical-align: top; margin-top: 0.5rem; }
     .carousel-control-prev, .carousel-control-next { width: 2.5rem; background: rgba(255,255,255,0.1); border-radius: 50%; height: 2.5rem; top: 50%; transform: translateY(-50%); opacity: 0.8; }
-
-    /* ===== FORM SIDEBAR ===== */
-    .form-sidebar { background: linear-gradient(135deg, #0d2b5e 0%, #1a4a9e 100%); padding: 2.5rem 2rem; }
-
-    /* ===== STEP TIMELINE ===== */
-    .step-timeline { position: relative; padding-left: 0; }
+.form-sidebar { background: linear-gradient(135deg, #0d2b5e 0%, #1a4a9e 100%); padding: 2.5rem 2rem; }
+.step-timeline { position: relative; padding-left: 0; }
     .step-item-timeline { display: flex; align-items: flex-start; gap: 1rem; margin-bottom: 1.25rem; position: relative; }
     .step-item-timeline:not(:last-child)::before { content: ''; position: absolute; left: 18px; top: 36px; bottom: -10px; width: 2px; background: linear-gradient(to bottom, #f5a623, transparent); }
     .step-num { width: 36px; height: 36px; min-width: 36px; background: #f5a623; color: #000; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.9rem; }
-    /* ── MOBILE IMPROVEMENTS ──────────────────────────────── */
-    @media (max-width: 767.98px) {
+@media (max-width: 767.98px) {
         .hero-v2 { padding-top: 70px; min-height: 100svh; }
         .hero-v2 h1 { font-size: clamp(1.6rem, 6vw, 2.4rem); }
         .stat-pill { display: none; }
@@ -892,20 +817,14 @@ for ($y = date('Y'); $y >= MIN_YEAR_LOST; $y--) { $years[] = $y; }
         .form-box-body { padding: 1.25rem; }
         .section-v2 { padding: 3rem 0; }
         .modal-dialog.modal-xl { margin: 0.5rem; }
-        /* Hero form card tighter on mobile */
-        .hero-form-card { padding: 1.25rem; border-radius: 14px; }
+.hero-form-card { padding: 1.25rem; border-radius: 14px; }
         .hero-form-card .form-card-header { margin: -1.25rem -1.25rem 1.25rem; padding: 1rem 1.25rem; border-radius: 14px 14px 0 0; }
-        /* fullFormModal header compacter */
-        .fall-modal-header-inner .d-flex.p-4 { padding: 1rem !important; }
-        /* Badge strip wraps to 2×2 on small screens */
-        .fall-badges-strip { flex-wrap: wrap; }
+.fall-modal-header-inner .d-flex.p-4 { padding: 1rem !important; }
+.fall-badges-strip { flex-wrap: wrap; }
         .fall-badges-strip .fall-badge { flex: 1 1 50%; min-width: 0; }
-        /* Inline CTA buttons stack vertically */
-        .d-flex.flex-wrap.gap-3.mt-4 .btn { width: 100%; justify-content: center; }
-        /* Modals: no side margin so they use full width */
-        .modal-dialog.modal-lg { margin: 0.5rem; max-width: calc(100% - 1rem); }
-        /* Navbar hamburger toggle button */
-        .navbar-toggler-v2 {
+.d-flex.flex-wrap.gap-3.mt-4 .btn { width: 100%; justify-content: center; }
+.modal-dialog.modal-lg { margin: 0.5rem; max-width: calc(100% - 1rem); }
+.navbar-toggler-v2 {
             background: none;
             border: 1px solid rgba(255,255,255,.25);
             border-radius: 6px;
@@ -915,8 +834,7 @@ for ($y = date('Y'); $y >= MIN_YEAR_LOST; $y--) { $years[] = $y; }
             line-height: 1;
             cursor: pointer;
         }
-        /* Navbar: shrink brand on small tablets */
-        .nav-brand { font-size: 1.05rem; }
+.nav-brand { font-size: 1.05rem; }
     }
     @media (max-width: 575.98px) {
         .hero-v2 h1 { font-size: clamp(1.4rem, 5.5vw, 2rem); }
@@ -924,20 +842,14 @@ for ($y = date('Y'); $y >= MIN_YEAR_LOST; $y--) { $years[] = $y; }
         .trust-item { font-size: .75rem; }
         .hero-form-card { padding: 1rem; }
         .hero-form-card .form-card-header { margin: -1rem -1rem 1rem; padding: .85rem 1rem; }
-        /* Stat bands: 2 cols instead of 4 */
-        .stats-band .col-6.col-md-3 { flex: 0 0 50%; max-width: 50%; }
-        /* Fall form section inner padding reduced */
-        .fall-form-section { padding: 14px; }
-        /* fullFormModal full-screen padding */
-        .modal-fullscreen-sm-down .modal-body .col-lg-7 { padding: 1rem !important; }
-        /* Form action buttons stacked */
-        .fall-submit-btn { font-size: .95rem; }
-        /* Navbar: further shrink brand on phones */
-        .nav-brand { font-size: .92rem; }
+.stats-band .col-6.col-md-3 { flex: 0 0 50%; max-width: 50%; }
+.fall-form-section { padding: 14px; }
+.modal-fullscreen-sm-down .modal-body .col-lg-7 { padding: 1rem !important; }
+.fall-submit-btn { font-size: .95rem; }
+.nav-brand { font-size: .92rem; }
         .navbar-v2 .container { gap: .5rem; }
     }
-    /* Mobile offcanvas nav menu */
-    .offcanvas-nav { background: #060e1f; border-color: rgba(255,255,255,.1); }
+.offcanvas-nav { background: #060e1f; border-color: rgba(255,255,255,.1); }
     .offcanvas-nav .offcanvas-header { border-bottom: 1px solid rgba(255,255,255,.08); padding: 1rem 1.25rem; }
     .offcanvas-nav .offcanvas-body { padding: 1.25rem; }
     .offcanvas-nav .nav-link-mob {
@@ -947,9 +859,7 @@ for ($y = date('Y'); $y >= MIN_YEAR_LOST; $y--) { $years[] = $y; }
     }
     .offcanvas-nav .nav-link-mob:hover,
     .offcanvas-nav .nav-link-mob:active { background: rgba(255,255,255,.08); color: #fff; }
-
-    /* ── OTP / E-Mail-Verifizierung ─────────────────────────── */
-    .otp-send-btn { font-size: .82rem; }
+.otp-send-btn { font-size: .82rem; }
     .otp-entry .form-control { letter-spacing: .2em; font-weight: 700; font-size: 1.1rem; }
     .otp-verified-badge { padding: .35rem 0; }
     </style>
@@ -2179,10 +2089,10 @@ for ($y = date('Y'); $y >= MIN_YEAR_LOST; $y--) { $years[] = $y; }
                                 </div>
                             </div>
                         </div>
-                        <button class="carousel-control-prev" type="button" data-bs-target="#testimonialCarousel" data-bs-slide="prev">
+                        <button class="carousel-control-prev" type="button" data-bs-target="#testimonialCarousel" data-bs-slide="prev" aria-label="Vorherige Bewertung">
                             <i class="bi bi-chevron-left text-warning fs-4"></i>
                         </button>
-                        <button class="carousel-control-next" type="button" data-bs-target="#testimonialCarousel" data-bs-slide="next">
+                        <button class="carousel-control-next" type="button" data-bs-target="#testimonialCarousel" data-bs-slide="next" aria-label="Nächste Bewertung">
                             <i class="bi bi-chevron-right text-warning fs-4"></i>
                         </button>
                     </div>
@@ -3075,17 +2985,21 @@ for ($y = date('Y'); $y >= MIN_YEAR_LOST; $y--) { $years[] = $y; }
     </div>
 </div>
 
-<!-- Bootstrap JS -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<!-- AOS -->
-<script src="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.js"></script>
+<!-- Bootstrap JS – deferred so it doesn't block rendering -->
+<script defer src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<!-- AOS – deferred -->
+<script defer src="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.js"></script>
 
 <script>
 (function () {
     'use strict';
 
-    // ── AOS init ────────────────────────────────────────────
-    AOS.init({ duration: 750, once: true, easing: 'ease-out-cubic', offset: 60 });
+    // ── AOS init – run after deferred scripts are loaded ────
+    document.addEventListener('DOMContentLoaded', function () {
+        if (typeof AOS !== 'undefined') {
+            AOS.init({ duration: 750, once: true, easing: 'ease-out-cubic', offset: 60 });
+        }
+    });
 
     // ── Navbar scroll effect ────────────────────────────────
     var nav = document.getElementById('mainNav2');
