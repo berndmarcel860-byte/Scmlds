@@ -1,0 +1,460 @@
+<?php
+require_once __DIR__ . '/../config/config.php';
+require_once __DIR__ . '/../includes/auth.php';
+require_once __DIR__ . '/../includes/functions.php';
+
+admin_check();
+
+$message = '';
+$msg_type = 'success';
+
+// ── Handle form submissions ───────────────────────────────────────────────────
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $tab = trim($_POST['tab'] ?? 'general');
+
+    if ($tab === 'general') {
+        $keys = [
+            'company_name', 'site_url', 'admin_email',
+            'from_email', 'from_name', 'page_title',
+            'modal_delay_seconds', 'send_email_on_submission',
+            'email_verification_required',
+            'whatsapp_number', 'announcement_text', 'announcement_url', 'announcement_bg',
+        ];
+        $data = [];
+        foreach ($keys as $k) {
+            $data[$k] = trim($_POST[$k] ?? '');
+        }
+        // Checkboxes
+        $data['send_email_on_submission']      = isset($_POST['send_email_on_submission'])      ? '1' : '0';
+        $data['email_verification_required']   = isset($_POST['email_verification_required'])   ? '1' : '0';
+
+        if (save_settings($data)) {
+            log_activity('settings_updated', 'General settings updated');
+            $message = 'Allgemeine Einstellungen wurden gespeichert.';
+        } else {
+            $msg_type = 'danger';
+            $message  = 'Fehler beim Speichern. Bitte versuchen Sie es erneut.';
+        }
+    } elseif ($tab === 'smtp') {
+        $smtp = [
+            'host'       => trim($_POST['smtp_host']       ?? ''),
+            'port'       => (int) ($_POST['smtp_port']     ?? 587),
+            'username'   => trim($_POST['smtp_username']   ?? ''),
+            'password'   => trim($_POST['smtp_password']   ?? ''),
+            'secure'     => in_array($_POST['smtp_secure'] ?? '', ['tls', 'ssl', 'none']) ? $_POST['smtp_secure'] : 'tls',
+            'debug'      => (int) ($_POST['smtp_debug']    ?? 0),
+            'from_email' => trim($_POST['smtp_from_email'] ?? ''),
+            'from_name'  => trim($_POST['smtp_from_name']  ?? ''),
+        ];
+        if (save_smtp_settings($smtp)) {
+            log_activity('settings_updated', 'SMTP settings updated');
+            $message = 'SMTP-Einstellungen wurden gespeichert.';
+        } else {
+            $msg_type = 'danger';
+            $message  = 'Fehler beim Speichern der SMTP-Einstellungen.';
+        }
+    } elseif ($tab === 'telegram') {
+        $tg = [
+            'bot_token' => trim($_POST['tg_bot_token'] ?? ''),
+            'chat_id'   => trim($_POST['tg_chat_id']   ?? ''),
+            'active'    => isset($_POST['tg_active']) ? 1 : 0,
+        ];
+        if (save_telegram_settings($tg)) {
+            log_activity('settings_updated', 'Telegram settings updated');
+            $message = 'Telegram-Einstellungen wurden gespeichert.';
+        } else {
+            $msg_type = 'danger';
+            $message  = 'Fehler beim Speichern der Telegram-Einstellungen.';
+        }
+    } elseif ($tab === 'seo') {
+        $seoKeys = ['og_image', 'indexnow_key', 'google_analytics_id'];
+        $seoData = [];
+        foreach ($seoKeys as $k) {
+            $seoData[$k] = trim($_POST[$k] ?? '');
+        }
+        if (save_settings($seoData)) {
+            log_activity('settings_updated', 'SEO settings updated');
+            $message = 'SEO-Einstellungen wurden gespeichert.';
+        } else {
+            $msg_type = 'danger';
+            $message  = 'Fehler beim Speichern der SEO-Einstellungen.';
+        }
+    }
+}
+
+// ── Load current values ───────────────────────────────────────────────────────
+$gen  = [];
+foreach (get_all_settings() as $row) {
+    $gen[$row['setting_key']] = $row['setting_value'];
+}
+$smtp = get_smtp_settings();
+$tg   = get_telegram_settings();
+
+$active_tab = $_POST['tab'] ?? ($_GET['tab'] ?? 'general');
+?>
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Einstellungen – VerlustRückholung Admin</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="../assets/css/admin.css" rel="stylesheet">
+</head>
+<body class="admin-body">
+
+<?php include __DIR__ . '/partials/sidebar.php'; ?>
+
+<div class="admin-main">
+    <?php include __DIR__ . '/partials/topbar.php'; ?>
+
+    <div class="admin-content p-4">
+        <div class="mb-4">
+            <h4 class="fw-bold mb-0"><i class="bi bi-gear-fill me-2 text-primary"></i>Einstellungen</h4>
+            <p class="text-muted small mb-0">Website-, E-Mail- und Benachrichtigungs-Konfiguration</p>
+        </div>
+
+        <?php if ($message): ?>
+        <div class="alert alert-<?= $msg_type ?> alert-dismissible fade show" role="alert">
+            <i class="bi bi-<?= $msg_type === 'success' ? 'check-circle' : 'exclamation-triangle' ?> me-2"></i>
+            <?= htmlspecialchars($message, ENT_QUOTES, 'UTF-8') ?>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        <?php endif; ?>
+
+        <!-- Nav tabs -->
+        <ul class="nav nav-tabs mb-4" id="settingsTabs">
+            <li class="nav-item">
+                <a class="nav-link <?= $active_tab === 'general'  ? 'active' : '' ?>"
+                   href="?tab=general"><i class="bi bi-sliders me-1"></i>Allgemein</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link <?= $active_tab === 'smtp'     ? 'active' : '' ?>"
+                   href="?tab=smtp"><i class="bi bi-envelope-at me-1"></i>SMTP / E-Mail</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link <?= $active_tab === 'telegram' ? 'active' : '' ?>"
+                   href="?tab=telegram"><i class="bi bi-telegram me-1"></i>Telegram</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link <?= $active_tab === 'seo'      ? 'active' : '' ?>"
+                   href="?tab=seo"><i class="bi bi-search me-1"></i>SEO</a>
+            </li>
+        </ul>
+
+        <!-- ===== TAB: GENERAL ===== -->
+        <?php if ($active_tab === 'general'): ?>
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <form method="POST">
+                    <input type="hidden" name="tab" value="general">
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold small">Firmenname</label>
+                            <input type="text" name="company_name" class="form-control"
+                                   value="<?= htmlspecialchars($gen['company_name'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold small">Website-URL</label>
+                            <input type="url" name="site_url" class="form-control"
+                                   value="<?= htmlspecialchars($gen['site_url'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold small">Admin-E-Mail</label>
+                            <input type="email" name="admin_email" class="form-control"
+                                   value="<?= htmlspecialchars($gen['admin_email'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold small">Absender-E-Mail</label>
+                            <input type="email" name="from_email" class="form-control"
+                                   value="<?= htmlspecialchars($gen['from_email'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold small">Absender-Name</label>
+                            <input type="text" name="from_name" class="form-control"
+                                   value="<?= htmlspecialchars($gen['from_name'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold small">Sekunden bis Modal erscheint</label>
+                            <div class="input-group">
+                                <input type="number" name="modal_delay_seconds" class="form-control" min="5" max="600"
+                                       value="<?= (int) ($gen['modal_delay_seconds'] ?? 60) ?>">
+                                <span class="input-group-text">Sekunden</span>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold small">Seiten-Titel (index.php)</label>
+                            <input type="text" name="page_title" class="form-control"
+                                   value="<?= htmlspecialchars($gen['page_title'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
+                        </div>
+                        <div class="col-12">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" name="send_email_on_submission"
+                                       id="sendEmailToggle" value="1"
+                                       <?= ($gen['send_email_on_submission'] ?? '1') === '1' ? 'checked' : '' ?>>
+                                <label class="form-check-label fw-semibold" for="sendEmailToggle">
+                                    Bestätigungs-E-Mail nach Formular-Absendung senden
+                                </label>
+                            </div>
+                            <div class="text-muted small mt-1">
+                                Wenn deaktiviert, werden keine E-Mails nach einer Falleinreichung gesendet.
+                                Telegram-Benachrichtigungen sind davon unabhängig.
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" name="email_verification_required"
+                                       id="emailVerifyToggle" value="1"
+                                       <?= ($gen['email_verification_required'] ?? '0') === '1' ? 'checked' : '' ?>>
+                                <label class="form-check-label fw-semibold" for="emailVerifyToggle">
+                                    E-Mail-Verifizierung via Code aktivieren
+                                </label>
+                            </div>
+                            <div class="text-muted small mt-1">
+                                Wenn aktiviert, müssen Nutzer ihre E-Mail-Adresse vor dem Absenden des Formulars
+                                durch einen 6-stelligen Code bestätigen. Verhindert gefälschte E-Mail-Adressen.
+                                <strong>Hinweis:</strong> SMTP muss korrekt konfiguriert sein.
+                            </div>
+                        </div>
+
+                        <!-- ── Lead Generation ─────────────────────────────── -->
+                        <div class="col-12 mt-2">
+                            <hr><h6 class="fw-bold mb-3"><i class="bi bi-graph-up-arrow me-1 text-success"></i>Lead-Generierung</h6>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold small">WhatsApp-Nummer <span class="text-muted fw-normal">(internationale Schreibweise ohne +, z.&nbsp;B.&nbsp;4915123456789)</span></label>
+                            <input type="text" name="whatsapp_number" class="form-control"
+                                   placeholder="4915123456789"
+                                   value="<?= htmlspecialchars($gen['whatsapp_number'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
+                            <div class="form-text">Zeigt einen grünen WhatsApp-Button unten rechts auf der Seite.</div>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold small">Ankündigungsleiste – Text <span class="text-muted fw-normal">(leer = ausgeblendet)</span></label>
+                            <input type="text" name="announcement_text" class="form-control"
+                                   placeholder="🔥 Jetzt kostenlose Erstprüfung sichern – Angebot endet bald!"
+                                   value="<?= htmlspecialchars($gen['announcement_text'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
+                        </div>
+                        <div class="col-md-8">
+                            <label class="form-label fw-semibold small">Ankündigungsleiste – Link-URL <span class="text-muted fw-normal">(optional)</span></label>
+                            <input type="url" name="announcement_url" class="form-control"
+                                   placeholder="https://..."
+                                   value="<?= htmlspecialchars($gen['announcement_url'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold small">Ankündigungsleiste – Hintergrundfarbe</label>
+                            <input type="color" name="announcement_bg" class="form-control form-control-color"
+                                   value="<?= htmlspecialchars($gen['announcement_bg'] ?? '#d32f2f', ENT_QUOTES, 'UTF-8') ?>">
+                        </div>
+                    </div>
+
+                    <hr class="my-4">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-save me-1"></i>Einstellungen speichern
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- ===== TAB: SMTP ===== -->
+        <?php elseif ($active_tab === 'smtp'): ?>
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <div class="alert alert-info mb-4">
+                    <i class="bi bi-info-circle me-2"></i>
+                    SMTP-Einstellungen überschreiben die Werte in <code>config/config.php</code>.
+                    Lassen Sie Felder leer, um die Standardwerte aus <code>config.php</code> zu verwenden.
+                </div>
+                <form method="POST">
+                    <input type="hidden" name="tab" value="smtp">
+                    <div class="row g-3">
+                        <div class="col-md-8">
+                            <label class="form-label fw-semibold small">SMTP-Server (Host)</label>
+                            <input type="text" name="smtp_host" class="form-control"
+                                   placeholder="smtp.example.com"
+                                   value="<?= htmlspecialchars($smtp['host'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold small">Port</label>
+                            <input type="number" name="smtp_port" class="form-control"
+                                   value="<?= (int) ($smtp['port'] ?? 587) ?>">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold small">Benutzername</label>
+                            <input type="text" name="smtp_username" class="form-control" autocomplete="off"
+                                   value="<?= htmlspecialchars($smtp['username'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold small">Passwort</label>
+                            <div class="input-group">
+                                <input type="password" name="smtp_password" class="form-control"
+                                       id="smtpPass" autocomplete="new-password"
+                                       placeholder="<?= !empty($smtp['password']) ? '••••••••' : 'Passwort eingeben' ?>">
+                                <button class="btn btn-outline-secondary" type="button"
+                                        onclick="var f=document.getElementById('smtpPass');f.type=f.type==='password'?'text':'password'">
+                                    <i class="bi bi-eye"></i>
+                                </button>
+                            </div>
+                            <div class="form-text">Leer lassen, um das bisherige Passwort beizubehalten.</div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold small">Verschlüsselung</label>
+                            <select name="smtp_secure" class="form-select">
+                                <option value="tls"  <?= ($smtp['secure'] ?? 'tls') === 'tls'  ? 'selected' : '' ?>>TLS (empfohlen)</option>
+                                <option value="ssl"  <?= ($smtp['secure'] ?? '') === 'ssl'  ? 'selected' : '' ?>>SSL</option>
+                                <option value="none" <?= ($smtp['secure'] ?? '') === 'none' ? 'selected' : '' ?>>Keine</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold small">Absender-E-Mail</label>
+                            <input type="email" name="smtp_from_email" class="form-control"
+                                   value="<?= htmlspecialchars($smtp['from_email'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold small">Absender-Name</label>
+                            <input type="text" name="smtp_from_name" class="form-control"
+                                   value="<?= htmlspecialchars($smtp['from_name'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold small">Debug-Modus</label>
+                            <select name="smtp_debug" class="form-select">
+                                <option value="0" <?= (int)($smtp['debug'] ?? 0) === 0 ? 'selected' : '' ?>>Aus (0)</option>
+                                <option value="1" <?= (int)($smtp['debug'] ?? 0) === 1 ? 'selected' : '' ?>>Minimal (1)</option>
+                                <option value="2" <?= (int)($smtp['debug'] ?? 0) === 2 ? 'selected' : '' ?>>Verbose (2)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <hr class="my-4">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-save me-1"></i>SMTP-Einstellungen speichern
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- ===== TAB: TELEGRAM ===== -->
+        <?php elseif ($active_tab === 'telegram'): ?>
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <div class="alert alert-info mb-4">
+                    <i class="bi bi-telegram me-2"></i>
+                    <strong>So einrichten:</strong>
+                    <ol class="mb-0 mt-2 ps-3">
+                        <li>Erstellen Sie einen Bot mit <a href="https://t.me/BotFather" target="_blank">@BotFather</a> und kopieren Sie den <strong>Bot-Token</strong>.</li>
+                        <li>Senden Sie Ihrem Bot eine Nachricht und rufen Sie dann
+                            <code>https://api.telegram.org/bot&lt;TOKEN&gt;/getUpdates</code> auf, um Ihre <strong>Chat-ID</strong> zu erhalten.</li>
+                        <li>Tragen Sie beide Werte ein, aktivieren Sie die Benachrichtigungen und speichern Sie.</li>
+                    </ol>
+                </div>
+                <form method="POST">
+                    <input type="hidden" name="tab" value="telegram">
+                    <div class="row g-3">
+                        <div class="col-md-7">
+                            <label class="form-label fw-semibold small">Bot-Token</label>
+                            <input type="text" name="tg_bot_token" class="form-control font-monospace"
+                                   placeholder="1234567890:AAF..."
+                                   value="<?= htmlspecialchars($tg['bot_token'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
+                        </div>
+                        <div class="col-md-5">
+                            <label class="form-label fw-semibold small">Chat-ID</label>
+                            <input type="text" name="tg_chat_id" class="form-control font-monospace"
+                                   placeholder="-100123456789"
+                                   value="<?= htmlspecialchars($tg['chat_id'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
+                        </div>
+                        <div class="col-12">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" name="tg_active" id="tgActive"
+                                       value="1" <?= !empty($tg['active']) ? 'checked' : '' ?>>
+                                <label class="form-check-label fw-semibold" for="tgActive">
+                                    Telegram-Benachrichtigungen aktivieren
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <hr class="my-4">
+                    <button type="submit" class="btn btn-primary me-2">
+                        <i class="bi bi-save me-1"></i>Telegram-Einstellungen speichern
+                    </button>
+                    <?php if (!empty($tg['bot_token']) && !empty($tg['chat_id'])): ?>
+                    <a href="test_telegram.php" class="btn btn-outline-secondary" target="_blank">
+                        <i class="bi bi-send me-1"></i>Test-Nachricht senden
+                    </a>
+                    <?php endif; ?>
+                </form>
+            </div>
+        </div>
+        <?php endif; ?>
+
+        <!-- ===== TAB: SEO ===== -->
+        <?php if ($active_tab === 'seo'): ?>
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <div class="alert alert-info mb-4">
+                    <i class="bi bi-info-circle me-2"></i>
+                    Diese Einstellungen steuern, wie die Seite in Suchmaschinen und beim Teilen in sozialen Netzwerken erscheint.
+                    Die <strong>robots.txt</strong> und <strong>sitemap.xml</strong> sind automatisch unter
+                    <code>/robots.txt</code> und <code>/sitemap.xml</code> erreichbar.
+                </div>
+                <form method="POST">
+                    <input type="hidden" name="tab" value="seo">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label fw-semibold small">Open Graph Bild-URL <span class="text-muted fw-normal">(empfohlen: 1200 × 630 Pixel)</span></label>
+                            <input type="url" name="og_image" class="form-control"
+                                   placeholder="https://example.de/assets/images/og-image.jpg"
+                                   value="<?= htmlspecialchars($gen['og_image'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
+                            <div class="form-text">Wird beim Teilen der Seite auf Facebook, LinkedIn, WhatsApp und Twitter angezeigt.</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold small">IndexNow API-Key <span class="text-muted fw-normal">(Bing / Yandex – Sofortindexierung)</span></label>
+                            <input type="text" name="indexnow_key" class="form-control font-monospace"
+                                   placeholder="z.B. a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4"
+                                   value="<?= htmlspecialchars($gen['indexnow_key'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
+                            <div class="form-text">
+                                Key generieren: <code>php -r "echo bin2hex(random_bytes(16));"</code>
+                                — Bing verifiziert den Key automatisch über <code>/indexnow.php?verify=1</code>.
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold small">Google Analytics Mess-ID</label>
+                            <input type="text" name="google_analytics_id" class="form-control font-monospace"
+                                   placeholder="G-XXXXXXXXXX"
+                                   value="<?= htmlspecialchars($gen['google_analytics_id'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
+                            <div class="form-text">GA4 Measurement-ID (z.B. G-XXXXXXXXXX). Wird auf allen Seiten eingebunden.</div>
+                        </div>
+                        <div class="col-12">
+                            <div class="alert alert-secondary py-2 px-3 mb-0">
+                                <h6 class="fw-bold mb-2"><i class="bi bi-lightbulb me-1"></i>SEO-Checkliste</h6>
+                                <ul class="mb-0 small">
+                                    <li>✅ Canonical-Tag &amp; robots meta sind bereits gesetzt</li>
+                                    <li>✅ hreflang="de" + x-default auf allen Seiten vorhanden</li>
+                                    <li>✅ Open Graph und Twitter Card meta tags sind vorhanden</li>
+                                    <li>✅ JSON-LD strukturierte Daten (Organization, FAQPage, Blog, BreadcrumbList) sind eingebettet</li>
+                                    <li>✅ sitemap.xml wird automatisch generiert (<a href="/sitemap.xml" target="_blank">/sitemap.xml</a>)</li>
+                                    <li>✅ robots.txt ist vorhanden (<a href="/robots.txt" target="_blank">/robots.txt</a>)</li>
+                                    <li>✅ HTTPS-Weiterleitung ist konfiguriert</li>
+                                    <li>✅ IndexNow-Endpoint aktiv bei gesetztem API-Key (<a href="/indexnow.php?verify=1" target="_blank">/indexnow.php?verify=1</a>)</li>
+                                    <li>⚠️ Reichen Sie die Sitemap in der <a href="https://search.google.com/search-console" target="_blank">Google Search Console</a> ein</li>
+                                    <li>⚠️ Erstellen Sie ein 1200×630 px OG-Bild und hinterlegen Sie die URL oben</li>
+                                    <li>⚠️ Tragen Sie Ihre Domain in <a href="https://www.bing.com/webmasters" target="_blank">Bing Webmaster Tools</a> ein</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <hr class="my-4">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-save me-1"></i>SEO-Einstellungen speichern
+                    </button>
+                </form>
+            </div>
+        </div>
+        <?php endif; ?>
+
+    </div><!-- /admin-content -->
+</div><!-- /admin-main -->
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

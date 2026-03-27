@@ -1,0 +1,191 @@
+<?php
+require_once __DIR__ . '/config/config.php';
+require_once __DIR__ . '/includes/db.php';
+require_once __DIR__ . '/includes/functions.php';
+require_once __DIR__ . '/includes/mailer.php';
+
+// ── AJAX detection ──────────────────────────────────────────
+$is_ajax = !empty($_POST['_ajax']);
+
+// Helper: send response (JSON for AJAX, redirect for regular POST)
+function send_response(bool $success, string $message, array $extra = []): never
+{
+    global $is_ajax;
+    if ($is_ajax) {
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode(array_merge(['success' => $success, 'message' => $message], $extra));
+        exit;
+    }
+    // Regular POST: redirect back with query string flag
+    $param = $success ? 'success=1' : ('error=' . urlencode($message));
+    $back  = 'index.php'; // Always redirect through the router (index.php) which loads the active design
+    header('Location: ' . $back . '?' . $param . ($success ? '#fallform' : ''));
+    exit;
+}
+
+// ── CSRF validation ────────────────────────────────────────
+if (
+    empty($_POST['csrf_token']) ||
+    empty($_SESSION['csrf_token']) ||
+    !hash_equals($_SESSION['csrf_token'], $_POST['csrf_token'])
+) {
+    // Regenerate token so a page-refresh always has a fresh one
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+    send_response(false, 'Sitzung abgelaufen. Bitte versuchen Sie es erneut.');
+}
+
+// ── Collect & sanitize input ───────────────────────────────
+$first_name        = trim($_POST['first_name']        ?? '');
+$last_name         = trim($_POST['last_name']         ?? '');
+$email             = trim($_POST['email']             ?? '');
+$phone             = trim($_POST['phone']             ?? '');
+$country           = trim($_POST['country']           ?? '');
+$year_lost         = trim($_POST['year_lost']         ?? '');
+$amount_lost       = trim($_POST['amount_lost']       ?? '');
+$platform_category = trim($_POST['platform_category'] ?? 'Andere');
+$case_description  = trim($_POST['case_description']  ?? '');
+$lead_source       = trim($_POST['lead_source']       ?? 'website');
+
+// ── Normalize engagement-modal submissions ─────────────────
+$is_engagement = ($lead_source === 'engagement_modal');
+if ($is_engagement) {
+    if (empty($case_description)) {
+        $case_description = 'Über Engagement-Modal eingereicht.';
+    }
+    if (empty($amount_lost) || !is_numeric($amount_lost)) {
+        $amount_lost = null;
+    }
+    if (empty($platform_category)) {
+        $platform_category = 'Andere';
+    }
+}
+
+// ── Validate required fields ───────────────────────────────
+$errors = [];
+if (empty($first_name)) $errors[] = 'Vorname fehlt.';
+if (empty($last_name))  $errors[] = 'Nachname fehlt.';
+if (empty($email) || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+    $errors[] = 'Ungültige E-Mail-Adresse.';
+}
+if (!$is_engagement) {
+    if (empty($amount_lost) || !is_numeric($amount_lost) || (float)$amount_lost <= 0) {
+        $errors[] = 'Ungültiger Betrag (muss größer als 0 sein).';
+    }
+    if (empty($case_description)) {
+        $errors[] = 'Fallbeschreibung fehlt.';
+    }
+}
+
+// ── E-mail verification check ──────────────────────────────
+if (get_setting('email_verification_required', '0') === '1') {
+    $verifiedEmail = $_SESSION['email_verified'] ?? '';
+    if (empty($verifiedEmail)) {
+        $errors[] = 'Bitte bestätigen Sie Ihre E-Mail-Adresse mit dem zugesandten Code, bevor Sie das Formular absenden.';
+    } elseif (strtolower($verifiedEmail) !== strtolower($email)) {
+        $errors[] = 'Die E-Mail-Adresse stimmt nicht mit der verifizierten Adresse überein. Bitte fordern Sie einen neuen Code an.';
+    }
+}
+
+// Year lost: optional but must be plausible if provided
+$year_lost_int = null;
+if ($year_lost !== '') {
+    $y = (int) $year_lost;
+    if ($y >= 2000 && $y <= (int) date('Y')) {
+        $year_lost_int = $y;
+    }
+}
+
+if (!empty($errors)) {
+    send_response(false, implode(' ', $errors));
+}
+
+// ── Allowed categories ─────────────────────────────────────
+$allowed_categories = [
+    'Krypto-Betrug',
+    'Forex-Betrug',
+    'Fake-Broker',
+    'Romance-Scam mit Investitionsbetrug',
+    'Binäre Optionen',
+    'Andere',
+];
+if (!in_array($platform_category, $allowed_categories, true)) {
+    $platform_category = 'Andere';
+}
+
+// ── Persist to database ────────────────────────────────────
+try {
+    $pdo = db_connect();
+    $stmt = $pdo->prepare(
+        'INSERT INTO leads
+         (first_name, last_name, email, phone, country, year_lost,
+          amount_lost, platform_category, case_description, status, ip_address,
+          lead_source, utm_source)
+         VALUES
+         (:fn, :ln, :em, :ph, :co, :yr,
+          :al, :pc, :cd, :st, :ip,
+          :ls, :us)'
+    );
+    $stmt->execute([
+        ':fn' => $first_name,
+        ':ln' => $last_name,
+        ':em' => $email,
+        ':ph' => $phone,
+        ':co' => $country ?: null,
+        ':yr' => $year_lost_int,
+        ':al' => (float) $amount_lost,
+        ':pc' => $platform_category,
+        ':cd' => $case_description,
+        ':st' => 'Neu',
+        ':ip' => $_SERVER['REMOTE_ADDR'] ?? '',
+        ':ls' => $lead_source,
+        ':us' => substr(trim($_POST['utm_source'] ?? ''), 0, 100) ?: null,
+    ]);
+    $lead_id = (int) $pdo->lastInsertId();
+
+    // ── Link visitor log to this lead ──────────────────────
+    $visit_id = (int) ($_POST['visit_id'] ?? $_SESSION['visit_id'] ?? 0);
+    if ($visit_id > 0) {
+        $vstmt = $pdo->prepare(
+            'UPDATE visitor_logs
+             SET submitted_lead = 1, lead_id = :lead_id
+             WHERE id = :visit_id'
+        );
+        $vstmt->execute([':lead_id' => $lead_id, ':visit_id' => $visit_id]);
+    }
+    unset($_SESSION['visit_id']);
+} catch (PDOException $e) {
+    error_log('[VerlustRückholung] DB error: ' . $e->getMessage());
+    send_response(false, 'Datenbankfehler. Bitte versuchen Sie es später erneut.');
+}
+
+// ── Send emails (non-blocking; failures are only logged) ───
+$mail_data = [
+    'first_name'        => $first_name,
+    'last_name'         => $last_name,
+    'email'             => $email,
+    'phone'             => $phone,
+    'country'           => $country,
+    'year_lost'         => $year_lost_int,
+    'amount_lost'       => $amount_lost,
+    'platform_category' => $platform_category,
+    'case_description'  => $case_description,
+    'ip'                => $_SERVER['REMOTE_ADDR'] ?? '',
+];
+
+// Respect admin setting: send emails only if enabled
+if (get_setting('send_email_on_submission', '1') === '1') {
+    send_confirmation_email($mail_data);
+    send_admin_notification($mail_data);
+} else {
+    // Still send Telegram notification even if email is disabled
+    send_telegram_notification($mail_data);
+}
+
+// ── Regenerate CSRF token after successful submission ──────
+$_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+// Clear the e-mail verification flag so the next submission requires re-verification
+unset($_SESSION['email_verified']);
+
+send_response(true, 'Vielen Dank! Ihr Fall wurde eingereicht. Wir melden uns innerhalb von 48 Stunden.', [
+    'csrf_token' => $_SESSION['csrf_token'],
+]);

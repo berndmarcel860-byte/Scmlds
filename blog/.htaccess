@@ -1,0 +1,10 @@
+Options -Indexes
+RewriteEngine On
+
+# Serve index.php for /blog/ or /blog
+RewriteRule ^/?$ index.php [L,QSA]
+
+# Serve post.php for /blog/{slug}
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^([a-z0-9\-]+)/?$ post.php?slug=$1 [L,QSA]
