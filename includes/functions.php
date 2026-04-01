@@ -1842,8 +1842,8 @@ function ensure_mailing_tables(): void
             $html,
             $text,
         ]);
-    } elseif (empty($check['body_html'])) {
-        // Template exists but HTML body is empty – restore it
+    } elseif (empty($check['body_html']) || str_starts_with($check['body_html'], '<placeholder')) {
+        // Template exists but HTML body is empty or still has the schema placeholder – restore it
         $pdo->prepare('UPDATE mailing_templates SET body_html=? WHERE id=?')
             ->execute([_kryptoxpay_email_template_html(), $check['id']]);
     }
@@ -1860,7 +1860,7 @@ function ensure_mailing_tables(): void
             $html2,
             $text2,
         ]);
-    } elseif (empty($check2['body_html'])) {
+    } elseif (empty($check2['body_html']) || str_starts_with($check2['body_html'], '<placeholder')) {
         $pdo->prepare('UPDATE mailing_templates SET body_html=? WHERE id=?')
             ->execute([_kryptoxpay_reminder_template_html(), $check2['id']]);
     }
