@@ -254,10 +254,12 @@ async function startSending() {
                 log(`Batch: ${data.sent_now} gesendet via SMTP #${data.active_smtp_id} (${data.account_label})`, 'log-ok');
             }
             if (data.failed_now > 0) {
-                log(`${data.failed_now} fehlgeschlagen.`, 'log-err');
+                const errDetail = data.error_detail ? ` — ${data.error_detail}` : '';
+                log(`${data.failed_now} fehlgeschlagen${errDetail}`, 'log-err');
             }
             if (data.account_rotated) {
-                await countdown(PAUSE_ACCT, 'SMTP-Account gewechselt. Pause', 'log-warn');
+                const nextLabel = data.account_label || `SMTP #${data.active_smtp_id}`;
+                await countdown(PAUSE_ACCT, `SMTP-Account gewechselt zu: ${nextLabel}. Pause`, 'log-warn');
                 // Auto-sync warmup after account rotation
                 syncWarmup();
                 continue;

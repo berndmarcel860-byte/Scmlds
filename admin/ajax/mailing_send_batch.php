@@ -319,6 +319,18 @@ try {
     $pdo->prepare('UPDATE mailing_campaigns SET failed=failed+1 WHERE id=:id')
         ->execute([':id' => $campaign_id]);
     $failed_now = 1;
+
+    // On SMTP failure, force-rotate to the next account so we don't keep
+    // hammering a broken account on every subsequent request.
+    if (count($accounts) > 1) {
+        $next_idx        = ($account_idx + 1) % count($accounts);
+        $next_account    = $accounts[$next_idx];
+        $pdo->prepare('UPDATE mailing_campaigns SET current_smtp_account_id=:aid, current_smtp_batch_count=0 WHERE id=:cid')
+            ->execute([':aid' => $next_account['id'], ':cid' => $campaign_id]);
+        $current_smtp_id = $next_account['id'];
+        $account         = $next_account;
+        $rotated         = true;
+    }
 }
 
 // ── Return response ───────────────────────────────────────────────────────────
@@ -329,7 +341,7 @@ echo json_encode([
     'error_detail'    => $error_msg,
     'active_smtp_id'  => $current_smtp_id,
     'account_label'   => $account['label'] ?: $account['from_email'],
-    'account_rotated' => false,
+    'account_rotated' => $rotated,
     'sent'            => $stats['sent'],
     'failed'          => $stats['failed'],
     'pending'         => $stats['pending'],
