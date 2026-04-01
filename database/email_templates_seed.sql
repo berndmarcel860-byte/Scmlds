@@ -635,6 +635,34 @@ WHERE NOT EXISTS (
 
 
 -- =============================================================
+-- Migration: fix existing templates with empty body_html
+-- Run this after the INSERTs above to repair any records in the
+-- database that were seeded before HTML templates were added.
+-- =============================================================
+
+-- Update the legacy "KryptoxPay – Professionell (DE)" template
+-- to use the proper HTML body from the Day 1 follow-up template.
+UPDATE mailing_templates dst
+  JOIN mailing_templates src ON src.name = 'Follow-up Sequence – Day 1 (Initial)'
+SET dst.body_html = src.body_html
+WHERE dst.name = 'KryptoxPay – Professionell (DE)'
+  AND (dst.body_html IS NULL OR dst.body_html = '');
+
+-- For any other templates still missing body_html, wrap body_text in a
+-- minimal HTML shell so they send as HTML rather than plain text.
+UPDATE mailing_templates
+SET body_html = CONCAT(
+  '<!DOCTYPE html><html lang="de"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{{company_name}}</title>',
+  '<style>body{margin:0;padding:30px;background:#f2f4f7;font-family:Helvetica,Arial,sans-serif;color:#374151;font-size:15px;line-height:1.8}',
+  '.wrap{max-width:600px;margin:0 auto;background:#fff;border-radius:10px;padding:38px 40px;box-shadow:0 2px 12px rgba(0,0,0,.08)}',
+  '.footer{margin-top:30px;padding-top:16px;border-top:1px solid #e8edf2;font-size:12px;color:#9ca3af;text-align:center}',
+  '.footer a{color:#9ca3af}</style></head><body><div class="wrap"><pre style="white-space:pre-wrap;font-family:inherit">',
+  body_text,
+  '</pre><div class="footer"><a href="{{unsubscribe_url}}">Abmelden</a> | <a href="{{site_url}}/datenschutz">Datenschutz</a></div></div></body></html>'
+)
+WHERE (body_html IS NULL OR body_html = '') AND body_text IS NOT NULL AND body_text != '';
+
+-- =============================================================
 -- How to run this sequence in a campaign
 -- =============================================================
 -- 1. Create four campaigns (one per template):

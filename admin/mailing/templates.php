@@ -277,7 +277,7 @@ HTML;
             <!-- Sidebar: template list + tips -->
             <div class="col-xl-5">
                 <!-- Preview -->
-                <div class="card shadow-sm border-0 mb-4" id="previewCard" style="display:none!important">
+                <div class="card shadow-sm border-0 mb-4" id="previewCard" style="display:none">
                     <div class="card-header bg-white py-2 d-flex justify-content-between">
                         <span class="fw-semibold small">Vorschau</span>
                         <button type="button" class="btn-close btn-sm" onclick="hidePreview()"></button>
@@ -352,9 +352,8 @@ function showPreview() {
 }
 
 function hidePreview() {
-    document.getElementById('previewCard').style.display = 'none!important';
-    document.getElementById('previewCard').style.removeProperty('display');
-    document.getElementById('previewCard').style.display = 'none';
+    const card = document.getElementById('previewCard');
+    if (card) card.style.display = 'none';
 }
 </script>
 </body>

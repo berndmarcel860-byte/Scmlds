@@ -44,7 +44,7 @@ if (!$campaign_id) {
 $pdo = db_connect();
 
 // Load campaign
-$stmt = $pdo->prepare('SELECT c.*,t.subject,t.body_html FROM mailing_campaigns c LEFT JOIN mailing_templates t ON t.id=c.template_id WHERE c.id=:id FOR UPDATE');
+$stmt = $pdo->prepare('SELECT c.*,t.subject,t.body_html,t.body_text FROM mailing_campaigns c LEFT JOIN mailing_templates t ON t.id=c.template_id WHERE c.id=:id FOR UPDATE');
 $stmt->execute([':id' => $campaign_id]);
 $campaign = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -278,9 +278,11 @@ try {
         $mail->Body    = $body_html;
         $mail->AltBody = strip_tags($body_html);
     } else {
-        // No HTML body – send minimal plain text
+        // No HTML body – fall back to plain-text body_text if available
+        $raw_text = $campaign['body_text'] ?? '';
+        $body_text_fallback = str_replace(array_keys($vars), array_values($vars), $raw_text);
         $mail->isHTML(false);
-        $mail->Body = strip_tags($subject);
+        $mail->Body = !empty($body_text_fallback) ? $body_text_fallback : strip_tags($subject);
     }
 
     // ── Anti-spam headers ─────────────────────────────────────────────────────

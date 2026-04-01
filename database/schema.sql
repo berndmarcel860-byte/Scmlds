@@ -397,10 +397,118 @@ CREATE TABLE IF NOT EXISTS mailing_recipients (
 INSERT IGNORE INTO mailing_templates (name, subject, body_html, body_text)
 SELECT 'KryptoxPay – Professionell (DE)',
        'Wichtige Information zu Ihren digitalen Vermögenswerten',
-       '',
+       '<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<title>{{company_name}}</title>
+<style>
+  body,table,td,a{-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%}
+  table,td{mso-table-lspace:0pt;mso-table-rspace:0pt}
+  img{-ms-interpolation-mode:bicubic;border:0;outline:none;text-decoration:none}
+  body{margin:0;padding:0;background-color:#f2f4f7;font-family:''Helvetica Neue'',Helvetica,Arial,sans-serif}
+  .email-wrapper{width:100%;background:#f2f4f7;padding:30px 0}
+  .email-content{max-width:600px;margin:0 auto;background:#ffffff;border-radius:10px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.08)}
+  .header{background:#0d2744;padding:32px 40px;text-align:center}
+  .header-logo{font-size:24px;font-weight:700;color:#ffffff;letter-spacing:-0.5px;text-decoration:none}
+  .header-logo span{color:#f0a500}
+  .header-tagline{margin:6px 0 0;font-size:12px;color:#7fa8d4;letter-spacing:1px;text-transform:uppercase}
+  .alert-banner{background:#fff3cd;border-left:4px solid #f0a500;padding:14px 20px;margin:0 0 20px;border-radius:0 6px 6px 0}
+  .alert-banner p{margin:0;font-size:14px;color:#7a5c00}
+  .body{padding:38px 40px;color:#374151;font-size:15px;line-height:1.8}
+  .body h2{margin:0 0 18px;font-size:20px;color:#0d2744;font-weight:700}
+  .body p{margin:0 0 16px}
+  .body ul{padding-left:20px;margin:0 0 16px}
+  .body ul li{margin-bottom:6px}
+  .divider{height:1px;background:#e8edf2;margin:24px 0}
+  .cta-wrapper{text-align:center;margin:28px 0}
+  .cta-btn{display:inline-block;background:#f0a500;color:#ffffff!important;padding:14px 36px;border-radius:6px;font-size:15px;font-weight:700;text-decoration:none;letter-spacing:0.3px}
+  .signature{font-size:14px;color:#374151}
+  .signature strong{color:#0d2744}
+  .footer{background:#f8fafc;padding:22px 40px;border-top:1px solid #e8edf2}
+  .footer p{margin:0 0 6px;font-size:12px;color:#9ca3af;text-align:center;line-height:1.6}
+  .footer a{color:#9ca3af;text-decoration:underline}
+  @media only screen and (max-width:620px){
+    .email-content,.header,.body,.footer{border-radius:0!important}
+    .body,.header,.footer{padding:24px 20px!important}
+  }
+</style>
+</head>
+<body>
+<div class="email-wrapper">
+  <div class="email-content">
+    <div class="header">
+      <div class="header-logo">{{company_name}}</div>
+      <p class="header-tagline">KI-gestützte Kapitalrückholung &amp; Beratung</p>
+    </div>
+    <div class="body">
+      <h2>Sehr geehrte/r {{name}},</h2>
+      {{#if scam_platform}}
+      <div class="alert-banner">
+        <p>&#9888;&nbsp; Wir haben Informationen erhalten, dass Sie Kapital auf der Plattform <strong>{{scam_platform}}</strong> verloren haben könnten.</p>
+      </div>
+      <p>wir wenden uns heute gezielt an Sie, da Anzeichen vorliegen, dass Sie durch <strong>{{scam_platform}}</strong> einen finanziellen Schaden erlitten haben könnten.</p>
+      {{else}}
+      <p>wir wenden uns heute mit einer wichtigen Mitteilung an Sie, die im Zusammenhang mit Ihren digitalen Vermögenswerten stehen könnte.</p>
+      <p>Unser Team bei <strong>{{company_name}}</strong> unterstützt Anleger dabei, ihre Situation zu bewerten und mögliche Handlungsoptionen zu prüfen.</p>
+      {{/if}}
+      <p>Was wir für Sie tun können:</p>
+      <ul>
+        <li>Kostenlose und unverbindliche Erstberatung</li>
+        <li>KI-gestützte Analyse Ihrer individuellen Situation</li>
+        <li>Professionelle Unterstützung durch erfahrene Fachleute</li>
+        <li>Diskrete und vertrauliche Bearbeitung Ihres Anliegens</li>
+      </ul>
+      <div class="divider"></div>
+      {{#if scam_platform}}
+      <p>Handeln Sie jetzt – je früher wir Ihren Fall prüfen können, desto besser sind die Chancen auf eine Rückholung Ihrer Mittel.</p>
+      {{else}}
+      <p>Wenn Sie mehr erfahren möchten oder Fragen zu Ihrer Situation haben, stehen wir Ihnen gerne zur Verfügung.</p>
+      {{/if}}
+      <div class="cta-wrapper">
+        <a href="{{site_url}}" class="cta-btn">Jetzt unverbindlich informieren</a>
+      </div>
+      <div class="divider"></div>
+      <div class="signature">
+        <p>Mit freundlichen Grüßen,<br>
+        <strong>{{sender_name}}</strong><br>
+        {{company_name}}<br>
+        <a href="{{site_url}}" style="color:#0d2744">{{site_url}}</a></p>
+      </div>
+    </div>
+    <div class="footer">
+      <p>Sie erhalten diese E-Mail, da Sie sich für Finanzthemen interessiert haben oder früher Kontakt mit uns aufgenommen haben.</p>
+      <p>
+        <a href="{{unsubscribe_url}}">Abmelden</a> &nbsp;|&nbsp;
+        <a href="{{site_url}}/datenschutz">Datenschutz</a> &nbsp;|&nbsp;
+        <a href="{{site_url}}/impressum">Impressum</a>
+      </p>
+      <p>{{company_name}} &nbsp;&middot;&nbsp; <a href="{{site_url}}">{{site_url}}</a></p>
+      {{open_tracker}}
+    </div>
+  </div>
+</div>
+</body>
+</html>',
        'Sehr geehrte/r {{name}},\n\nwir möchten Sie auf eine wichtige Möglichkeit hinweisen.\n\nBitte besuchen Sie uns unter: {{site_url}}\n\nMit freundlichen Grüßen,\n{{sender_name}}\n{{company_name}}\n\nAbmelden: {{unsubscribe_url}}'
 FROM DUAL
 WHERE NOT EXISTS (SELECT 1 FROM mailing_templates WHERE name = 'KryptoxPay – Professionell (DE)');
+
+-- Migration: populate body_html for any existing templates that have an empty body_html
+-- Wraps the plain-text body_text in a minimal responsive HTML shell so emails render as HTML
+UPDATE mailing_templates
+SET body_html = CONCAT(
+  '<!DOCTYPE html><html lang="de"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{{company_name}}</title>',
+  '<style>body{margin:0;padding:30px;background:#f2f4f7;font-family:Helvetica,Arial,sans-serif;color:#374151;font-size:15px;line-height:1.8}',
+  '.wrap{max-width:600px;margin:0 auto;background:#fff;border-radius:10px;padding:38px 40px;box-shadow:0 2px 12px rgba(0,0,0,.08)}',
+  '.footer{margin-top:30px;padding-top:16px;border-top:1px solid #e8edf2;font-size:12px;color:#9ca3af;text-align:center}',
+  '.footer a{color:#9ca3af}</style></head><body><div class="wrap"><pre style="white-space:pre-wrap;font-family:inherit">',
+  body_text,
+  '</pre><div class="footer"><a href="{{unsubscribe_url}}">Abmelden</a> | <a href="{{site_url}}/datenschutz">Datenschutz</a></div></div></body></html>'
+)
+WHERE (body_html IS NULL OR body_html = '') AND body_text IS NOT NULL AND body_text != '';
 
 -- ============================================================
 -- Static Pages (Impressum, Datenschutz, Kontakt, AGB …)
