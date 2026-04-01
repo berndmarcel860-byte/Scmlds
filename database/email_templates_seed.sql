@@ -26,7 +26,7 @@ SELECT
   'Follow-up Sequence – Day 1 (Initial)',
 
   -- Subject spintax (one is picked randomly by spintax() at send time)
-  '{Wichtige Information zu Ihren Krypto-Vermögenswerten|Haben Sie Kapital durch {{scam_platform}} verloren?|Kostenlose Erstberatung – KryptoxPay|Kurze Frage zu Ihrer digitalen Anlage}',
+  '{Wichtige Information zu Ihren Krypto-Vermögenswerten|Haben Sie Kapital durch Broker verloren?|Kostenlose Erstberatung – KryptoxPay|Kurze Frage zu Ihrer digitalen Anlage}',
 
   -- ── HTML body ──────────────────────────────────────────────────
   '<!DOCTYPE html>
@@ -80,7 +80,7 @@ SELECT
   <!-- Alert banner (only when scam_platform is known) -->
   {{#if scam_platform}}
   <tr><td class="banner">
-    <p>&#9888;&nbsp; {Wichtiger Hinweis|Achtung}: Wir haben Daten zu <strong>{{scam_platform}}</strong> erhalten.</p>
+    <p>&#9888;&nbsp; {Wichtiger Hinweis|Achtung}: Wir haben Daten zu <strong>Broker</strong> erhalten.</p>
   </td></tr>
   {{/if}}
 
@@ -90,7 +90,7 @@ SELECT
 
     {{#if scam_platform}}
     <p>{wir wenden uns heute an Sie, da|unsere Analyse zeigt, dass} Anzeichen vorliegen,
-    dass Sie über <strong>{{scam_platform}}</strong> einen finanziellen Schaden
+    dass Sie über <strong>Broker</strong> einen finanziellen Schaden
     erlitten haben {könnten|möglicherweise haben}.</p>
     <p>Mit {modernster KI-Technologie|unserem spezialisierten KI-System}
     {unterstützen wir Betroffene dabei|helfen wir Ihnen},
@@ -156,7 +156,7 @@ SELECT
 
 {{#if scam_platform}}
 {wir wenden uns heute an Sie, da|unsere Analyse zeigt, dass} Anzeichen vorliegen,
-dass Sie über {{scam_platform}} einen finanziellen Schaden erlitten haben {könnten|möglicherweise haben}.
+dass Sie über Broker einen finanziellen Schaden erlitten haben {könnten|möglicherweise haben}.
 
 Mit {modernster KI-Technologie|unserem spezialisierten KI-System} {unterstützen wir
 Betroffene dabei|helfen wir Ihnen}, {verlorene Mittel zurückzuholen|Ihre Verluste zu
@@ -199,6 +199,14 @@ FROM DUAL
 WHERE NOT EXISTS (
   SELECT 1 FROM mailing_templates WHERE name = 'Follow-up Sequence – Day 1 (Initial)'
 );
+
+-- Update existing Day 1 record (if already inserted) to use "Broker" instead of {{scam_platform}}.
+UPDATE mailing_templates
+SET
+  subject   = REPLACE(subject,   '{{scam_platform}}', 'Broker'),
+  body_html = REPLACE(body_html, '{{scam_platform}}', 'Broker'),
+  body_text = REPLACE(body_text, '{{scam_platform}}', 'Broker')
+WHERE name = 'Follow-up Sequence – Day 1 (Initial)';
 
 
 -- -------------------------------------------------------------
