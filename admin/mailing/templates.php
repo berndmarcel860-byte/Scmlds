@@ -115,7 +115,7 @@ $default_html = <<<'HTML'
         <p>&#9888;&nbsp; Wir haben Informationen erhalten, dass Sie Kapital auf der Plattform <strong>{{scam_platform}}</strong> verloren haben könnten. Unser KI-gestütztes System hat diese Plattform als bekannte Betrugsstätte identifiziert.</p>
       </div>
       <p>wir wenden uns heute gezielt an Sie, da Anzeichen vorliegen, dass Sie durch <strong>{{scam_platform}}</strong> einen finanziellen Schaden erlitten haben könnten.</p>
-      <p>Mit modernster KI-Technologie und langjähriger Erfahrung im Bereich der Kapitalrückholung unterstützen wir Betroffene dabei, verlorene Mittel zurückzuholen. Unsere Analyse von <strong>{{scam_platform}}</strong> zeigt, dass eine Rückholung in vergleichbaren Fällen möglich sein kann.</p>
+      <p>Mit modernster KI-Technologie und langjähriger Erfahrung im Bereich der Kapitalrückholung unterstützen wir Betroffene dabei, verlorene Mittel zurückzuholen. Unsere Analyse zeigt, dass eine Rückholung in vergleichbaren Fällen möglich sein kann.</p>
       {{else}}
       <p>wir wenden uns heute mit einer wichtigen Mitteilung an Sie, die im Zusammenhang mit Ihren digitalen Vermögenswerten stehen könnte.</p>
       <p>Unser Team bei <strong>{{company_name}}</strong> unterstützt Anleger dabei, ihre Situation zu bewerten und mögliche Handlungsoptionen zu prüfen. Mit modernster KI-Technologie und langjähriger Erfahrung stehen wir Ihnen als vertrauenswürdiger Ansprechpartner zur Verfügung.</p>
@@ -241,7 +241,7 @@ HTML;
                                     <button type="button" class="btn btn-link btn-sm p-0" onclick="loadDefault()">Standard-Template laden</button>
                                 </label>
                                 <textarea name="body_html" id="bodyHtml" class="form-control font-monospace"
-                                          rows="18" style="font-size:12px"><?= htmlspecialchars($edit['body_html'] ?? $default_html) ?></textarea>
+                                          rows="18" style="font-size:12px"><?= htmlspecialchars($edit['body_html'] ?: $default_html) ?></textarea>
                                 <div class="form-text">Verfügbare Variablen: <span class="template-vars">
                                     <code>{{name}}</code> <code>{{email}}</code>
                                     <code>{{company_name}}</code> <code>{{site_url}}</code>
@@ -277,7 +277,7 @@ HTML;
             <!-- Sidebar: template list + tips -->
             <div class="col-xl-5">
                 <!-- Preview -->
-                <div class="card shadow-sm border-0 mb-4" id="previewCard" style="display:none!important">
+                <div class="card shadow-sm border-0 mb-4" id="previewCard" style="display:none">
                     <div class="card-header bg-white py-2 d-flex justify-content-between">
                         <span class="fw-semibold small">Vorschau</span>
                         <button type="button" class="btn-close btn-sm" onclick="hidePreview()"></button>
@@ -352,9 +352,8 @@ function showPreview() {
 }
 
 function hidePreview() {
-    document.getElementById('previewCard').style.display = 'none!important';
-    document.getElementById('previewCard').style.removeProperty('display');
-    document.getElementById('previewCard').style.display = 'none';
+    const card = document.getElementById('previewCard');
+    if (card) card.style.display = 'none';
 }
 </script>
 </body>
