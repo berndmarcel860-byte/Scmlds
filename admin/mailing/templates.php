@@ -112,9 +112,9 @@ $default_html = <<<'HTML'
 
       {{#if scam_platform}}
       <div class="alert-banner">
-        <p>&#9888;&nbsp; Wir haben Informationen erhalten, dass Sie Kapital auf der Plattform <strong>Broker</strong> verloren haben könnten. Unser KI-gestütztes System hat diese Plattform als bekannte Betrugsstätte identifiziert.</p>
+        <p>&#9888;&nbsp; Wir haben Informationen erhalten, dass Sie Kapital auf der Plattform <strong>{{scam_platform}}</strong> verloren haben könnten. Unser KI-gestütztes System hat diese Plattform als bekannte Betrugsstätte identifiziert.</p>
       </div>
-      <p>wir wenden uns heute gezielt an Sie, da Anzeichen vorliegen, dass Sie durch <strong>Broker</strong> einen finanziellen Schaden erlitten haben könnten.</p>
+      <p>wir wenden uns heute gezielt an Sie, da Anzeichen vorliegen, dass Sie durch <strong>{{scam_platform}}</strong> einen finanziellen Schaden erlitten haben könnten.</p>
       <p>Mit modernster KI-Technologie und langjähriger Erfahrung im Bereich der Kapitalrückholung unterstützen wir Betroffene dabei, verlorene Mittel zurückzuholen. Unsere Analyse zeigt, dass eine Rückholung in vergleichbaren Fällen möglich sein kann.</p>
       {{else}}
       <p>wir wenden uns heute mit einer wichtigen Mitteilung an Sie, die im Zusammenhang mit Ihren digitalen Vermögenswerten stehen könnte.</p>

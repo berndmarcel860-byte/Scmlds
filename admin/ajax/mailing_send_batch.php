@@ -233,6 +233,12 @@ $raw_html = resolve_platform_conditional($raw_html, $scam_platform);
 $raw_text = resolve_platform_conditional($raw_text, $scam_platform);
 $raw_subj = resolve_platform_conditional($raw_subj, $scam_platform);
 
+// Strip any remaining unmatched conditional tags (e.g. stray {{/if}} or unclosed {{#if scam_platform}})
+$_cond_rx  = '/\{\{#if\s+scam_platform\}\}|\{\{else\}\}|\{\{\/if\}\}/';
+$raw_html  = preg_replace($_cond_rx, '', $raw_html);
+$raw_text  = preg_replace($_cond_rx, '', $raw_text);
+$raw_subj  = preg_replace($_cond_rx, '', $raw_subj);
+
 $subject   = str_replace(array_keys($vars), array_values($vars), $raw_subj);
 $body_html = str_replace(array_keys($vars), array_values($vars), $raw_html);
 $body_text = str_replace(array_keys($vars), array_values($vars), $raw_text);
@@ -276,9 +282,15 @@ try {
     $mail->setFrom($account['from_email'] ?: $account['username'], $account['from_name'] ?: $company_name);
     $mail->addAddress($recipient['email'], $recipient['name'] ?: '');
     $mail->Subject = $subject;
-    $mail->isHTML(true);
-    $mail->Body    = $body_html;
-    $mail->AltBody = $body_text ?: strip_tags($body_html);
+    if (!empty($body_html)) {
+        $mail->isHTML(true);
+        $mail->Body    = $body_html;
+        $mail->AltBody = $body_text ?: strip_tags($body_html);
+    } else {
+        // No HTML body – send as plain text
+        $mail->isHTML(false);
+        $mail->Body = $body_text;
+    }
 
     // ── Anti-spam headers ─────────────────────────────────────────────────────
     // List-Unsubscribe: reduces spam score and gives providers a machine-readable opt-out

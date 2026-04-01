@@ -1938,9 +1938,9 @@ function _kryptoxpay_email_template_html(): string
       <h2>Sehr geehrte/r {{name}},</h2>
       {{#if scam_platform}}
       <div class="alert-banner">
-        <p>&#9888;&nbsp; Wir haben Informationen erhalten, dass Sie Kapital auf der Plattform <strong>Broker</strong> verloren haben könnten. Unser KI-System hat diese Plattform als bekannte Betrugsstätte identifiziert.</p>
+        <p>&#9888;&nbsp; Wir haben Informationen erhalten, dass Sie Kapital auf der Plattform <strong>{{scam_platform}}</strong> verloren haben könnten. Unser KI-System hat diese Plattform als bekannte Betrugsstätte identifiziert.</p>
       </div>
-      <p>wir wenden uns heute gezielt an Sie, da Anzeichen vorliegen, dass Sie durch <strong>Broker</strong> einen finanziellen Schaden erlitten haben könnten.</p>
+      <p>wir wenden uns heute gezielt an Sie, da Anzeichen vorliegen, dass Sie durch <strong>{{scam_platform}}</strong> einen finanziellen Schaden erlitten haben könnten.</p>
       <p>Mit modernster KI-Technologie und langjähriger Erfahrung im Bereich der Kapitalrückholung unterstützen wir Betroffene dabei, verlorene Mittel zurückzuholen.</p>
       {{else}}
       <p>wir wenden uns heute mit einer wichtigen Mitteilung an Sie, die im Zusammenhang mit Ihren digitalen Vermögenswerten stehen könnte.</p>
@@ -1996,7 +1996,7 @@ function _kryptoxpay_email_template_text(): string
 
 {{#if scam_platform}}
 Wir wenden uns heute gezielt an Sie, da Anzeichen vorliegen, dass Sie durch
-Broker einen finanziellen Schaden erlitten haben könnten.
+{{scam_platform}} einen finanziellen Schaden erlitten haben könnten.
 
 Mit modernster KI-Technologie unterstützen wir Betroffene dabei,
 verlorene Mittel zurückzuholen.
