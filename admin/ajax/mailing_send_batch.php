@@ -44,7 +44,7 @@ if (!$campaign_id) {
 $pdo = db_connect();
 
 // Load campaign
-$stmt = $pdo->prepare('SELECT c.*,t.subject,t.body_html,t.body_text FROM mailing_campaigns c LEFT JOIN mailing_templates t ON t.id=c.template_id WHERE c.id=:id FOR UPDATE');
+$stmt = $pdo->prepare('SELECT c.*,t.subject,t.body_html FROM mailing_campaigns c LEFT JOIN mailing_templates t ON t.id=c.template_id WHERE c.id=:id FOR UPDATE');
 $stmt->execute([':id' => $campaign_id]);
 $campaign = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -221,27 +221,18 @@ function resolve_platform_conditional(string $tpl, string $platform): string {
 }
 
 $raw_html = $campaign['body_html'] ?? '';
-$raw_text = $campaign['body_text'] ?? '';
 $raw_subj = $campaign['subject']   ?? '';
 
-// ── Spintax resolution (must run BEFORE variable substitution) ────────────────
-$raw_subj = spintax($raw_subj);
-$raw_html = spintax($raw_html);
-$raw_text = spintax($raw_text);
-
 $raw_html = resolve_platform_conditional($raw_html, $scam_platform);
-$raw_text = resolve_platform_conditional($raw_text, $scam_platform);
 $raw_subj = resolve_platform_conditional($raw_subj, $scam_platform);
 
 // Strip any remaining unmatched conditional tags (e.g. stray {{/if}} or unclosed {{#if scam_platform}})
 $_cond_rx  = '/\{\{#if\s+scam_platform\}\}|\{\{else\}\}|\{\{\/if\}\}/';
 $raw_html  = preg_replace($_cond_rx, '', $raw_html);
-$raw_text  = preg_replace($_cond_rx, '', $raw_text);
 $raw_subj  = preg_replace($_cond_rx, '', $raw_subj);
 
 $subject   = str_replace(array_keys($vars), array_values($vars), $raw_subj);
 $body_html = str_replace(array_keys($vars), array_values($vars), $raw_html);
-$body_text = str_replace(array_keys($vars), array_values($vars), $raw_text);
 
 // ── Inject click-tracking wrapper around links ────────────────────────────────
 $click_token = $recipient['click_token'] ?? '';
@@ -282,24 +273,14 @@ try {
     $mail->setFrom($account['from_email'] ?: $account['username'], $account['from_name'] ?: $company_name);
     $mail->addAddress($recipient['email'], $recipient['name'] ?: '');
     $mail->Subject = $subject;
-    // If body_html is empty (e.g. old template without HTML body), generate a minimal
-    // HTML wrapper around the plain-text body so emails are always sent as HTML.
-    if (empty($body_html) && !empty($body_text)) {
-        $body_html = '<!DOCTYPE html><html lang="de"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>' . htmlspecialchars($subject) . '</title>'
-            . '<style>body{font-family:Helvetica Neue,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.8;color:#374151;background:#f2f4f7;margin:0;padding:20px}'
-            . '.wrap{max-width:600px;margin:0 auto;background:#fff;padding:32px 40px;border-radius:10px;box-shadow:0 2px 12px rgba(0,0,0,.08)}'
-            . 'p{margin:0 0 14px}a{color:#0d2744}</style></head><body>'
-            . '<div class="wrap">' . nl2br(htmlspecialchars($body_text)) . '</div>'
-            . '</body></html>';
-    }
     if (!empty($body_html)) {
         $mail->isHTML(true);
         $mail->Body    = $body_html;
-        $mail->AltBody = $body_text ?: strip_tags($body_html);
+        $mail->AltBody = strip_tags($body_html);
     } else {
-        // No body at all – send as plain text
+        // No HTML body – send minimal plain text
         $mail->isHTML(false);
-        $mail->Body = $body_text;
+        $mail->Body = strip_tags($subject);
     }
 
     // ── Anti-spam headers ─────────────────────────────────────────────────────
