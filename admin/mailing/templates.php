@@ -241,7 +241,7 @@ HTML;
                                     <button type="button" class="btn btn-link btn-sm p-0" onclick="loadDefault()">Standard-Template laden</button>
                                 </label>
                                 <textarea name="body_html" id="bodyHtml" class="form-control font-monospace"
-                                          rows="18" style="font-size:12px"><?= htmlspecialchars($edit['body_html'] ?? $default_html) ?></textarea>
+                                          rows="18" style="font-size:12px"><?= htmlspecialchars($edit['body_html'] ?: $default_html) ?></textarea>
                                 <div class="form-text">Verfügbare Variablen: <span class="template-vars">
                                     <code>{{name}}</code> <code>{{email}}</code>
                                     <code>{{company_name}}</code> <code>{{site_url}}</code>

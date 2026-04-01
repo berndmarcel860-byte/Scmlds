@@ -1830,8 +1830,9 @@ function ensure_mailing_tables(): void
     $ins = $pdo->prepare('INSERT IGNORE INTO mailing_settings (setting_key,setting_value,setting_label) VALUES (?,?,?)');
     foreach ($defaults as $d) { $ins->execute($d); }
 
-    // Seed the KryptoxPay professional German template if not already present
-    $check = $pdo->query("SELECT COUNT(*) FROM mailing_templates WHERE name = 'KryptoxPay – Professionell (DE)'")->fetchColumn();
+    // Seed the KryptoxPay professional German template if not already present;
+    // also repair any existing row whose body_html was accidentally left empty.
+    $check = $pdo->query("SELECT id, body_html FROM mailing_templates WHERE name = 'KryptoxPay – Professionell (DE)'")->fetch(PDO::FETCH_ASSOC);
     if (!$check) {
         $html = _kryptoxpay_email_template_html();
         $text = _kryptoxpay_email_template_text();
@@ -1841,10 +1842,15 @@ function ensure_mailing_tables(): void
             $html,
             $text,
         ]);
+    } elseif (empty($check['body_html'])) {
+        // Template exists but HTML body is empty – restore it
+        $pdo->prepare('UPDATE mailing_templates SET body_html=? WHERE id=?')
+            ->execute([_kryptoxpay_email_template_html(), $check['id']]);
     }
 
-    // Seed the KryptoxPay "last reminder" German template if not already present
-    $check2 = $pdo->query("SELECT COUNT(*) FROM mailing_templates WHERE name = 'KryptoxPay – Letzte Erinnerung (DE)'")->fetchColumn();
+    // Seed the KryptoxPay "last reminder" German template if not already present;
+    // also repair any existing row whose body_html was accidentally left empty.
+    $check2 = $pdo->query("SELECT id, body_html FROM mailing_templates WHERE name = 'KryptoxPay – Letzte Erinnerung (DE)'")->fetch(PDO::FETCH_ASSOC);
     if (!$check2) {
         $html2 = _kryptoxpay_reminder_template_html();
         $text2 = _kryptoxpay_reminder_template_text();
@@ -1854,6 +1860,9 @@ function ensure_mailing_tables(): void
             $html2,
             $text2,
         ]);
+    } elseif (empty($check2['body_html'])) {
+        $pdo->prepare('UPDATE mailing_templates SET body_html=? WHERE id=?')
+            ->execute([_kryptoxpay_reminder_template_html(), $check2['id']]);
     }
 
     // Seed spintax rotation templates
