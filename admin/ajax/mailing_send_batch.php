@@ -221,21 +221,18 @@ function resolve_platform_conditional(string $tpl, string $platform): string {
 }
 
 $raw_html = $campaign['body_html'] ?? '';
-$raw_text = $campaign['body_text'] ?? '';
 $raw_subj = $campaign['subject']   ?? '';
 
-// ── Spintax resolution (must run BEFORE variable substitution) ────────────────
-$raw_subj = spintax($raw_subj);
-$raw_html = spintax($raw_html);
-$raw_text = spintax($raw_text);
-
 $raw_html = resolve_platform_conditional($raw_html, $scam_platform);
-$raw_text = resolve_platform_conditional($raw_text, $scam_platform);
 $raw_subj = resolve_platform_conditional($raw_subj, $scam_platform);
+
+// Strip any remaining unmatched conditional tags (e.g. stray {{/if}} or unclosed {{#if scam_platform}})
+$_cond_rx  = '/\{\{#if\s+scam_platform\}\}|\{\{else\}\}|\{\{\/if\}\}/';
+$raw_html  = preg_replace($_cond_rx, '', $raw_html);
+$raw_subj  = preg_replace($_cond_rx, '', $raw_subj);
 
 $subject   = str_replace(array_keys($vars), array_values($vars), $raw_subj);
 $body_html = str_replace(array_keys($vars), array_values($vars), $raw_html);
-$body_text = str_replace(array_keys($vars), array_values($vars), $raw_text);
 
 // ── Inject click-tracking wrapper around links ────────────────────────────────
 $click_token = $recipient['click_token'] ?? '';
@@ -276,9 +273,17 @@ try {
     $mail->setFrom($account['from_email'] ?: $account['username'], $account['from_name'] ?: $company_name);
     $mail->addAddress($recipient['email'], $recipient['name'] ?: '');
     $mail->Subject = $subject;
-    $mail->isHTML(true);
-    $mail->Body    = $body_html;
-    $mail->AltBody = $body_text ?: strip_tags($body_html);
+    if (!empty($body_html)) {
+        $mail->isHTML(true);
+        $mail->Body    = $body_html;
+        $mail->AltBody = strip_tags($body_html);
+    } else {
+        // No HTML body – fall back to plain-text body_text if available
+        $raw_text = $campaign['body_text'] ?? '';
+        $body_text_fallback = str_replace(array_keys($vars), array_values($vars), $raw_text);
+        $mail->isHTML(false);
+        $mail->Body = !empty($body_text_fallback) ? $body_text_fallback : strip_tags($subject);
+    }
 
     // ── Anti-spam headers ─────────────────────────────────────────────────────
     // List-Unsubscribe: reduces spam score and gives providers a machine-readable opt-out
@@ -314,6 +319,18 @@ try {
     $pdo->prepare('UPDATE mailing_campaigns SET failed=failed+1 WHERE id=:id')
         ->execute([':id' => $campaign_id]);
     $failed_now = 1;
+
+    // On SMTP failure, force-rotate to the next account so we don't keep
+    // hammering a broken account on every subsequent request.
+    if (count($accounts) > 1) {
+        $next_idx        = ($account_idx + 1) % count($accounts);
+        $next_account    = $accounts[$next_idx];
+        $pdo->prepare('UPDATE mailing_campaigns SET current_smtp_account_id=:aid, current_smtp_batch_count=0 WHERE id=:cid')
+            ->execute([':aid' => $next_account['id'], ':cid' => $campaign_id]);
+        $current_smtp_id = $next_account['id'];
+        $account         = $next_account;
+        $rotated         = true;
+    }
 }
 
 // ── Return response ───────────────────────────────────────────────────────────
@@ -324,7 +341,7 @@ echo json_encode([
     'error_detail'    => $error_msg,
     'active_smtp_id'  => $current_smtp_id,
     'account_label'   => $account['label'] ?: $account['from_email'],
-    'account_rotated' => false,
+    'account_rotated' => $rotated,
     'sent'            => $stats['sent'],
     'failed'          => $stats['failed'],
     'pending'         => $stats['pending'],
