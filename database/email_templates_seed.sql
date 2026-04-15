@@ -663,6 +663,227 @@ SET body_html = CONCAT(
 WHERE (body_html IS NULL OR body_html = '') AND body_text IS NOT NULL AND body_text != '';
 
 -- =============================================================
+-- ERSTKONTAKT – Cold Outreach (First Contact)
+-- -------------------------------------------------------------
+-- Purpose : Kaltakquise / cold first-contact to potential
+--           victims of online-investment fraud.
+-- Design  : Spam-filter-safe subject + body (avoids trigger
+--           words; uses professional, empathetic German copy),
+--           trust-building credential strip, single CTA,
+--           P.S. nudge, GDPR-compliant footer.
+-- =============================================================
+INSERT IGNORE INTO mailing_templates (name, subject, body_html, body_text)
+SELECT
+  'Erstkontakt – Kaltakquise (Cold Outreach)',
+
+  -- Subject line: personal, question-based, no spam-trigger words
+  '{{name}}, kurze Anfrage zu Ihren Online-Investitionen',
+
+  -- ── HTML body ──────────────────────────────────────────────────
+  '<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<title>KryptoxPay</title>
+<style>
+  body,table,td,a{-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%}
+  table,td{mso-table-lspace:0pt;mso-table-rspace:0pt}
+  body{margin:0;padding:0;background:#f0f3f7;font-family:''Helvetica Neue'',Helvetica,Arial,sans-serif}
+  table{border-collapse:collapse}
+  img{border:0;line-height:100%;outline:none;text-decoration:none}
+  .wrapper{width:100%;background:#f0f3f7;padding:30px 0}
+  .card{max-width:600px;margin:0 auto;background:#ffffff;border-radius:10px;overflow:hidden;box-shadow:0 2px 14px rgba(0,0,0,.09)}
+  .hd{background:#0d2744;padding:28px 40px;text-align:center}
+  .hd-logo{font-size:23px;font-weight:700;color:#ffffff;text-decoration:none;display:block;letter-spacing:-0.5px}
+  .hd-logo span{color:#f0a500}
+  .hd-tag{margin:5px 0 0;font-size:11px;color:#7fa8d4;letter-spacing:1.2px;text-transform:uppercase}
+  .trust{background:#eef4fb;border-bottom:1px solid #d6e4f0;padding:10px 40px;text-align:center;font-size:12px;color:#3a5a80}
+  .trust strong{color:#0d2744}
+  .bd{padding:34px 40px;color:#374151;font-size:15px;line-height:1.85}
+  .bd h2{margin:0 0 16px;font-size:19px;color:#0d2744;font-weight:700}
+  .bd p{margin:0 0 14px}
+  .bd ul{padding-left:20px;margin:0 0 16px}
+  .bd ul li{margin-bottom:7px}
+  .highlight{background:#f8f3e3;border-left:3px solid #f0a500;padding:12px 18px;margin:16px 0;border-radius:0 4px 4px 0}
+  .highlight p{margin:0;font-size:14px;color:#6b4c00}
+  .divider{height:1px;background:#e8edf2;margin:22px 0}
+  .cta{text-align:center;margin:28px 0}
+  .btn{display:inline-block;background:#0d6efd;color:#ffffff !important;padding:14px 38px;border-radius:6px;font-size:15px;font-weight:700;text-decoration:none;letter-spacing:0.2px}
+  .ps-box{background:#fffbeb;border:1px solid #fde68a;border-radius:6px;padding:14px 18px;margin-top:18px}
+  .ps-box p{margin:0;font-size:13px;color:#92400e}
+  .ft{background:#f8f9fb;padding:18px 40px;text-align:center;font-size:12px;color:#6b7280;border-top:1px solid #e8edf2}
+  .ft p{margin:0 0 5px}
+  .ft a{color:#6b7280;text-decoration:underline}
+  @media only screen and (max-width:620px){
+    .card{border-radius:0!important}
+    .bd,.hd,.ft,.trust{padding:22px 18px!important}
+  }
+</style>
+</head>
+<body>
+<div class="wrapper">
+<table width="100%" cellpadding="0" cellspacing="0" role="presentation">
+<tr><td align="center">
+<table class="card" width="600" cellpadding="0" cellspacing="0" role="presentation">
+
+  <!-- Header -->
+  <tr><td class="hd">
+    <a href="https://kryptoxpay.co.uk" class="hd-logo">Kryptox<span>Pay</span></a>
+    <p class="hd-tag">Asset Recovery &amp; Digitale Finanzberatung</p>
+  </td></tr>
+
+  <!-- Trust strip -->
+  <tr><td class="trust">
+    &#9733; <strong>Gepr&uuml;ftes Beratungsunternehmen</strong> &nbsp;&middot;&nbsp;
+    DSGVO-konform &nbsp;&middot;&nbsp; Vertrauliche Behandlung aller Anfragen
+  </td></tr>
+
+  <!-- Body -->
+  <tr><td class="bd">
+    <h2>Sehr geehrte/r {{name}},</h2>
+
+    <p>mein Name ist <strong>{{sender_name}}</strong> vom KryptoxPay-Beratungsteam.
+    Ich schreibe Ihnen, weil uns Informationen vorliegen, die im Zusammenhang
+    mit Ihrer m&ouml;glichen Erfahrung auf Online-Investitionsplattformen
+    von Bedeutung sein k&ouml;nnten.</p>
+
+    {{#if scam_platform}}
+    <div class="highlight">
+      <p>&#9432;&nbsp; Im Zusammenhang mit <strong>{{scam_platform}}</strong>
+      sind uns &auml;hnliche F&auml;lle bekannt. Wir pr&uuml;fen Ihre
+      individuelle Situation vollst&auml;ndig unverbindlich.</p>
+    </div>
+    {{/if}}
+
+    <p>Viele Menschen, die &uuml;ber unseri&ouml;se Online-Plattformen
+    finanzielle Einbu&szlig;en erlitten haben, wissen nicht, welche
+    Handlungsm&ouml;glichkeiten ihnen noch offenstehen.
+    Genau dabei m&ouml;chten wir Ihnen helfen &ndash;
+    ohne Druck und ohne versteckte Kosten.</p>
+
+    <div class="divider"></div>
+
+    <p><strong>Was wir Ihnen anbieten:</strong></p>
+    <ul>
+      <li>Pers&ouml;nliches Erstgespr&auml;ch ohne Honorar</li>
+      <li>Vertrauliche Pr&uuml;fung Ihrer Unterlagen und Transaktionen</li>
+      <li>Einsch&auml;tzung Ihrer rechtlichen und praktischen M&ouml;glichkeiten</li>
+      <li>Transparente Kommunikation auf Augenh&ouml;he</li>
+    </ul>
+
+    <p>Es entstehen Ihnen durch das Erstgespr&auml;ch
+    <strong>keinerlei Verpflichtungen</strong>.
+    Sie entscheiden selbst, ob und wie Sie weitermachen m&ouml;chten.</p>
+
+    <div class="cta">
+      <a href="https://kryptoxpay.co.uk?utm_source=email&amp;utm_campaign=erstkontakt&amp;utm_medium=cta" class="btn">
+        Unverbindlich Kontakt aufnehmen
+      </a>
+    </div>
+
+    <div class="divider"></div>
+
+    <p>Falls Sie Fragen haben oder lieber zun&auml;chst per E-Mail antworten
+    m&ouml;chten, k&ouml;nnen Sie mir direkt auf diese Nachricht schreiben.
+    Ich melde mich pers&ouml;nlich bei Ihnen.</p>
+
+    <p>Mit freundlichen Gr&uuml;&szlig;en,<br>
+    <strong style="color:#0d2744">{{sender_name}}</strong><br>
+    KryptoxPay &ndash; Asset Recovery &amp; Beratung<br>
+    <a href="https://kryptoxpay.co.uk" style="color:#0d6efd">kryptoxpay.co.uk</a></p>
+
+    <div class="ps-box">
+      <p><strong>P.S.</strong> &nbsp;Unser Erstgespr&auml;ch ist
+      f&uuml;r Sie ohne Kosten und ohne Verpflichtung.
+      Viele unserer Klienten berichten, dass bereits das erste
+      Gespr&auml;ch Klarheit gebracht hat &ndash; unabh&auml;ngig vom weiteren Verlauf.</p>
+    </div>
+  </td></tr>
+
+  <!-- Footer -->
+  <tr><td class="ft">
+    <p>
+      KryptoxPay Ltd &nbsp;&middot;&nbsp;
+      <a href="https://kryptoxpay.co.uk">kryptoxpay.co.uk</a> &nbsp;&middot;&nbsp;
+      info@kryptoxpay.co.uk
+    </p>
+    <p>
+      <a href="{{unsubscribe_url}}">Abmelden</a> &nbsp;&middot;&nbsp;
+      <a href="https://kryptoxpay.co.uk/datenschutz">Datenschutz</a> &nbsp;&middot;&nbsp;
+      <a href="https://kryptoxpay.co.uk/impressum">Impressum</a>
+    </p>
+    <p>Sie erhalten diese Nachricht, da Ihre Kontaktdaten im Zusammenhang
+    mit Online-Finanzdienstleistungen registriert wurden.<br>
+    Dieses Angebot richtet sich ausschlie&szlig;lich an Personen ab 18 Jahren.<br>
+    DSGVO-konform &nbsp;&middot;&nbsp; Alle Daten werden vertraulich behandelt.</p>
+    {{open_tracker}}
+  </td></tr>
+
+</table>
+</td></tr>
+</table>
+</div>
+</body>
+</html>',
+
+  -- ── Plain-text body ────────────────────────────────────────────
+  'Sehr geehrte/r {{name}},
+
+mein Name ist {{sender_name}} vom KryptoxPay-Beratungsteam.
+Ich schreibe Ihnen, weil uns Informationen vorliegen, die im Zusammenhang
+mit Ihrer möglichen Erfahrung auf Online-Investitionsplattformen
+von Bedeutung sein könnten.
+
+{{#if scam_platform}}
+Im Zusammenhang mit {{scam_platform}} sind uns ähnliche Fälle bekannt.
+Wir prüfen Ihre individuelle Situation vollständig unverbindlich.
+{{/if}}
+
+Viele Menschen, die über unseriöse Online-Plattformen finanzielle Einbußen
+erlitten haben, wissen nicht, welche Handlungsmöglichkeiten ihnen noch
+offenstehen. Genau dabei möchten wir Ihnen helfen – ohne Druck und
+ohne versteckte Kosten.
+
+Was wir Ihnen anbieten:
+- Persönliches Erstgespräch ohne Honorar
+- Vertrauliche Prüfung Ihrer Unterlagen und Transaktionen
+- Einschätzung Ihrer rechtlichen und praktischen Möglichkeiten
+- Transparente Kommunikation auf Augenhöhe
+
+Es entstehen Ihnen durch das Erstgespräch keinerlei Verpflichtungen.
+Sie entscheiden selbst, ob und wie Sie weitermachen möchten.
+
+Kontakt aufnehmen: https://kryptoxpay.co.uk?utm_source=email&utm_campaign=erstkontakt&utm_medium=cta
+
+Falls Sie Fragen haben oder lieber per E-Mail antworten möchten, schreiben
+Sie mir direkt auf diese Nachricht. Ich melde mich persönlich bei Ihnen.
+
+Mit freundlichen Grüßen,
+{{sender_name}}
+KryptoxPay – Asset Recovery & Beratung
+https://kryptoxpay.co.uk
+
+P.S. Unser Erstgespräch ist für Sie ohne Kosten und ohne Verpflichtung.
+Viele unserer Klienten berichten, dass bereits das erste Gespräch Klarheit
+gebracht hat – unabhängig vom weiteren Verlauf.
+
+---
+Sie erhalten diese Nachricht, da Ihre Kontaktdaten im Zusammenhang mit
+Online-Finanzdienstleistungen registriert wurden.
+Abmelden: {{unsubscribe_url}}
+Datenschutz: https://kryptoxpay.co.uk/datenschutz
+Impressum: https://kryptoxpay.co.uk/impressum
+KryptoxPay Ltd – info@kryptoxpay.co.uk – kryptoxpay.co.uk'
+
+FROM DUAL
+WHERE NOT EXISTS (
+  SELECT 1 FROM mailing_templates WHERE name = 'Erstkontakt – Kaltakquise (Cold Outreach)'
+);
+
+
+-- =============================================================
 -- How to run this sequence in a campaign
 -- =============================================================
 -- 1. Create four campaigns (one per template):
