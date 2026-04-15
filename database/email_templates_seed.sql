@@ -883,6 +883,165 @@ WHERE NOT EXISTS (
 );
 
 
+-- -------------------------------------------------------------
+-- NACHFASS – Re-Engagement (für Nicht-Öffner / Nicht-Klicker)
+-- Send ~5–7 days after Erstkontakt to contacts with 0 opens AND 0 clicks
+-- -------------------------------------------------------------
+INSERT IGNORE INTO mailing_templates (name, subject, body_html, body_text)
+SELECT
+  'Nachfass – Kein Öffnen / Kein Klick (Re-Engagement)',
+
+  -- Subject line (plain, curiosity-driven, no spam trigger words)
+  '{{name}}, eine kurze Frage noch',
+
+  -- ── HTML body ──────────────────────────────────────────────────
+  '<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<title>KryptoxPay</title>
+<style>
+  body,table,td,a{-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%}
+  body{margin:0;padding:0;background:#f2f4f7;font-family:''Helvetica Neue'',Helvetica,Arial,sans-serif}
+  table{border-collapse:collapse}
+  img{border:0;line-height:100%;outline:none;text-decoration:none}
+  .wrapper{width:100%;background:#f2f4f7;padding:30px 0}
+  .card{max-width:600px;margin:0 auto;background:#ffffff;border-radius:10px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.08)}
+  .hd{background:#0d2744;padding:28px 40px;text-align:center}
+  .hd-logo{font-size:22px;font-weight:700;color:#ffffff;text-decoration:none;display:block}
+  .hd-logo span{color:#f0a500}
+  .hd-tag{margin:5px 0 0;font-size:11px;color:#7fa8d4;letter-spacing:1px;text-transform:uppercase}
+  .bd{padding:32px 40px;color:#374151;font-size:15px;line-height:1.8}
+  .bd h2{margin:0 0 16px;font-size:19px;color:#0d2744;font-weight:700}
+  .bd p{margin:0 0 14px}
+  .divider{height:1px;background:#e8edf2;margin:20px 0}
+  .cta{text-align:center;margin:26px 0}
+  .btn{display:inline-block;background:#f0a500;color:#ffffff !important;padding:14px 36px;border-radius:6px;font-size:15px;font-weight:700;text-decoration:none}
+  .ft{background:#f8f9fb;padding:18px 40px;text-align:center;font-size:12px;color:#6b7280}
+  .ft a{color:#6b7280}
+  @media only screen and (max-width:620px){
+    .card{border-radius:0 !important}
+    .bd,.ft{padding:24px 20px !important}
+    .btn{display:block !important;text-align:center}
+  }
+</style>
+</head>
+<body>
+<div class="wrapper">
+<table role="presentation" cellpadding="0" cellspacing="0" width="100%"><tr><td>
+<div class="card">
+
+  <!-- Header -->
+  <div class="hd">
+    <a href="https://kryptoxpay.co.uk?utm_source=email&utm_campaign=nachfass" class="hd-logo">Kryptox<span>Pay</span></a>
+    <p class="hd-tag">Asset Recovery &amp; Beratung</p>
+  </div>
+
+  <!-- Body -->
+  <div class="bd">
+    <h2>Vielleicht hat meine letzte Nachricht Sie nicht erreicht</h2>
+
+    <p>Guten Tag{{#if name}}, {{name}}{{/if}},</p>
+
+    <p>vor einigen Tagen habe ich Ihnen eine Nachricht geschickt – zum Thema
+    {{#if scam_platform}}Ihrer Erfahrungen mit <strong>{{scam_platform}}</strong>{{else}}
+    möglicher Wege, verloren gegangene Online-Investitionen zu prüfen{{/if}}.</p>
+
+    <p>Da ich noch keine Rückmeldung erhalten habe, möchte ich kurz nachhaken –
+    nicht um Sie zu drängen, sondern weil ich weiß, wie viel Frustration und
+    Unsicherheit in solchen Situationen zurückbleiben kann.</p>
+
+    <p>Unser kostenfreies Erstgespräch gibt Ihnen konkrete Antworten darauf,
+    welche Optionen Sie realistisch haben. Kein Versprechen, kein Druck –
+    nur ein ehrliches Gespräch.</p>
+
+    <div class="divider"></div>
+
+    <div class="cta">
+      <a href="https://kryptoxpay.co.uk/kontakt?utm_source=email&utm_campaign=nachfass&utm_content=cta_btn"
+         class="btn">Jetzt kostenfrei Termin vereinbaren</a>
+    </div>
+
+    <p style="font-size:13px;color:#6b7280;text-align:center">
+      Oder antworten Sie einfach direkt auf diese E-Mail – ich melde mich persönlich bei Ihnen.
+    </p>
+
+    <div class="divider"></div>
+
+    <p>Mit freundlichen Grüßen,<br>
+    <strong>{{sender_name}}</strong><br>
+    KryptoxPay – Asset Recovery &amp; Beratung<br>
+    <a href="https://kryptoxpay.co.uk" style="color:#0d2744">kryptoxpay.co.uk</a></p>
+
+    <p style="font-size:13px;color:#6b7280;margin-top:10px">
+      P.S. Falls Sie diese E-Mail irrtümlich erhalten haben oder keine weiteren
+      Nachrichten wünschen, können Sie sich jederzeit
+      <a href="{{unsubscribe_url}}" style="color:#6b7280">hier abmelden</a>.
+    </p>
+  </div>
+
+  <!-- Footer -->
+  <div class="ft">
+    <p style="margin:0 0 6px">
+      Sie erhalten diese Nachricht, da Ihre Kontaktdaten im Zusammenhang mit
+      Online-Finanzdienstleistungen registriert wurden.
+    </p>
+    <p style="margin:0 0 6px">
+      <a href="{{unsubscribe_url}}">Abmelden</a> &nbsp;|&nbsp;
+      <a href="https://kryptoxpay.co.uk/datenschutz">Datenschutz</a> &nbsp;|&nbsp;
+      <a href="https://kryptoxpay.co.uk/impressum">Impressum</a>
+    </p>
+    <p style="margin:0">KryptoxPay Ltd &ndash; info@kryptoxpay.co.uk</p>
+  </div>
+
+</div>
+</td></tr></table>
+</div>
+<!-- open tracker -->
+{{open_tracker}}
+</body>
+</html>',
+
+  -- ── Plain-text body ────────────────────────────────────────────
+  'Vielleicht hat meine letzte Nachricht Sie nicht erreicht
+=========================================================
+
+Guten Tag{{#if name}}, {{name}}{{/if}},
+
+vor einigen Tagen habe ich Ihnen geschrieben – zum Thema
+{{#if scam_platform}}Ihrer Erfahrungen mit {{scam_platform}}{{else}}
+möglicher Wege, verloren gegangene Online-Investitionen zu prüfen{{/if}}.
+
+Da ich noch keine Rückmeldung erhalten habe, möchte ich kurz nachhaken.
+Kein Druck – nur ein ehrliches Angebot: Unser kostenfreies Erstgespräch
+gibt Ihnen konkrete Antworten darauf, welche Optionen Sie realistisch haben.
+
+► Kostenfrei Termin vereinbaren:
+https://kryptoxpay.co.uk/kontakt?utm_source=email&utm_campaign=nachfass&utm_content=text_link
+
+Oder antworten Sie einfach auf diese E-Mail – ich melde mich persönlich.
+
+Mit freundlichen Grüßen,
+{{sender_name}}
+KryptoxPay – Asset Recovery & Beratung
+https://kryptoxpay.co.uk
+
+---
+Sie erhalten diese Nachricht, da Ihre Kontaktdaten im Zusammenhang mit
+Online-Finanzdienstleistungen registriert wurden.
+Abmelden: {{unsubscribe_url}}
+Datenschutz: https://kryptoxpay.co.uk/datenschutz
+Impressum: https://kryptoxpay.co.uk/impressum
+KryptoxPay Ltd – info@kryptoxpay.co.uk – kryptoxpay.co.uk'
+
+FROM DUAL
+WHERE NOT EXISTS (
+  SELECT 1 FROM mailing_templates WHERE name = 'Nachfass – Kein Öffnen / Kein Klick (Re-Engagement)'
+);
+
+
 -- =============================================================
 -- How to run this sequence in a campaign
 -- =============================================================
@@ -892,15 +1051,20 @@ WHERE NOT EXISTS (
 --      Day 6  → template 'Follow-up Sequence – Day 6 (Reminder)'
 --      Day 10 → template 'Follow-up Sequence – Day 10 (Last Touch)'
 --
--- 2. Each campaign: set status='draft', load the same recipient list.
+-- 2. Erstkontakt cold-outreach:
+--      Day 0  → template 'Erstkontakt – Kaltakquise (Cold Outreach)'
+--      Day 5–7 (no open AND no click) → 'Nachfass – Kein Öffnen / Kein Klick (Re-Engagement)'
 --
--- 3. Use the admin scheduler (or cron) to start each campaign:
+-- 3. Each campaign: set status='draft', load the same recipient list.
+--    For the Nachfass campaign filter the recipient list to
+--    contacts where opens=0 AND clicks=0 since the Erstkontakt send.
+--
+-- 4. Use the admin scheduler (or cron) to start each campaign:
 --      UPDATE mailing_campaigns SET status='running', started_at=NOW()
---      WHERE name='Follow-up Sequence – Day 1 (Initial)';
---    … and repeat for subsequent days.
+--      WHERE name='Nachfass – Kein Öffnen / Kein Klick (Re-Engagement)';
 --
--- 4. The PHP spintax() engine randomly resolves A at send time.
+-- 5. The PHP spintax() engine randomly resolves A at send time.
 --    Every recipient gets a different variation → avoids pattern detection.
 --
--- 5. Rotate SMTP accounts via mailing_smtp_accounts to spread load.
+-- 6. Rotate SMTP accounts via mailing_smtp_accounts to spread load.
 -- =============================================================
