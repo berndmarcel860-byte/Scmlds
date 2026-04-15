@@ -170,6 +170,8 @@ $smtp_count = count(get_mailing_smtp_accounts(true));
                                 <a href="index.php?action=pause&id=<?= $c['id'] ?>" class="btn btn-warning btn-sm"><i class="bi bi-pause-fill"></i></a>
                                 <?php elseif (in_array($c['status'], ['draft','paused'])): ?>
                                 <a href="index.php?action=start&id=<?= $c['id'] ?>" class="btn btn-success btn-sm"><i class="bi bi-play-fill"></i> Starten</a>
+                                <?php elseif ($c['status'] === 'completed' && $c['sent'] > 0): ?>
+                                <a href="stats.php?id=<?= $c['id'] ?>#followupModal" class="btn btn-warning btn-sm" title="Nachfass-Kampagne"><i class="bi bi-reply-all"></i></a>
                                 <?php endif; ?>
                                 <a href="stats.php?id=<?= $c['id'] ?>" class="btn btn-outline-info btn-sm"><i class="bi bi-bar-chart"></i></a>
                                 <a href="campaign_edit.php?id=<?= $c['id'] ?>" class="btn btn-outline-secondary btn-sm"><i class="bi bi-pencil"></i></a>

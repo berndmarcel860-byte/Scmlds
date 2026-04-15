@@ -14,6 +14,29 @@ if (!$cid) { header('Location: index.php'); exit; }
 $campaign = get_mailing_campaign($cid);
 if (!$campaign) { header('Location: index.php'); exit; }
 
+// ── Handle follow-up campaign creation ────────────────────────────────────────
+$msg      = '';
+$msg_type = 'success';
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'create_followup') {
+    $fu_name    = trim($_POST['followup_name'] ?? '');
+    $fu_tid     = (int) ($_POST['followup_template_id'] ?? 0);
+    $fu_segment = in_array($_POST['followup_segment'] ?? '', ['no_click', 'no_open']) ? $_POST['followup_segment'] : 'no_click';
+    if (empty($fu_name)) {
+        $msg_type = 'danger';
+        $msg = 'Bitte geben Sie einen Namen für die Nachfass-Kampagne an.';
+    } else {
+        $new_cid = create_followup_campaign($cid, $fu_name, $fu_tid ?: 0, $fu_segment);
+        if ($new_cid) {
+            header('Location: campaign_edit.php?id=' . $new_cid . '&created=1');
+            exit;
+        } else {
+            $msg_type = 'warning';
+            $msg = 'Keine passenden Empfänger für die gewählte Filterung gefunden (alle haben bereits geklickt / geöffnet), oder Kampagne konnte nicht erstellt werden.';
+        }
+    }
+}
+
 $stats = get_campaign_stats($cid);
 $settings = get_all_mailing_settings();
 
@@ -72,10 +95,22 @@ $bounce_rate  = $bounce_base > 0 ? round($stats['bounced'] / $bounce_base * 100,
                 </p>
             </div>
             <div class="d-flex gap-2">
+                <?php if ($stats['sent'] > 0): ?>
+                <button type="button" class="btn btn-warning btn-sm" data-bs-toggle="modal" data-bs-target="#followupModal">
+                    <i class="bi bi-reply-all me-1"></i>Nachfass-Kampagne
+                </button>
+                <?php endif; ?>
                 <a href="campaign_edit.php?id=<?= $cid ?>" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left me-1"></i>Kampagne</a>
                 <a href="index.php" class="btn btn-outline-secondary btn-sm">Alle Kampagnen</a>
             </div>
         </div>
+
+        <?php if ($msg): ?>
+        <div class="alert alert-<?= $msg_type ?> alert-dismissible fade show" role="alert">
+            <?= htmlspecialchars($msg) ?>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        <?php endif; ?>
 
         <!-- KPI cards -->
         <div class="row g-3 mb-4">
@@ -467,5 +502,102 @@ if (count(array_filter($advice, fn($a) => $a['type'] === 'danger')) === 0
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+// Auto-open the follow-up modal if the URL hash is #followupModal
+if (window.location.hash === '#followupModal') {
+    document.addEventListener('DOMContentLoaded', function () {
+        var el = document.getElementById('followupModal');
+        if (el) { new bootstrap.Modal(el).show(); }
+    });
+}
+</script>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     Nachfass-Kampagne Modal
+     ═══════════════════════════════════════════════════════════════════ -->
+<?php
+$templates = get_mailing_templates();
+// Count non-clickers for info display
+$pdo_fu = db_connect();
+$nc_stmt = $pdo_fu->prepare('SELECT COUNT(*) FROM mailing_recipients WHERE campaign_id=:cid AND email_validity="valid" AND status="sent" AND clicked_at IS NULL');
+$nc_stmt->execute([':cid' => $cid]);
+$no_click_count = (int) $nc_stmt->fetchColumn();
+$no_stmt = $pdo_fu->prepare('SELECT COUNT(*) FROM mailing_recipients WHERE campaign_id=:cid AND email_validity="valid" AND status="sent" AND opened_at IS NULL AND clicked_at IS NULL');
+$no_stmt->execute([':cid' => $cid]);
+$no_open_count = (int) $no_stmt->fetchColumn();
+?>
+<div class="modal fade" id="followupModal" tabindex="-1" aria-labelledby="followupModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <form method="post" action="stats.php?id=<?= $cid ?>">
+        <input type="hidden" name="action" value="create_followup">
+        <div class="modal-header">
+          <h5 class="modal-title fw-bold" id="followupModalLabel">
+            <i class="bi bi-reply-all me-2 text-warning"></i>Nachfass-Kampagne erstellen
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Schließen"></button>
+        </div>
+        <div class="modal-body">
+          <p class="text-muted small">
+            Eine neue Kampagne wird erstellt und mit den Empfängern befüllt, die in <strong><?= htmlspecialchars($campaign['name']) ?></strong> noch nicht auf den Link geklickt haben.
+          </p>
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Zielgruppe (Segment)</label>
+            <div class="d-flex gap-3">
+              <div class="form-check">
+                <input class="form-check-input" type="radio" name="followup_segment" id="seg_no_click" value="no_click" checked>
+                <label class="form-check-label" for="seg_no_click">
+                  Kein Klick
+                  <span class="badge bg-warning-subtle text-warning ms-1"><?= number_format($no_click_count) ?></span>
+                </label>
+              </div>
+              <div class="form-check">
+                <input class="form-check-input" type="radio" name="followup_segment" id="seg_no_open" value="no_open">
+                <label class="form-check-label" for="seg_no_open">
+                  Nicht geöffnet &amp; kein Klick
+                  <span class="badge bg-secondary-subtle text-secondary ms-1"><?= number_format($no_open_count) ?></span>
+                </label>
+              </div>
+            </div>
+            <div class="form-text">Die Empfängeranzahl wird beim Erstellen der Kampagne aktualisiert.</div>
+          </div>
+
+          <div class="mb-3">
+            <label for="followup_name" class="form-label fw-semibold">Name der Nachfass-Kampagne <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" id="followup_name" name="followup_name"
+                   value="Nachfass: <?= htmlspecialchars($campaign['name']) ?>" required>
+          </div>
+
+          <div class="mb-3">
+            <label for="followup_template_id" class="form-label fw-semibold">Template</label>
+            <select class="form-select" id="followup_template_id" name="followup_template_id">
+              <option value="0">— Gleiches Template wie Original-Kampagne —</option>
+              <?php foreach ($templates as $t): ?>
+              <option value="<?= $t['id'] ?>" <?= $t['id'] == $campaign['template_id'] ? 'selected' : '' ?>>
+                <?= htmlspecialchars($t['name']) ?>
+              </option>
+              <?php endforeach; ?>
+            </select>
+            <div class="form-text">Optional: anderes Template wählen (z.B. für eine neue Betreffzeile).</div>
+          </div>
+
+          <?php if ($no_click_count === 0): ?>
+          <div class="alert alert-success d-flex align-items-center gap-2 mb-0">
+            <i class="bi bi-check-circle-fill"></i>
+            <div>Alle Empfänger haben bereits geklickt – keine Nachfass-Kandidaten vorhanden.</div>
+          </div>
+          <?php endif; ?>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Abbrechen</button>
+          <button type="submit" class="btn btn-warning" <?= $no_click_count === 0 ? 'disabled' : '' ?>>
+            <i class="bi bi-reply-all me-1"></i>Nachfass-Kampagne erstellen
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
 </body>
 </html>

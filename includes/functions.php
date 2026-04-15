@@ -1784,6 +1784,90 @@ function record_mailing_click(string $token): ?string
 }
 
 /**
+ * Create a follow-up campaign from recipients of an existing campaign who have not clicked.
+ *
+ * @param  int    $source_cid       ID of the original campaign.
+ * @param  string $new_name         Name for the new follow-up campaign.
+ * @param  int    $template_id      Template to use (0 = re-use original campaign template).
+ * @param  string $segment          'no_click' (sent but no click) or 'no_open' (sent but no open or click).
+ * @return int|false                New campaign ID, or false on failure.
+ */
+function create_followup_campaign(int $source_cid, string $new_name, int $template_id = 0, string $segment = 'no_click'): int|false
+{
+    $pdo = db_connect();
+
+    // Resolve template: fall back to source campaign template
+    if (!$template_id) {
+        $src = $pdo->prepare('SELECT template_id FROM mailing_campaigns WHERE id=:id');
+        $src->execute([':id' => $source_cid]);
+        $row = $src->fetch(PDO::FETCH_ASSOC);
+        if (!$row) return false;
+        $template_id = (int) $row['template_id'];
+    }
+
+    // Create the new campaign
+    $new_id = create_mailing_campaign($new_name, $template_id);
+    if (!$new_id) return false;
+
+    // Select recipients: sent + valid, excluding those who already clicked (or opened+clicked)
+    if ($segment === 'no_open') {
+        // No open AND no click
+        $sel = $pdo->prepare(
+            'SELECT email, name, scam_platform, email_validity
+             FROM mailing_recipients
+             WHERE campaign_id = :cid
+               AND email_validity = "valid"
+               AND status = "sent"
+               AND opened_at IS NULL
+               AND clicked_at IS NULL'
+        );
+    } else {
+        // Default: no click (may or may not have opened)
+        $sel = $pdo->prepare(
+            'SELECT email, name, scam_platform, email_validity
+             FROM mailing_recipients
+             WHERE campaign_id = :cid
+               AND email_validity = "valid"
+               AND status = "sent"
+               AND clicked_at IS NULL'
+        );
+    }
+    $sel->execute([':cid' => $source_cid]);
+    $rows = $sel->fetchAll(PDO::FETCH_ASSOC);
+
+    if (empty($rows)) {
+        // No matching recipients – remove the empty campaign and return false
+        delete_mailing_campaign($new_id);
+        return false;
+    }
+
+    // Import as recipients of the new campaign (new tokens generated per recipient)
+    $ins = $pdo->prepare(
+        'INSERT IGNORE INTO mailing_recipients (campaign_id, email, name, scam_platform, email_validity, open_token, click_token)
+         VALUES (:cid, :em, :nm, :sp, :ev, :tok, :ctok)'
+    );
+    foreach ($rows as $r) {
+        $ins->execute([
+            ':cid'  => $new_id,
+            ':em'   => $r['email'],
+            ':nm'   => $r['name'],
+            ':sp'   => $r['scam_platform'],
+            ':ev'   => $r['email_validity'],
+            ':tok'  => bin2hex(random_bytes(16)),
+            ':ctok' => bin2hex(random_bytes(16)),
+        ]);
+    }
+
+    // Sync campaign total
+    $pdo->prepare(
+        'UPDATE mailing_campaigns SET total=(SELECT COUNT(*) FROM mailing_recipients WHERE campaign_id=:cid AND email_validity="valid") WHERE id=:cid2'
+    )->execute([':cid' => $new_id, ':cid2' => $new_id]);
+
+    log_activity('mailing_followup_created', "Follow-up campaign #$new_id created from campaign #$source_cid ($segment)");
+    return $new_id;
+}
+
+/**
  * Seed default mailing data.
  * Schema (CREATE TABLE / ALTER TABLE) is managed by database/migrate.sql.
  */
