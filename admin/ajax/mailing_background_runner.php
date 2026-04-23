@@ -78,7 +78,7 @@ use PHPMailer\PHPMailer\Exception as MailException;
 // ── Load settings once (they won't change during a run) ──────────────────────
 $emails_per_account  = max(1, (int) get_mailing_setting('emails_per_account', '5'));
 $pause_email_ms      = max(500, (int) get_mailing_setting('pause_between_emails_ms', '3000'));
-$pause_account_ms    = max(1000, (int) get_mailing_setting('pause_between_accounts_ms', '15000'));
+$pause_account_ms    = max(1000, (int) get_mailing_setting('pause_between_accounts_ms', '300000'));
 $track_opens         = (int) get_mailing_setting('track_opens', '0');
 $site_url            = get_setting('site_url', 'https://verlustrueckholung.de');
 $company_name        = get_setting('company_name', 'VerlustRückholung');

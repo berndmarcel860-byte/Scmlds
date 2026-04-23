@@ -60,6 +60,8 @@ if ($campaign['status'] !== 'running') {
 
 // ── Load settings ─────────────────────────────────────────────────────────────
 $emails_per_account  = max(1, (int) get_mailing_setting('emails_per_account', '5'));
+$pause_email_ms      = max(500,  (int) get_mailing_setting('pause_between_emails_ms',   '3000'));
+$pause_account_ms    = max(1000, (int) get_mailing_setting('pause_between_accounts_ms', '300000'));
 $track_opens         = (int) get_mailing_setting('track_opens', '0');
 $site_url            = get_setting('site_url', 'https://verlustrueckholung.de');
 $company_name        = get_setting('company_name', 'VerlustRückholung');
@@ -361,6 +363,8 @@ echo json_encode([
     'pending'         => $stats['pending'],
     'done'            => false,
     'no_pending'      => false,
+    'pause_email_ms'  => $pause_email_ms,
+    'pause_account_ms'=> $pause_account_ms,
     'status_text'     => sprintf('Gesendet: %d / %d | Fehler: %d | Account: %s',
         $stats['sent'], $stats['total'], $stats['failed'],
         $account['label'] ?: $account['from_email']),

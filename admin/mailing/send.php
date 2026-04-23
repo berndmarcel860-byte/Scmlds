@@ -290,8 +290,9 @@ async function startSending() {
                 log(`${data.failed_now} fehlgeschlagen${errDetail}`, 'log-err');
             }
             if (data.account_rotated) {
-                const nextLabel = data.account_label || `SMTP #${data.active_smtp_id}`;
-                await countdown(PAUSE_ACCT, `SMTP-Account gewechselt zu: ${nextLabel}. Pause`, 'log-warn');
+                const nextLabel   = data.account_label || `SMTP #${data.active_smtp_id}`;
+                const pauseAcctMs = data.pause_account_ms ?? PAUSE_ACCT;
+                await countdown(pauseAcctMs, `SMTP-Account gewechselt zu: ${nextLabel}. Pause`, 'log-warn');
                 // Auto-sync warmup after account rotation
                 syncWarmup();
                 continue;
@@ -307,7 +308,8 @@ async function startSending() {
             }
 
             // Countdown pause between emails
-            await countdown(PAUSE_EMAIL, 'Nächste E-Mail in', 'log-info');
+            const pauseEmailMs = data.pause_email_ms ?? PAUSE_EMAIL;
+            await countdown(pauseEmailMs, 'Nächste E-Mail in', 'log-info');
         } catch(e) {
             log('⚠️ Netzwerkfehler: ' + e.message, 'log-err');
             await countdown(5000, 'Wiederholung in', 'log-warn');
