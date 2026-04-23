@@ -272,6 +272,25 @@ while (true) {
             ->execute([':id' => $campaign_id]);
 
         $consecutive_failures = 0;
+        $batch_count++;
+
+        // If batch limit is now reached, rotate immediately and apply the
+        // account-rotation pause — no separate per-email pause is needed.
+        // This prevents the double-pause (pause_email + pause_account) that
+        // would otherwise occur when emails_per_account = 1.
+        if ($batch_count >= $emails_per_account) {
+            $next_idx        = ($account_idx + 1) % count($accounts);
+            $account         = $accounts[$next_idx];
+            $account_idx     = $next_idx;
+            $current_smtp_id = $account['id'];
+            $pdo->prepare('UPDATE mailing_campaigns SET current_smtp_account_id=:aid, current_smtp_batch_count=0 WHERE id=:cid')
+                ->execute([':aid' => $current_smtp_id, ':cid' => $campaign_id]);
+            usleep($pause_account_ms * 1000);
+        } else {
+            // Still within the same account's batch — use the shorter inter-email pause.
+            usleep($pause_email_ms * 1000);
+        }
+        continue;
 
     } catch (MailException $e) {
         $error_msg = $e->getMessage();
@@ -299,7 +318,7 @@ while (true) {
         }
     }
 
-    // Pause between emails
+    // Fallback pause (reached only when: single-account SMTP error, no consecutive-fail abort)
     usleep($pause_email_ms * 1000);
 }
 

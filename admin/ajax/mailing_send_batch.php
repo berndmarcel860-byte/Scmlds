@@ -311,6 +311,20 @@ try {
 
     $sent_now = 1;
 
+    // If the batch limit is now reached, rotate to the next account immediately.
+    // This way the browser only needs to apply PAUSE_ACCT once instead of
+    // PAUSE_EMAIL + PAUSE_ACCT (the double-pause that occurred when rotation
+    // was deferred to the next call).
+    if (($batch_count + 1) >= $emails_per_account) {
+        $next_idx        = ($account_idx + 1) % count($accounts);
+        $account         = $accounts[$next_idx];
+        $account_idx     = $next_idx;
+        $current_smtp_id = $account['id'];
+        $pdo->prepare('UPDATE mailing_campaigns SET current_smtp_account_id=:aid, current_smtp_batch_count=0 WHERE id=:cid')
+            ->execute([':aid' => $current_smtp_id, ':cid' => $campaign_id]);
+        $rotated = true;
+    }
+
 } catch (MailException $e) {
     $error_msg = $e->getMessage();
     // Mark failed
