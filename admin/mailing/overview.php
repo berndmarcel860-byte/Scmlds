@@ -76,11 +76,10 @@ foreach ($ranges as $label => $cond) {
 // ── 3. Hourly volume for chart (last 24h, sent + open + click per hour) ────────
 $hourly_rows = $pdo->query(
     "SELECT
-        CONCAT(LPAD(HOUR(sent_at), 2, '0'), ':00') AS hour_label,
-        HOUR(sent_at)                              AS hr,
-        COUNT(*)                                   AS sent,
-        SUM(opened_at IS NOT NULL)                 AS opened,
-        SUM(clicked_at IS NOT NULL)                AS clicked
+        HOUR(sent_at)              AS hr,
+        COUNT(*)                   AS sent,
+        SUM(opened_at IS NOT NULL) AS opened,
+        SUM(clicked_at IS NOT NULL) AS clicked
      FROM mailing_recipients
      WHERE status = 'sent'
        AND email_validity = 'valid'
@@ -117,7 +116,7 @@ $daily_rows = $pdo->query(
      WHERE status = 'sent'
        AND email_validity = 'valid'
        AND sent_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
-     GROUP BY DATE(sent_at)
+     GROUP BY DATE(sent_at), DATE_FORMAT(DATE(sent_at), '%d.%m')
      ORDER BY day_date ASC"
 )->fetchAll(PDO::FETCH_ASSOC);
 
