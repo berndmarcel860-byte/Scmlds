@@ -76,16 +76,16 @@ foreach ($ranges as $label => $cond) {
 // ── 3. Hourly volume for chart (last 24h, sent + open + click per hour) ────────
 $hourly_rows = $pdo->query(
     "SELECT
-        DATE_FORMAT(sent_at, '%H:00') AS hour_label,
-        HOUR(sent_at)                 AS hr,
-        COUNT(*)                      AS sent,
-        SUM(opened_at IS NOT NULL)    AS opened,
-        SUM(clicked_at IS NOT NULL)   AS clicked
+        CONCAT(LPAD(HOUR(sent_at), 2, '0'), ':00') AS hour_label,
+        HOUR(sent_at)                              AS hr,
+        COUNT(*)                                   AS sent,
+        SUM(opened_at IS NOT NULL)                 AS opened,
+        SUM(clicked_at IS NOT NULL)                AS clicked
      FROM mailing_recipients
      WHERE status = 'sent'
        AND email_validity = 'valid'
        AND sent_at >= DATE_SUB(NOW(), INTERVAL 24 HOUR)
-     GROUP BY HOUR(sent_at), DATE_FORMAT(sent_at, '%H:00')
+     GROUP BY HOUR(sent_at)
      ORDER BY hr ASC"
 )->fetchAll(PDO::FETCH_ASSOC);
 
@@ -108,16 +108,16 @@ for ($h = 0; $h < 24; $h++) {
 // ── 4. Daily volume for chart (last 30 days) ───────────────────────────────────
 $daily_rows = $pdo->query(
     "SELECT
-        DATE_FORMAT(sent_at, '%d.%m') AS day_label,
-        DATE(sent_at)                 AS day_date,
-        COUNT(*)                      AS sent,
-        SUM(opened_at IS NOT NULL)    AS opened,
-        SUM(clicked_at IS NOT NULL)   AS clicked
+        DATE_FORMAT(DATE(sent_at), '%d.%m') AS day_label,
+        DATE(sent_at)                       AS day_date,
+        COUNT(*)                            AS sent,
+        SUM(opened_at IS NOT NULL)          AS opened,
+        SUM(clicked_at IS NOT NULL)         AS clicked
      FROM mailing_recipients
      WHERE status = 'sent'
        AND email_validity = 'valid'
        AND sent_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
-     GROUP BY DATE(sent_at), DATE_FORMAT(sent_at, '%d.%m')
+     GROUP BY DATE(sent_at)
      ORDER BY day_date ASC"
 )->fetchAll(PDO::FETCH_ASSOC);
 
