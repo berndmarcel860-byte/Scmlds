@@ -607,27 +607,37 @@ function get_leads(array $filters = [], int $page = 1, int $per_page = 20): arra
     $params = [];
 
     if (!empty($filters['status'])) {
-        $where[] = 'status = :status';
+        $where[] = 'l.status = :status';
         $params[':status'] = $filters['status'];
     }
     if (!empty($filters['search'])) {
-        $where[] = '(first_name LIKE :s OR last_name LIKE :s OR email LIKE :s OR phone LIKE :s)';
+        $where[] = '(l.first_name LIKE :s OR l.last_name LIKE :s OR l.email LIKE :s OR l.phone LIKE :s)';
         $params[':s'] = '%' . $filters['search'] . '%';
     }
     if (!empty($filters['category'])) {
-        $where[] = 'platform_category = :cat';
+        $where[] = 'l.platform_category = :cat';
         $params[':cat'] = $filters['category'];
     }
 
     $whereSQL = implode(' AND ', $where);
     $offset = ($page - 1) * $per_page;
 
-    $countStmt = $pdo->prepare("SELECT COUNT(*) FROM leads WHERE $whereSQL");
+    $countStmt = $pdo->prepare("SELECT COUNT(*) FROM leads l WHERE $whereSQL");
     $countStmt->execute($params);
     $total = (int) $countStmt->fetchColumn();
 
     $stmt = $pdo->prepare(
-        "SELECT * FROM leads WHERE $whereSQL ORDER BY created_at DESC LIMIT :limit OFFSET :offset"
+        "SELECT l.*,
+            (SELECT c.name
+             FROM mailing_recipients mr
+             JOIN mailing_campaigns c ON c.id = mr.campaign_id
+             WHERE mr.email = l.email
+             ORDER BY mr.id DESC LIMIT 1) AS campaign_name,
+            (SELECT mr.campaign_id
+             FROM mailing_recipients mr
+             WHERE mr.email = l.email
+             ORDER BY mr.id DESC LIMIT 1) AS campaign_id
+         FROM leads l WHERE $whereSQL ORDER BY l.created_at DESC LIMIT :limit OFFSET :offset"
     );
     foreach ($params as $k => $v) {
         $stmt->bindValue($k, $v);
