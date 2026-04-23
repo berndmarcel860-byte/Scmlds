@@ -117,7 +117,7 @@ $daily_rows = $pdo->query(
      WHERE status = 'sent'
        AND email_validity = 'valid'
        AND sent_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
-     GROUP BY DATE(sent_at)
+     GROUP BY DATE(sent_at), DATE_FORMAT(sent_at, '%d.%m')
      ORDER BY day_date ASC"
 )->fetchAll(PDO::FETCH_ASSOC);
 
