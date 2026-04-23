@@ -18,6 +18,12 @@ if (!$campaign) { header('Location: index.php'); exit; }
 $stats    = get_campaign_stats($cid);
 $settings = get_all_mailing_settings();
 $accounts = get_mailing_smtp_accounts(true);
+
+// Load auto_send_active flag
+$_pdo_s = db_connect();
+$_bg_row = $_pdo_s->prepare('SELECT auto_send_active FROM mailing_campaigns WHERE id=:id');
+$_bg_row->execute([':id' => $cid]);
+$auto_send_active = (int) ($_bg_row->fetchColumn() ?? 0);
 ?>
 <!DOCTYPE html>
 <html lang="de">
@@ -100,12 +106,19 @@ $accounts = get_mailing_smtp_accounts(true);
                             <?= $campaign['status'] === 'running' ? 'Bereit zum Versand.' : ucfirst($campaign['status']) ?>
                         </p>
 
-                        <div class="d-flex gap-2">
+                        <div class="d-flex gap-2 flex-wrap">
                             <button id="btnStart" class="btn btn-success" <?= $campaign['status'] !== 'running' ? 'disabled' : '' ?> onclick="startSending()">
-                                <i class="bi bi-play-fill me-1"></i>Versand starten
+                                <i class="bi bi-play-fill me-1"></i>Browser-Modus
+                            </button>
+                            <button id="btnStartBg" class="btn btn-primary" <?= ($campaign['status'] !== 'running' || $auto_send_active) ? 'disabled' : '' ?> onclick="startBackground()"
+                                title="Läuft weiter, auch wenn der Browser-Tab geschlossen wird">
+                                <i class="bi bi-server me-1"></i><?= $auto_send_active ? 'Läuft im Hintergrund…' : 'Hintergrund-Modus' ?>
                             </button>
                             <button id="btnStop" class="btn btn-warning" style="display:none" onclick="stopSending()">
                                 <i class="bi bi-pause-fill me-1"></i>Pausieren
+                            </button>
+                            <button id="btnStopBg" class="btn btn-danger <?= $auto_send_active ? '' : 'd-none' ?>" onclick="stopBackground()">
+                                <i class="bi bi-stop-fill me-1"></i>Hintergrund stoppen
                             </button>
                             <a href="stats.php?id=<?= $cid ?>" class="btn btn-outline-info ms-auto">
                                 <i class="bi bi-bar-chart me-1"></i>Statistiken
@@ -117,6 +130,18 @@ $accounts = get_mailing_smtp_accounts(true);
                             <i class="bi bi-info-circle me-1"></i>
                             Kampagne muss den Status "running" haben.
                             <a href="../index.php?action=start&id=<?= $cid ?>">Jetzt starten</a>.
+                        </div>
+                        <?php elseif ($auto_send_active): ?>
+                        <div class="alert alert-success mt-3 small">
+                            <i class="bi bi-server me-1"></i>
+                            Hintergrund-Modus aktiv. Der Versand läuft auf dem Server weiter, auch wenn Sie diesen Tab schließen.
+                            Klicken Sie "Hintergrund stoppen", um den Versand zu beenden.
+                        </div>
+                        <?php else: ?>
+                        <div class="alert alert-secondary mt-3 small">
+                            <i class="bi bi-info-circle me-1"></i>
+                            <strong>Browser-Modus:</strong> Versand läuft solange dieser Tab offen ist.<br>
+                            <strong>Hintergrund-Modus:</strong> Versand läuft auf dem Server weiter, auch nach Tab-Schließen.
                         </div>
                         <?php endif; ?>
                     </div>
@@ -197,10 +222,17 @@ const CAMPAIGN_ID  = <?= $cid ?>;
 const TOTAL        = <?= $stats['total'] ?>;
 const PAUSE_EMAIL  = <?= (int)($settings['pause_between_emails_ms'] ?? 3000) ?>;
 const PAUSE_ACCT   = <?= (int)($settings['pause_between_accounts_ms'] ?? 15000) ?>;
+const AUTO_ACTIVE_INIT = <?= $auto_send_active ? 'true' : 'false' ?>;
 
 let running  = false;
 let stopping = false;
 let _cdSeq   = 0;   // monotonic counter for countdown line IDs
+let _bgPollInterval = null;
+
+// ── Background mode polling (if already running on page load) ─────────────────
+if (AUTO_ACTIVE_INIT) {
+    startBgPolling();
+}
 
 function log(msg, cls = '') {
     const el  = document.getElementById('sendLog');
@@ -331,6 +363,89 @@ function syncWarmup() {
             log(`🔥 IP-Warmup: ${d.synced} Account(s) für heute synchronisiert.`, 'log-info');
         }
     }).catch(() => {});
+}
+
+// ── Background mode ───────────────────────────────────────────────────────────
+
+async function startBackground() {
+    const btn = document.getElementById('btnStartBg');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Starten…';
+
+    try {
+        const res = await fetch('../ajax/mailing_background_runner.php', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+            body: 'campaign_id=' + CAMPAIGN_ID
+        });
+        const data = await res.json();
+        if (data.error) {
+            log('Hintergrund-Fehler: ' + data.error, 'log-err');
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-server me-1"></i>Hintergrund-Modus';
+            return;
+        }
+        log('🖥️ Hintergrund-Modus gestartet. Versand läuft auf dem Server.', 'log-info');
+        btn.innerHTML = '<i class="bi bi-server me-1"></i>Läuft im Hintergrund…';
+        document.getElementById('btnStopBg').classList.remove('d-none');
+        startBgPolling();
+    } catch (e) {
+        log('Netzwerkfehler: ' + e.message, 'log-err');
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-server me-1"></i>Hintergrund-Modus';
+    }
+}
+
+async function stopBackground() {
+    await fetch('../ajax/mailing_runner_stop.php', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        body: 'campaign_id=' + CAMPAIGN_ID
+    });
+    log('⏹️ Hintergrund-Modus gestoppt.', 'log-warn');
+    stopBgPolling();
+    document.getElementById('btnStartBg').disabled = false;
+    document.getElementById('btnStartBg').innerHTML = '<i class="bi bi-server me-1"></i>Hintergrund-Modus';
+    document.getElementById('btnStopBg').classList.add('d-none');
+}
+
+function startBgPolling() {
+    if (_bgPollInterval) return;
+    _bgPollInterval = setInterval(pollBgStatus, 5000);
+    log('📡 Polling aktiv (alle 5 s)…', 'log-info');
+}
+
+function stopBgPolling() {
+    if (_bgPollInterval) {
+        clearInterval(_bgPollInterval);
+        _bgPollInterval = null;
+    }
+}
+
+async function pollBgStatus() {
+    try {
+        const res  = await fetch('../ajax/mailing_runner_status.php?campaign_id=' + CAMPAIGN_ID);
+        const data = await res.json();
+        if (data.error) return;
+
+        updateStats({
+            sent: data.sent, failed: data.failed, pending: data.pending,
+            status_text: `Hintergrund: gesendet ${data.sent}/${data.total} | Fehler: ${data.failed}`
+        });
+
+        if (!data.auto_send_active) {
+            // Runner finished or was stopped
+            stopBgPolling();
+            document.getElementById('btnStartBg').disabled = false;
+            document.getElementById('btnStartBg').innerHTML = '<i class="bi bi-server me-1"></i>Hintergrund-Modus';
+            document.getElementById('btnStopBg').classList.add('d-none');
+            if (data.campaign_status === 'completed') {
+                log('✅ Hintergrund-Versand abgeschlossen!', 'log-info');
+            } else {
+                log('ℹ️ Hintergrund-Modus beendet.', 'log-info');
+            }
+        }
+    } catch (e) { /* network hiccup, ignore */ }
 }
 
 function sleep(ms) {

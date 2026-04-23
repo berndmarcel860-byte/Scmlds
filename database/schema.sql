@@ -366,6 +366,7 @@ CREATE TABLE IF NOT EXISTS mailing_campaigns (
     opens        INT UNSIGNED  NOT NULL DEFAULT 0,
     current_smtp_account_id INT DEFAULT NULL,
     current_smtp_batch_count INT UNSIGNED NOT NULL DEFAULT 0,
+    auto_send_active TINYINT(1) NOT NULL DEFAULT 0,
     created_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     started_at   DATETIME DEFAULT NULL,
     finished_at  DATETIME DEFAULT NULL,
