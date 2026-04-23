@@ -150,19 +150,15 @@ while (true) {
     // Rotate account if batch limit reached
     if ($batch_count >= $emails_per_account) {
         $next_idx        = ($account_idx + 1) % count($accounts);
-        $account_changed = ($next_idx !== $account_idx);
         $account         = $accounts[$next_idx];
         $account_idx     = $next_idx;
         $current_smtp_id = $account['id'];
         $pdo->prepare('UPDATE mailing_campaigns SET current_smtp_account_id=:aid, current_smtp_batch_count=0 WHERE id=:cid')
             ->execute([':aid' => $current_smtp_id, ':cid' => $campaign_id]);
-        if ($account_changed) {
-            // Account rotation pause only when actually switching to a different account
-            usleep($pause_account_ms * 1000);
-            continue;
-        }
-        // Only one SMTP account configured: reset counter and fall through to send
-        $batch_count = 0;
+        // Always apply the account-rotation pause (even with a single SMTP account)
+        // so that configured cooldown between re-uses of the same account is respected.
+        usleep($pause_account_ms * 1000);
+        continue;
     }
 
     // Pick next pending recipient

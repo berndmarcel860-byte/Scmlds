@@ -76,15 +76,21 @@ foreach ($ranges as $label => $cond) {
 // ── 3. Hourly volume for chart (last 24h, sent + open + click per hour) ────────
 $hourly_rows = $pdo->query(
     "SELECT
-        HOUR(sent_at)              AS hr,
+        hr,
         COUNT(*)                   AS sent,
         SUM(opened_at IS NOT NULL) AS opened,
         SUM(clicked_at IS NOT NULL) AS clicked
-     FROM mailing_recipients
-     WHERE status = 'sent'
-       AND email_validity = 'valid'
-       AND sent_at >= DATE_SUB(NOW(), INTERVAL 24 HOUR)
-     GROUP BY HOUR(sent_at)
+     FROM (
+         SELECT
+             HOUR(sent_at) AS hr,
+             opened_at,
+             clicked_at
+         FROM mailing_recipients
+         WHERE status = 'sent'
+           AND email_validity = 'valid'
+           AND sent_at >= DATE_SUB(NOW(), INTERVAL 24 HOUR)
+     ) sub
+     GROUP BY hr
      ORDER BY hr ASC"
 )->fetchAll(PDO::FETCH_ASSOC);
 
