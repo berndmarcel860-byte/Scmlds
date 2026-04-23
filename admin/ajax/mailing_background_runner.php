@@ -84,6 +84,47 @@ $site_url            = get_setting('site_url', 'https://verlustrueckholung.de');
 $company_name        = get_setting('company_name', 'VerlustRückholung');
 $unsubscribe_base    = rtrim(get_mailing_setting('unsubscribe_url', '') ?: $site_url, '/');
 
+/**
+ * Sleep for $ms milliseconds in ≤1-second chunks.
+ *
+ * A single large usleep() call is silently truncated when any OS signal
+ * (SIGALRM, SIGCHLD, etc.) fires — PHP never retries the interrupted sleep.
+ * By looping over 950 ms chunks we ensure the full configured pause elapses
+ * regardless of signals.  Every 30 s the campaign stop-flag is re-checked so
+ * very long pauses (e.g. 1 h between accounts) can be interrupted promptly
+ * when the user clicks "Stop"; the periodic query also keeps the MySQL
+ * connection alive across the sleep.
+ *
+ * @return bool false → campaign was stopped mid-pause; true → full pause done.
+ */
+function bg_pause_ms(int $ms, PDO &$pdo, int $cid): bool
+{
+    $target     = microtime(true) + $ms / 1000.0;
+    $last_check = 0.0;
+    while (($left = $target - microtime(true)) > 0) {
+        usleep(min(950000, (int) ($left * 1e6)));
+        $now = microtime(true);
+        if ($now - $last_check >= 30) {
+            $last_check = $now;
+            try {
+                $st = $pdo->prepare('SELECT auto_send_active, status FROM mailing_campaigns WHERE id=:id');
+                $st->execute([':id' => $cid]);
+                $row = $st->fetch(PDO::FETCH_ASSOC);
+            } catch (Throwable $e) {
+                // Connection dropped during long sleep — reconnect
+                $pdo = db_connect();
+                $st  = $pdo->prepare('SELECT auto_send_active, status FROM mailing_campaigns WHERE id=:id');
+                $st->execute([':id' => $cid]);
+                $row = $st->fetch(PDO::FETCH_ASSOC);
+            }
+            if (!$row || !$row['auto_send_active'] || $row['status'] !== 'running') {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
 // Resolve {{#if scam_platform}}…{{else}}…{{/if}} conditional blocks
 function _bg_resolve_platform_conditional(string $tpl, string $platform): string {
     $tpl = preg_replace_callback(
