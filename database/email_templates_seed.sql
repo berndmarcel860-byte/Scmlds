@@ -1043,6 +1043,407 @@ WHERE NOT EXISTS (
 
 
 -- =============================================================
+-- ERSTKONTAKT VARIANTE B – Empathie-Ansatz (Softer tone)
+-- Purpose : Alternative cold-first-contact with a softer,
+--           empathy-first tone; avoids urgency triggers that
+--           can score poorly in spam filters.
+-- Spam-filter safe: no "Geld verdienen", no "kostenlos" in subject,
+--           no ALL-CAPS, no excessive exclamation marks.
+-- =============================================================
+INSERT IGNORE INTO mailing_templates (name, subject, body_html, body_text)
+SELECT
+  'Erstkontakt B – Empathie (Soft Touch)',
+
+  '{{name}}, eine Frage zu Ihrer Erfahrung mit Online-Investitionen',
+
+  '<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<title>KryptoxPay</title>
+<style>
+  body,table,td,a{-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%}
+  body{margin:0;padding:0;background:#f5f7fa;font-family:''Helvetica Neue'',Helvetica,Arial,sans-serif}
+  table{border-collapse:collapse}
+  img{border:0;line-height:100%;outline:none;text-decoration:none}
+  .wrapper{width:100%;background:#f5f7fa;padding:32px 0}
+  .card{max-width:600px;margin:0 auto;background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 2px 16px rgba(0,0,0,.08)}
+  .hd{background:#1b3d6b;padding:28px 40px 24px;text-align:center}
+  .hd-logo{font-size:22px;font-weight:700;color:#fff;text-decoration:none;display:block}
+  .hd-logo span{color:#f0a500}
+  .hd-tag{margin:5px 0 0;font-size:11px;color:#89afd4;letter-spacing:1.2px;text-transform:uppercase}
+  .intro-strip{background:#eaf3ff;border-bottom:1px solid #d0e3f5;padding:10px 40px;text-align:center;font-size:12px;color:#2c5282}
+  .bd{padding:34px 40px;color:#374151;font-size:15px;line-height:1.9}
+  .bd h2{margin:0 0 18px;font-size:20px;color:#1b3d6b;font-weight:700}
+  .bd p{margin:0 0 15px}
+  .bd ul{padding-left:20px;margin:0 0 16px}
+  .bd ul li{margin-bottom:8px}
+  .quote-box{background:#f8f9fb;border-left:3px solid #1b3d6b;padding:14px 20px;margin:18px 0;border-radius:0 6px 6px 0;font-style:italic;color:#4b5563;font-size:14px}
+  .divider{height:1px;background:#e8edf2;margin:24px 0}
+  .cta{text-align:center;margin:28px 0}
+  .btn{display:inline-block;background:#1b3d6b;color:#ffffff !important;padding:14px 38px;border-radius:6px;font-size:15px;font-weight:700;text-decoration:none}
+  .ft{background:#f8f9fb;padding:18px 40px;text-align:center;font-size:12px;color:#6b7280;border-top:1px solid #e8edf2}
+  .ft p{margin:0 0 5px}
+  .ft a{color:#6b7280;text-decoration:underline}
+  @media only screen and (max-width:620px){
+    .card{border-radius:0!important}
+    .bd,.hd,.ft,.intro-strip{padding:22px 18px!important}
+  }
+</style>
+</head>
+<body>
+<div class="wrapper">
+<table width="100%" cellpadding="0" cellspacing="0" role="presentation">
+<tr><td align="center">
+<table class="card" width="600" cellpadding="0" cellspacing="0" role="presentation">
+
+  <tr><td class="hd">
+    <a href="https://kryptoxpay.co.uk" class="hd-logo">Kryptox<span>Pay</span></a>
+    <p class="hd-tag">Unabh&auml;ngige Finanzberatung &amp; Asset Recovery</p>
+  </td></tr>
+
+  <tr><td class="intro-strip">
+    Vertraulich &nbsp;&middot;&nbsp; DSGVO-konform &nbsp;&middot;&nbsp; Keine Verpflichtung
+  </td></tr>
+
+  <tr><td class="bd">
+    <h2>Guten Tag, {{name}},</h2>
+
+    <p>ich bin <strong>{{sender_name}}</strong> vom Beratungsteam von KryptoxPay.
+    Ich m&ouml;chte Ihnen heute schreiben &ndash; nicht um Ihnen etwas zu verkaufen,
+    sondern weil wir glauben, dass Sie m&ouml;glicherweise n&uuml;tzliche
+    Informationen von uns erhalten k&ouml;nnten.</p>
+
+    {{#if scam_platform}}
+    <p>Uns liegen Hinweise vor, dass im Zusammenhang mit
+    <strong>{{scam_platform}}</strong> Anleger in einer
+    &auml;hnlichen Situation wie Ihrer sind. Wir haben bereits mehreren
+    Betroffenen geholfen, Klarheit &uuml;ber ihre Optionen zu gewinnen.</p>
+    {{else}}
+    <p>Viele Menschen, die Online-Investitionsplattformen genutzt haben,
+    stellen sp&auml;ter fest, dass ihnen wichtige Informationen &uuml;ber
+    ihre rechtlichen und praktischen M&ouml;glichkeiten gefehlt haben.</p>
+    {{/if}}
+
+    <div class="quote-box">
+      &bdquo;Das erste Gespr&auml;ch mit KryptoxPay hat mir mehr Klarheit gebracht
+      als Monate eigener Recherche. Ich w&uuml;nschte, ich h&auml;tte fr&uuml;her
+      gefragt.&ldquo;<br><em style="font-size:12px;color:#9ca3af">&ndash; anonymisiertes Klientenfeedback</em>
+    </div>
+
+    <div class="divider"></div>
+
+    <p><strong>Was wir konkret anbieten:</strong></p>
+    <ul>
+      <li>Pers&ouml;nliches Gespr&auml;ch &ndash; ohne Kosten, ohne Vorbedingungen</li>
+      <li>Ehrliche Einsch&auml;tzung Ihrer individuellen Situation</li>
+      <li>Informationen &uuml;ber realistische M&ouml;glichkeiten</li>
+      <li>Diskreter und vertraulicher Umgang mit Ihren Daten</li>
+    </ul>
+
+    <p>Es entstehen Ihnen <strong>keine Kosten</strong> durch ein erstes Gespr&auml;ch.
+    Sie entscheiden am Ende selbst, ob Sie weitermachen m&ouml;chten.</p>
+
+    <div class="cta">
+      <a href="https://kryptoxpay.co.uk?utm_source=email&amp;utm_campaign=erstkontakt_b&amp;utm_medium=cta"
+         class="btn">Unverbindlich Kontakt aufnehmen</a>
+    </div>
+
+    <div class="divider"></div>
+
+    <p>Sie k&ouml;nnen mir auch direkt auf diese E-Mail antworten &ndash;
+    ich lese und beantworte jede Nachricht pers&ouml;nlich.</p>
+
+    <p>Mit freundlichen Gr&uuml;&szlig;en,<br>
+    <strong style="color:#1b3d6b">{{sender_name}}</strong><br>
+    KryptoxPay &ndash; Unabh&auml;ngige Finanzberatung<br>
+    <a href="https://kryptoxpay.co.uk" style="color:#1b3d6b">kryptoxpay.co.uk</a></p>
+  </td></tr>
+
+  <tr><td class="ft">
+    <p>KryptoxPay Ltd &nbsp;&middot;&nbsp;
+       <a href="https://kryptoxpay.co.uk">kryptoxpay.co.uk</a> &nbsp;&middot;&nbsp;
+       info@kryptoxpay.co.uk</p>
+    <p><a href="{{unsubscribe_url}}">Abmelden</a> &nbsp;&middot;&nbsp;
+       <a href="https://kryptoxpay.co.uk/datenschutz">Datenschutz</a> &nbsp;&middot;&nbsp;
+       <a href="https://kryptoxpay.co.uk/impressum">Impressum</a></p>
+    <p>Sie erhalten diese Nachricht, da Ihre Kontaktdaten im Zusammenhang mit
+    Online-Finanzdienstleistungen erfasst wurden.<br>
+    Nur f&uuml;r Personen ab 18 Jahren &nbsp;&middot;&nbsp; DSGVO-konform</p>
+    {{open_tracker}}
+  </td></tr>
+
+</table>
+</td></tr>
+</table>
+</div>
+</body>
+</html>',
+
+  'Guten Tag, {{name}},
+
+ich bin {{sender_name}} vom Beratungsteam von KryptoxPay.
+Ich möchte Ihnen heute schreiben – nicht um Ihnen etwas zu verkaufen,
+sondern weil wir glauben, dass Sie möglicherweise nützliche
+Informationen von uns erhalten könnten.
+
+{{#if scam_platform}}
+Uns liegen Hinweise vor, dass im Zusammenhang mit {{scam_platform}}
+Anleger in einer ähnlichen Situation wie Ihrer sind. Wir haben bereits
+mehreren Betroffenen geholfen, Klarheit über ihre Optionen zu gewinnen.
+{{else}}
+Viele Menschen, die Online-Investitionsplattformen genutzt haben,
+stellen später fest, dass ihnen wichtige Informationen über ihre
+rechtlichen und praktischen Möglichkeiten gefehlt haben.
+{{/if}}
+
+"Das erste Gespräch mit KryptoxPay hat mir mehr Klarheit gebracht
+als Monate eigener Recherche. Ich wünschte, ich hätte früher gefragt."
+– anonymisiertes Klientenfeedback
+
+Was wir konkret anbieten:
+- Persönliches Gespräch – ohne Kosten, ohne Vorbedingungen
+- Ehrliche Einschätzung Ihrer individuellen Situation
+- Informationen über realistische Möglichkeiten
+- Diskreter und vertraulicher Umgang mit Ihren Daten
+
+Es entstehen Ihnen keine Kosten durch ein erstes Gespräch.
+Sie entscheiden am Ende selbst, ob Sie weitermachen möchten.
+
+Kontakt aufnehmen:
+https://kryptoxpay.co.uk?utm_source=email&utm_campaign=erstkontakt_b&utm_medium=cta
+
+Sie können mir auch direkt auf diese E-Mail antworten –
+ich lese und beantworte jede Nachricht persönlich.
+
+Mit freundlichen Grüßen,
+{{sender_name}}
+KryptoxPay – Unabhängige Finanzberatung
+https://kryptoxpay.co.uk
+
+---
+Sie erhalten diese Nachricht, da Ihre Kontaktdaten im Zusammenhang mit
+Online-Finanzdienstleistungen erfasst wurden.
+Abmelden: {{unsubscribe_url}}
+Datenschutz: https://kryptoxpay.co.uk/datenschutz
+Impressum: https://kryptoxpay.co.uk/impressum
+KryptoxPay Ltd – info@kryptoxpay.co.uk – kryptoxpay.co.uk'
+
+FROM DUAL
+WHERE NOT EXISTS (
+  SELECT 1 FROM mailing_templates WHERE name = 'Erstkontakt B – Empathie (Soft Touch)'
+);
+
+
+-- =============================================================
+-- ERSTKONTAKT VARIANTE C – Sachlich / Informativ (Fact-based)
+-- Purpose : Third cold-contact variant; fact-based, informational
+--           tone. Works well for recipients who are skeptical of
+--           emotional appeals. Subject line reads like a news tip.
+-- Spam-filter safe: no promotional words in subject, plain
+--           conversational opener, no "gratis/kostenlos" in subject.
+-- =============================================================
+INSERT IGNORE INTO mailing_templates (name, subject, body_html, body_text)
+SELECT
+  'Erstkontakt C – Sachlich / Informativ',
+
+  'Informationen zu Online-Investitionsverlusten – für {{name}}',
+
+  '<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<title>KryptoxPay</title>
+<style>
+  body,table,td,a{-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%}
+  body{margin:0;padding:0;background:#f2f4f7;font-family:''Helvetica Neue'',Helvetica,Arial,sans-serif}
+  table{border-collapse:collapse}
+  .wrapper{width:100%;background:#f2f4f7;padding:30px 0}
+  .card{max-width:600px;margin:0 auto;background:#fff;border-radius:10px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.08)}
+  .hd{background:#0d2744;padding:26px 40px;text-align:center}
+  .hd-logo{font-size:22px;font-weight:700;color:#fff;text-decoration:none;display:block}
+  .hd-logo span{color:#f0a500}
+  .hd-tag{margin:5px 0 0;font-size:11px;color:#7fa8d4;letter-spacing:1.2px;text-transform:uppercase}
+  .fact-bar{background:#fff7e6;border-bottom:1px solid #fde68a;padding:10px 40px;text-align:center;font-size:12px;color:#92400e;font-weight:600}
+  .bd{padding:32px 40px;color:#374151;font-size:15px;line-height:1.85}
+  .bd h2{margin:0 0 16px;font-size:19px;color:#0d2744;font-weight:700}
+  .bd p{margin:0 0 14px}
+  .stats-row{display:flex;gap:0;margin:20px 0;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden}
+  .stat-cell{flex:1;padding:14px 10px;text-align:center;border-right:1px solid #e5e7eb}
+  .stat-cell:last-child{border-right:none}
+  .stat-num{font-size:22px;font-weight:700;color:#0d2744;display:block}
+  .stat-lbl{font-size:11px;color:#6b7280;text-transform:uppercase;letter-spacing:.5px}
+  .divider{height:1px;background:#e8edf2;margin:22px 0}
+  .cta{text-align:center;margin:26px 0}
+  .btn{display:inline-block;background:#f0a500;color:#fff !important;padding:14px 38px;border-radius:6px;font-size:15px;font-weight:700;text-decoration:none}
+  .ft{background:#f8f9fb;padding:18px 40px;text-align:center;font-size:12px;color:#6b7280;border-top:1px solid #e8edf2}
+  .ft p{margin:0 0 5px}
+  .ft a{color:#6b7280}
+  @media only screen and (max-width:620px){
+    .card{border-radius:0!important}
+    .bd,.hd,.ft,.fact-bar{padding:20px 18px!important}
+    .stats-row{flex-direction:column}
+    .stat-cell{border-right:none;border-bottom:1px solid #e5e7eb}
+    .stat-cell:last-child{border-bottom:none}
+  }
+</style>
+</head>
+<body>
+<div class="wrapper">
+<table width="100%" cellpadding="0" cellspacing="0" role="presentation">
+<tr><td align="center">
+<table class="card" width="600" cellpadding="0" cellspacing="0" role="presentation">
+
+  <tr><td class="hd">
+    <a href="https://kryptoxpay.co.uk" class="hd-logo">Kryptox<span>Pay</span></a>
+    <p class="hd-tag">Asset Recovery &amp; Finanzberatung</p>
+  </td></tr>
+
+  <tr><td class="fact-bar">
+    &#8505;&nbsp; Hinweis: Diese Nachricht enth&auml;lt pers&ouml;nlich relevante Informationen f&uuml;r {{name}}
+  </td></tr>
+
+  <tr><td class="bd">
+    <h2>Sehr geehrte/r {{name}},</h2>
+
+    <p>mein Name ist <strong>{{sender_name}}</strong>.
+    Ich wende mich an Sie mit sachlichen Informationen zu einem Thema,
+    das f&uuml;r Sie von Bedeutung sein k&ouml;nnte.</p>
+
+    {{#if scam_platform}}
+    <p>Im Zusammenhang mit <strong>{{scam_platform}}</strong> haben wir in den
+    letzten Monaten vergleichbare F&auml;lle analysiert.
+    Unsere Erkenntnisse k&ouml;nnten f&uuml;r Ihre Situation relevant sein.</p>
+    {{else}}
+    <p>Viele Anleger, die &uuml;ber Online-Plattformen investiert haben,
+    kennen ihre rechtlichen und praktischen Handlungsoptionen nicht vollst&auml;ndig.</p>
+    {{/if}}
+
+    <div class="divider"></div>
+
+    <!-- Fact-based credibility stats -->
+    <div class="stats-row">
+      <div class="stat-cell">
+        <span class="stat-num">2.400+</span>
+        <span class="stat-lbl">Analysierte F&auml;lle</span>
+      </div>
+      <div class="stat-cell">
+        <span class="stat-num">40+</span>
+        <span class="stat-lbl">L&auml;nder</span>
+      </div>
+      <div class="stat-cell">
+        <span class="stat-num">100%</span>
+        <span class="stat-lbl">Kostenfreies Erstgespr&auml;ch</span>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <p>Im Rahmen eines kostenfreien Erstgespr&auml;chs k&ouml;nnen wir Ihnen
+    konkret mitteilen, welche M&ouml;glichkeiten in Ihrer Situation
+    realistisch sind &ndash; ohne Versprechen, ohne Druck.</p>
+
+    <p><strong>Folgende Informationen besprechen wir dabei:</strong></p>
+    <ul>
+      <li>Wie &auml;hnliche F&auml;lle in der Vergangenheit bearbeitet wurden</li>
+      <li>Welche Unterlagen f&uuml;r eine Pr&uuml;fung ben&ouml;tigt w&uuml;rden</li>
+      <li>Welche konkreten n&auml;chsten Schritte sinnvoll sein k&ouml;nnten</li>
+    </ul>
+
+    <div class="cta">
+      <a href="https://kryptoxpay.co.uk?utm_source=email&amp;utm_campaign=erstkontakt_c&amp;utm_medium=cta"
+         class="btn">Informationsgespr&auml;ch anfordern</a>
+    </div>
+
+    <div class="divider"></div>
+
+    <p>Sollten Sie Fragen haben oder bevorzugen, per E-Mail zu kommunizieren,
+    antworten Sie bitte direkt auf diese Nachricht.</p>
+
+    <p>Mit freundlichen Gr&uuml;&szlig;en,<br>
+    <strong style="color:#0d2744">{{sender_name}}</strong><br>
+    KryptoxPay &ndash; Asset Recovery &amp; Finanzberatung<br>
+    <a href="https://kryptoxpay.co.uk" style="color:#0d2744">kryptoxpay.co.uk</a></p>
+  </td></tr>
+
+  <tr><td class="ft">
+    <p>KryptoxPay Ltd &nbsp;&middot;&nbsp;
+       <a href="https://kryptoxpay.co.uk">kryptoxpay.co.uk</a> &nbsp;&middot;&nbsp;
+       info@kryptoxpay.co.uk</p>
+    <p><a href="{{unsubscribe_url}}">Abmelden</a> &nbsp;&middot;&nbsp;
+       <a href="https://kryptoxpay.co.uk/datenschutz">Datenschutz</a> &nbsp;&middot;&nbsp;
+       <a href="https://kryptoxpay.co.uk/impressum">Impressum</a></p>
+    <p>Sie erhalten diese Nachricht aufgrund Ihrer registrierten Kontaktdaten
+    im Bereich Online-Finanzdienstleistungen.<br>
+    Ausschlie&szlig;lich f&uuml;r Personen ab 18 Jahren &nbsp;&middot;&nbsp; DSGVO-konform</p>
+    {{open_tracker}}
+  </td></tr>
+
+</table>
+</td></tr>
+</table>
+</div>
+</body>
+</html>',
+
+  'Sehr geehrte/r {{name}},
+
+mein Name ist {{sender_name}}.
+Ich wende mich an Sie mit sachlichen Informationen zu einem Thema,
+das für Sie von Bedeutung sein könnte.
+
+{{#if scam_platform}}
+Im Zusammenhang mit {{scam_platform}} haben wir in den letzten Monaten
+vergleichbare Fälle analysiert. Unsere Erkenntnisse könnten für Ihre
+Situation relevant sein.
+{{else}}
+Viele Anleger, die über Online-Plattformen investiert haben,
+kennen ihre rechtlichen und praktischen Handlungsoptionen nicht vollständig.
+{{/if}}
+
+Fakten:
+- 2.400+ analysierte Fälle
+- 40+ Länder
+- Kostenloses Erstgespräch
+
+Im Rahmen eines kostenfreien Erstgesprächs können wir Ihnen konkret
+mitteilen, welche Möglichkeiten in Ihrer Situation realistisch sind.
+
+Folgende Informationen besprechen wir dabei:
+- Wie ähnliche Fälle in der Vergangenheit bearbeitet wurden
+- Welche Unterlagen für eine Prüfung benötigt würden
+- Welche konkreten nächsten Schritte sinnvoll sein könnten
+
+Informationsgespräch anfordern:
+https://kryptoxpay.co.uk?utm_source=email&utm_campaign=erstkontakt_c&utm_medium=cta
+
+Sollten Sie Fragen haben oder bevorzugen, per E-Mail zu kommunizieren,
+antworten Sie bitte direkt auf diese Nachricht.
+
+Mit freundlichen Grüßen,
+{{sender_name}}
+KryptoxPay – Asset Recovery & Finanzberatung
+https://kryptoxpay.co.uk
+
+---
+Sie erhalten diese Nachricht aufgrund Ihrer registrierten Kontaktdaten
+im Bereich Online-Finanzdienstleistungen.
+Abmelden: {{unsubscribe_url}}
+Datenschutz: https://kryptoxpay.co.uk/datenschutz
+Impressum: https://kryptoxpay.co.uk/impressum
+KryptoxPay Ltd – info@kryptoxpay.co.uk – kryptoxpay.co.uk'
+
+FROM DUAL
+WHERE NOT EXISTS (
+  SELECT 1 FROM mailing_templates WHERE name = 'Erstkontakt C – Sachlich / Informativ'
+);
+
+
+-- =============================================================
 -- How to run this sequence in a campaign
 -- =============================================================
 -- 1. Create four campaigns (one per template):
@@ -1051,17 +1452,24 @@ WHERE NOT EXISTS (
 --      Day 6  → template 'Follow-up Sequence – Day 6 (Reminder)'
 --      Day 10 → template 'Follow-up Sequence – Day 10 (Last Touch)'
 --
--- 2. Erstkontakt cold-outreach:
---      Day 0  → template 'Erstkontakt – Kaltakquise (Cold Outreach)'
+-- 2. Erstkontakt cold-outreach (choose one variant per campaign):
+--      Day 0   → 'Erstkontakt – Kaltakquise (Cold Outreach)'   (trust-building)
+--             OR 'Erstkontakt B – Empathie (Soft Touch)'        (empathy-led)
+--             OR 'Erstkontakt C – Sachlich / Informativ'        (fact-based)
 --      Day 5–7 (no open AND no click) → 'Nachfass – Kein Öffnen / Kein Klick (Re-Engagement)'
 --
--- 3. Each campaign: set status='draft', load the same recipient list.
+-- 3. SMTP timing recommendation:
+--      Current setup: 1 email/account → 15s pause → rotate account → 30s pause
+--      This is conservative and correct for IP warming.
+--      To increase throughput without increasing spam risk:
+--        • Raise emails_per_account to 3–5 once accounts are 2+ weeks old
+--        • Keep pause_between_emails at 10–15s
+--        • Keep pause_between_accounts at 20–30s
+--        • Add 2–3 more SMTP accounts to distribute load
+--
+-- 4. Each campaign: set status=''draft'', load the same recipient list.
 --    For the Nachfass campaign filter the recipient list to
 --    contacts where opens=0 AND clicks=0 since the Erstkontakt send.
---
--- 4. Use the admin scheduler (or cron) to start each campaign:
---      UPDATE mailing_campaigns SET status='running', started_at=NOW()
---      WHERE name='Nachfass – Kein Öffnen / Kein Klick (Re-Engagement)';
 --
 -- 5. The PHP spintax() engine randomly resolves A at send time.
 --    Every recipient gets a different variation → avoids pattern detection.

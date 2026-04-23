@@ -71,6 +71,24 @@ $health_map = [];
 foreach ($health_stmt->fetchAll(PDO::FETCH_ASSOC) as $h) {
     $health_map[(int)$h['smtp_account_id']] = $h;
 }
+
+// Throughput stats per account: sent in last 1h, 12h, 24h
+$tp_stmt = $pdo->prepare("
+    SELECT
+        smtp_account_id,
+        COUNT(CASE WHEN sent_at >= DATE_SUB(NOW(), INTERVAL  1 HOUR)  THEN 1 END) AS sent_1h,
+        COUNT(CASE WHEN sent_at >= DATE_SUB(NOW(), INTERVAL 12 HOUR)  THEN 1 END) AS sent_12h,
+        COUNT(CASE WHEN sent_at >= DATE_SUB(NOW(), INTERVAL 24 HOUR)  THEN 1 END) AS sent_24h
+    FROM mailing_recipients
+    WHERE status = 'sent'
+      AND smtp_account_id IS NOT NULL
+    GROUP BY smtp_account_id
+");
+$tp_stmt->execute();
+$tp_map = [];
+foreach ($tp_stmt->fetchAll(PDO::FETCH_ASSOC) as $tp) {
+    $tp_map[(int)$tp['smtp_account_id']] = $tp;
+}
 ?>
 <!DOCTYPE html>
 <html lang="de">
@@ -211,14 +229,15 @@ foreach ($health_stmt->fetchAll(PDO::FETCH_ASSOC) as $h) {
                                     <th>Host</th>
                                     <th>Absender</th>
                                     <th class="text-center">Status</th>
-                                    <th class="text-center">Versendet</th>
+                                    <th class="text-center">Gesamt</th>
+                                    <th class="text-center" title="Gesendet in letzter 1h / 12h / 24h">1h / 12h / 24h</th>
                                     <th class="text-center">Delivery Health <small class="text-muted">(30d)</small></th>
                                     <th class="text-end">Aktionen</th>
                                 </tr>
                             </thead>
                             <tbody>
                             <?php if (empty($accounts)): ?>
-                            <tr><td colspan="7" class="text-center text-muted py-4">Noch keine Accounts konfiguriert.</td></tr>
+                            <tr><td colspan="8" class="text-center text-muted py-4">Noch keine Accounts konfiguriert.</td></tr>
                             <?php endif; ?>
                             <?php foreach ($accounts as $a): ?>
                             <tr>
@@ -233,6 +252,23 @@ foreach ($health_stmt->fetchAll(PDO::FETCH_ASSOC) as $h) {
                                     <?php endif; ?>
                                 </td>
                                 <td class="text-center"><?= number_format($a['emails_sent']) ?></td>
+                                <td class="text-center">
+                                    <?php
+                                    $tp = $tp_map[$a['id']] ?? null;
+                                    if ($tp):
+                                    ?>
+                                    <span class="font-monospace small"
+                                          title="Gesendet: <?= (int)$tp['sent_1h'] ?> (1h) / <?= (int)$tp['sent_12h'] ?> (12h) / <?= (int)$tp['sent_24h'] ?> (24h)">
+                                        <span class="text-primary fw-semibold"><?= (int)$tp['sent_1h'] ?></span>
+                                        <span class="text-muted">/</span>
+                                        <span class="text-info fw-semibold"><?= (int)$tp['sent_12h'] ?></span>
+                                        <span class="text-muted">/</span>
+                                        <span class="text-success fw-semibold"><?= (int)$tp['sent_24h'] ?></span>
+                                    </span>
+                                    <?php else: ?>
+                                    <span class="text-muted small">—</span>
+                                    <?php endif; ?>
+                                </td>
                                 <td class="text-center">
                                     <?php
                                     $h = $health_map[$a['id']] ?? null;
