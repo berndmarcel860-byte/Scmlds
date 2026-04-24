@@ -123,7 +123,7 @@ $categories = ['Krypto-Betrug', 'Forex-Betrug', 'Fake-Broker', 'Romance-Scam mit
                     <table class="table table-hover mb-0">
                         <thead class="table-light">
                             <tr>
-                                <th>#</th>
+                                <th>ID</th>
                                 <th>Name</th>
                                 <th>E-Mail</th>
                                 <th>Telefon</th>
@@ -131,6 +131,7 @@ $categories = ['Krypto-Betrug', 'Forex-Betrug', 'Fake-Broker', 'Romance-Scam mit
                                 <th>Betrag</th>
                                 <th>Kategorie</th>
                                 <th>Quelle</th>
+                                <th>Kampagne</th>
                                 <th>Status</th>
                                 <th>Datum</th>
                                 <th>Aktionen</th>
@@ -166,6 +167,16 @@ $categories = ['Krypto-Betrug', 'Forex-Betrug', 'Fake-Broker', 'Romance-Scam mit
                                     <?= htmlspecialchars($lead['lead_source'] ?: 'website', ENT_QUOTES, 'UTF-8') ?>
                                     <?php if (!empty($lead['utm_source'])): ?>
                                         <br><span class="text-info"><?= htmlspecialchars($lead['utm_source'], ENT_QUOTES, 'UTF-8') ?></span>
+                                    <?php endif; ?>
+                                </td>
+                                <td class="text-muted small">
+                                    <?php if (!empty($lead['campaign_name'])): ?>
+                                        <a href="mailing/stats.php?campaign_id=<?= (int)$lead['campaign_id'] ?>"
+                                           class="text-decoration-none text-primary" title="Kampagne öffnen">
+                                            <i class="bi bi-envelope me-1"></i><?= htmlspecialchars($lead['campaign_name'], ENT_QUOTES, 'UTF-8') ?>
+                                        </a>
+                                    <?php else: ?>
+                                        <span class="text-muted">–</span>
                                     <?php endif; ?>
                                 </td>
                                 <td>
@@ -204,7 +215,7 @@ $categories = ['Krypto-Betrug', 'Forex-Betrug', 'Fake-Broker', 'Romance-Scam mit
                             </tr>
                         <?php endforeach; ?>
                         <?php if (empty($leads)): ?>
-                            <tr><td colspan="11" class="text-center text-muted py-5">
+                            <tr><td colspan="12" class="text-center text-muted py-5">
                                 <i class="bi bi-inbox fs-1 d-block mb-2"></i>
                                 Keine Leads gefunden.
                             </td></tr>

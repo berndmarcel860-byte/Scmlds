@@ -2,33 +2,6 @@
 require_once __DIR__ . '/db.php';
 
 // ============================================================
-// Spintax – {option1|option2|option3} random picker
-// ============================================================
-
-/**
- * Recursively resolves spintax like {A|B|C} by randomly picking one option.
- * Nested spintax is supported, e.g. {Hello {World|Earth}|Hi there}.
- * Template variables like {{name}} are intentionally left untouched.
- */
-function spintax(string $text): string
-{
-    // Use negative lookbehind/lookahead to skip {{double-brace}} template variables.
-    // (?<!\{)\{ — opening brace NOT preceded by another brace
-    // (?!\})  \} — closing brace NOT followed by another brace
-    while (preg_match('/(?<!\{)\{(?!\{)[^{}]+\}(?!\})/', $text)) {
-        $text = preg_replace_callback(
-            '/(?<!\{)\{(?!\{)([^{}]+)\}(?!\})/',
-            function (array $m): string {
-                $options = explode('|', $m[1]);
-                return $options[array_rand($options)];
-            },
-            $text
-        );
-    }
-    return $text;
-}
-
-// ============================================================
 // Static Pages (Impressum, Datenschutz, Kontakt, AGB …)
 // ============================================================
 
@@ -634,27 +607,37 @@ function get_leads(array $filters = [], int $page = 1, int $per_page = 20): arra
     $params = [];
 
     if (!empty($filters['status'])) {
-        $where[] = 'status = :status';
+        $where[] = 'l.status = :status';
         $params[':status'] = $filters['status'];
     }
     if (!empty($filters['search'])) {
-        $where[] = '(first_name LIKE :s OR last_name LIKE :s OR email LIKE :s OR phone LIKE :s)';
+        $where[] = '(l.first_name LIKE :s OR l.last_name LIKE :s OR l.email LIKE :s OR l.phone LIKE :s)';
         $params[':s'] = '%' . $filters['search'] . '%';
     }
     if (!empty($filters['category'])) {
-        $where[] = 'platform_category = :cat';
+        $where[] = 'l.platform_category = :cat';
         $params[':cat'] = $filters['category'];
     }
 
     $whereSQL = implode(' AND ', $where);
     $offset = ($page - 1) * $per_page;
 
-    $countStmt = $pdo->prepare("SELECT COUNT(*) FROM leads WHERE $whereSQL");
+    $countStmt = $pdo->prepare("SELECT COUNT(*) FROM leads l WHERE $whereSQL");
     $countStmt->execute($params);
     $total = (int) $countStmt->fetchColumn();
 
     $stmt = $pdo->prepare(
-        "SELECT * FROM leads WHERE $whereSQL ORDER BY created_at DESC LIMIT :limit OFFSET :offset"
+        "SELECT l.*,
+            (SELECT c.name
+             FROM mailing_recipients mr
+             JOIN mailing_campaigns c ON c.id = mr.campaign_id
+             WHERE mr.email = l.email
+             ORDER BY mr.id DESC LIMIT 1) AS campaign_name,
+            (SELECT mr.campaign_id
+             FROM mailing_recipients mr
+             WHERE mr.email = l.email
+             ORDER BY mr.id DESC LIMIT 1) AS campaign_id
+         FROM leads l WHERE $whereSQL ORDER BY l.created_at DESC LIMIT :limit OFFSET :offset"
     );
     foreach ($params as $k => $v) {
         $stmt->bindValue($k, $v);
@@ -1811,6 +1794,90 @@ function record_mailing_click(string $token): ?string
 }
 
 /**
+ * Create a follow-up campaign from recipients of an existing campaign who have not clicked.
+ *
+ * @param  int    $source_cid       ID of the original campaign.
+ * @param  string $new_name         Name for the new follow-up campaign.
+ * @param  int    $template_id      Template to use (0 = re-use original campaign template).
+ * @param  string $segment          'no_click' (sent but no click) or 'no_open' (sent but no open or click).
+ * @return int|false                New campaign ID, or false on failure.
+ */
+function create_followup_campaign(int $source_cid, string $new_name, int $template_id = 0, string $segment = 'no_click'): int|false
+{
+    $pdo = db_connect();
+
+    // Resolve template: fall back to source campaign template
+    if (!$template_id) {
+        $src = $pdo->prepare('SELECT template_id FROM mailing_campaigns WHERE id=:id');
+        $src->execute([':id' => $source_cid]);
+        $row = $src->fetch(PDO::FETCH_ASSOC);
+        if (!$row) return false;
+        $template_id = (int) $row['template_id'];
+    }
+
+    // Create the new campaign
+    $new_id = create_mailing_campaign($new_name, $template_id);
+    if (!$new_id) return false;
+
+    // Select recipients: sent + valid, excluding those who already clicked (or opened+clicked)
+    if ($segment === 'no_open') {
+        // No open AND no click
+        $sel = $pdo->prepare(
+            'SELECT email, name, scam_platform, email_validity
+             FROM mailing_recipients
+             WHERE campaign_id = :cid
+               AND email_validity = "valid"
+               AND status = "sent"
+               AND opened_at IS NULL
+               AND clicked_at IS NULL'
+        );
+    } else {
+        // Default: no click (may or may not have opened)
+        $sel = $pdo->prepare(
+            'SELECT email, name, scam_platform, email_validity
+             FROM mailing_recipients
+             WHERE campaign_id = :cid
+               AND email_validity = "valid"
+               AND status = "sent"
+               AND clicked_at IS NULL'
+        );
+    }
+    $sel->execute([':cid' => $source_cid]);
+    $rows = $sel->fetchAll(PDO::FETCH_ASSOC);
+
+    if (empty($rows)) {
+        // No matching recipients – remove the empty campaign and return false
+        delete_mailing_campaign($new_id);
+        return false;
+    }
+
+    // Import as recipients of the new campaign (new tokens generated per recipient)
+    $ins = $pdo->prepare(
+        'INSERT IGNORE INTO mailing_recipients (campaign_id, email, name, scam_platform, email_validity, open_token, click_token)
+         VALUES (:cid, :em, :nm, :sp, :ev, :tok, :ctok)'
+    );
+    foreach ($rows as $r) {
+        $ins->execute([
+            ':cid'  => $new_id,
+            ':em'   => $r['email'],
+            ':nm'   => $r['name'],
+            ':sp'   => $r['scam_platform'],
+            ':ev'   => $r['email_validity'],
+            ':tok'  => bin2hex(random_bytes(16)),
+            ':ctok' => bin2hex(random_bytes(16)),
+        ]);
+    }
+
+    // Sync campaign total
+    $pdo->prepare(
+        'UPDATE mailing_campaigns SET total=(SELECT COUNT(*) FROM mailing_recipients WHERE campaign_id=:cid AND email_validity="valid") WHERE id=:cid2'
+    )->execute([':cid' => $new_id, ':cid2' => $new_id]);
+
+    log_activity('mailing_followup_created', "Follow-up campaign #$new_id created from campaign #$source_cid ($segment)");
+    return $new_id;
+}
+
+/**
  * Seed default mailing data.
  * Schema (CREATE TABLE / ALTER TABLE) is managed by database/migrate.sql.
  */
@@ -1830,583 +1897,5 @@ function ensure_mailing_tables(): void
     $ins = $pdo->prepare('INSERT IGNORE INTO mailing_settings (setting_key,setting_value,setting_label) VALUES (?,?,?)');
     foreach ($defaults as $d) { $ins->execute($d); }
 
-    // Seed the KryptoxPay professional German template if not already present
-    $check = $pdo->query("SELECT COUNT(*) FROM mailing_templates WHERE name = 'KryptoxPay – Professionell (DE)'")->fetchColumn();
-    if (!$check) {
-        $html = _kryptoxpay_email_template_html();
-        $text = _kryptoxpay_email_template_text();
-        $pdo->prepare('INSERT INTO mailing_templates (name,subject,body_html,body_text) VALUES (?,?,?,?)')->execute([
-            'KryptoxPay – Professionell (DE)',
-            'Wichtige Information zu Ihren digitalen Vermögenswerten',
-            $html,
-            $text,
-        ]);
-    }
-
-    // Seed the KryptoxPay "last reminder" German template if not already present
-    $check2 = $pdo->query("SELECT COUNT(*) FROM mailing_templates WHERE name = 'KryptoxPay – Letzte Erinnerung (DE)'")->fetchColumn();
-    if (!$check2) {
-        $html2 = _kryptoxpay_reminder_template_html();
-        $text2 = _kryptoxpay_reminder_template_text();
-        $pdo->prepare('INSERT INTO mailing_templates (name,subject,body_html,body_text) VALUES (?,?,?,?)')->execute([
-            'KryptoxPay – Letzte Erinnerung (DE)',
-            'Letzte Erinnerung: Ihre Möglichkeit zur Rückholung verlorener Gelder',
-            $html2,
-            $text2,
-        ]);
-    }
-
-    // Seed spintax rotation templates
-    $rotation_templates = [
-        [
-            'name'    => 'Rotation – Neutral / Safe (Spintax)',
-            'subject' => '{Kurze Frage zu Ihrer Erfahrung|Kurze Rückfrage|Allgemeine Frage zu digitalen Themen}',
-            'html'    => _rotation_template_1_html(),
-            'text'    => _rotation_template_1_text(),
-        ],
-        [
-            'name'    => 'Rotation – Soft Question Style (Spintax)',
-            'subject' => '{Ist das aktuell relevant für Sie?|Passt das aktuell bei Ihnen?|Kurze Nachfrage}',
-            'html'    => _rotation_template_2_html(),
-            'text'    => _rotation_template_2_text(),
-        ],
-        [
-            'name'    => 'Rotation – Brief Info Style (Spintax)',
-            'subject' => '{Ein kurzer Hinweis|Kurze Information für Sie|Kleine Rückmeldung}',
-            'html'    => _rotation_template_3_html(),
-            'text'    => _rotation_template_3_text(),
-        ],
-    ];
-    foreach ($rotation_templates as $rt) {
-        $cnt = $pdo->query("SELECT COUNT(*) FROM mailing_templates WHERE name=" . $pdo->quote($rt['name']))->fetchColumn();
-        if (!$cnt) {
-            $pdo->prepare('INSERT INTO mailing_templates (name,subject,body_html,body_text) VALUES (?,?,?,?)')
-                ->execute([$rt['name'], $rt['subject'], $rt['html'], $rt['text']]);
-        }
-    }
 }
 
-/**
- * Returns the full HTML of the KryptoxPay professional German email template.
- * Supports {{#if scam_platform}}…{{else}}…{{/if}} conditional blocks.
- */
-function _kryptoxpay_email_template_html(): string
-{
-    return '<!DOCTYPE html>
-<html lang="de">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<meta http-equiv="X-UA-Compatible" content="IE=edge">
-<title>{{company_name}}</title>
-<style>
-  body,table,td,a{-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%}
-  body{margin:0;padding:0;background-color:#f2f4f7;font-family:\'Helvetica Neue\',Helvetica,Arial,sans-serif}
-  .email-wrapper{width:100%;background:#f2f4f7;padding:30px 0}
-  .email-content{max-width:600px;margin:0 auto;background:#ffffff;border-radius:10px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.08)}
-  .header{background:#0d2744;padding:32px 40px;text-align:center}
-  .header-logo{font-size:24px;font-weight:700;color:#ffffff;letter-spacing:-0.5px;text-decoration:none;display:block}
-  .header-logo span{color:#f0a500}
-  .header-tagline{margin:6px 0 0;font-size:12px;color:#7fa8d4;letter-spacing:1px;text-transform:uppercase}
-  .alert-banner{background:#fff3cd;border-left:4px solid #f0a500;padding:14px 20px;margin:0 0 20px;border-radius:0 6px 6px 0}
-  .alert-banner p{margin:0;font-size:14px;color:#7a5c00}
-  .body{padding:38px 40px;color:#374151;font-size:15px;line-height:1.8}
-  .body h2{margin:0 0 18px;font-size:20px;color:#0d2744;font-weight:700}
-  .body p{margin:0 0 16px}
-  .body ul{padding-left:20px;margin:0 0 16px}
-  .body ul li{margin-bottom:6px}
-  .divider{height:1px;background:#e8edf2;margin:24px 0}
-  .cta-wrapper{text-align:center;margin:28px 0}
-  .cta-btn{display:inline-block;background:#f0a500;color:#ffffff!important;padding:14px 36px;border-radius:6px;font-size:15px;font-weight:700;text-decoration:none;letter-spacing:0.3px}
-  .footer{background:#f8fafc;padding:22px 40px;border-top:1px solid #e8edf2}
-  .footer p{margin:0 0 6px;font-size:12px;color:#9ca3af;text-align:center;line-height:1.6}
-  .footer a{color:#9ca3af;text-decoration:underline}
-  @media only screen and (max-width:620px){
-    .email-content,.header,.body,.footer{border-radius:0!important}
-    .body,.header,.footer{padding:24px 20px!important}
-  }
-</style>
-</head>
-<body>
-<div class="email-wrapper">
-  <div class="email-content">
-    <div class="header">
-      <a class="header-logo" href="https://kryptoxpay.co.uk">Kryptox<span>Pay</span></a>
-      <p class="header-tagline">KI-gestützte Kapitalrückholung &amp; Beratung</p>
-    </div>
-    <div class="body">
-      <h2>Sehr geehrte/r {{name}},</h2>
-      {{#if scam_platform}}
-      <div class="alert-banner">
-        <p>&#9888;&nbsp; Wir haben Informationen erhalten, dass Sie Kapital auf der Plattform <strong>{{scam_platform}}</strong> verloren haben könnten. Unser KI-System hat diese Plattform als bekannte Betrugsstätte identifiziert.</p>
-      </div>
-      <p>wir wenden uns heute gezielt an Sie, da Anzeichen vorliegen, dass Sie durch <strong>{{scam_platform}}</strong> einen finanziellen Schaden erlitten haben könnten.</p>
-      <p>Mit modernster KI-Technologie und langjähriger Erfahrung im Bereich der Kapitalrückholung unterstützen wir Betroffene dabei, verlorene Mittel zurückzuholen.</p>
-      {{else}}
-      <p>wir wenden uns heute mit einer wichtigen Mitteilung an Sie, die im Zusammenhang mit Ihren digitalen Vermögenswerten stehen könnte.</p>
-      <p>Bei <strong>KryptoxPay</strong> begleiten wir Anlegerinnen und Anleger dabei, ihre finanzielle Situation transparent zu bewerten und fundierte Entscheidungen zu treffen.</p>
-      {{/if}}
-      <p>Unsere Leistungen im Überblick:</p>
-      <ul>
-        <li>Unverbindliche und kostenlose Erstberatung</li>
-        <li>KI-gestützte Analyse Ihrer individuellen Situation</li>
-        <li>Transparente Kommunikation ohne versteckte Kosten</li>
-        <li>Vertrauliche Bearbeitung Ihres Anliegens</li>
-      </ul>
-      <div class="divider"></div>
-      {{#if scam_platform}}
-      <p>Handeln Sie jetzt – je früher wir Ihren Fall prüfen können, desto besser sind die Chancen auf eine Rückholung Ihrer Mittel.</p>
-      {{else}}
-      <p>Wir laden Sie herzlich ein, sich auf unserer Website zu informieren und unverbindlich Kontakt aufzunehmen.</p>
-      {{/if}}
-      <div class="cta-wrapper">
-        <a href="https://kryptoxpay.co.uk" class="cta-btn">Jetzt unverbindlich informieren</a>
-      </div>
-      <div class="divider"></div>
-      <p style="font-size:14px;color:#374151">
-        Mit freundlichen Grüßen,<br>
-        <strong style="color:#0d2744">{{sender_name}}</strong><br>
-        KryptoxPay<br>
-        <a href="https://kryptoxpay.co.uk" style="color:#0d2744">https://kryptoxpay.co.uk</a>
-      </p>
-    </div>
-    <div class="footer">
-      <p>Sie erhalten diese E-Mail, da Sie sich für digitale Finanzthemen interessiert haben oder früher Kontakt mit uns aufgenommen haben.</p>
-      <p>
-        <a href="{{unsubscribe_url}}">Abmelden</a> &nbsp;&middot;&nbsp;
-        <a href="https://kryptoxpay.co.uk/datenschutz">Datenschutz</a> &nbsp;&middot;&nbsp;
-        <a href="https://kryptoxpay.co.uk/impressum">Impressum</a>
-      </p>
-      <p>KryptoxPay &nbsp;&middot;&nbsp; <a href="https://kryptoxpay.co.uk">https://kryptoxpay.co.uk</a></p>
-      {{open_tracker}}
-    </div>
-  </div>
-</div>
-</body>
-</html>';
-}
-
-/**
- * Plain-text version of the KryptoxPay email template.
- * Supports {{#if scam_platform}}…{{else}}…{{/if}} blocks.
- */
-function _kryptoxpay_email_template_text(): string
-{
-    return 'Sehr geehrte/r {{name}},
-
-{{#if scam_platform}}
-Wir wenden uns heute gezielt an Sie, da Anzeichen vorliegen, dass Sie durch
-{{scam_platform}} einen finanziellen Schaden erlitten haben könnten.
-
-Mit modernster KI-Technologie unterstützen wir Betroffene dabei,
-verlorene Mittel zurückzuholen.
-{{else}}
-wir wenden uns heute mit einer wichtigen Mitteilung an Sie, die im Zusammenhang
-mit Ihren digitalen Vermögenswerten stehen könnte.
-
-Bei KryptoxPay begleiten wir Anlegerinnen und Anleger dabei, ihre finanzielle
-Situation transparent zu bewerten und fundierte Entscheidungen zu treffen.
-{{/if}}
-
-Unsere Leistungen:
-- Unverbindliche und kostenlose Erstberatung
-- KI-gestützte Analyse Ihrer individuellen Situation
-- Transparente Kommunikation ohne versteckte Kosten
-- Vertrauliche Bearbeitung Ihres Anliegens
-
-{{#if scam_platform}}
-Handeln Sie jetzt – je früher wir Ihren Fall prüfen können, desto besser sind
-die Chancen auf eine Rückholung Ihrer Mittel.
-{{else}}
-Wir laden Sie herzlich ein, sich auf unserer Website zu informieren.
-{{/if}}
-
-Mehr Informationen finden Sie unter:
-https://kryptoxpay.co.uk
-
-Mit freundlichen Grüßen,
-{{sender_name}}
-KryptoxPay
-https://kryptoxpay.co.uk
-
----
-Sie erhalten diese E-Mail, da Sie sich für digitale Finanzthemen interessiert haben.
-Abmelden: {{unsubscribe_url}}
-Datenschutz: https://kryptoxpay.co.uk/datenschutz';
-}
-
-/**
- * HTML body of the KryptoxPay "last reminder" German notification template.
- */
-function _kryptoxpay_reminder_template_html(): string
-{
-    return '<!DOCTYPE html>
-<html lang="de">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<meta http-equiv="X-UA-Compatible" content="IE=edge">
-<title>{{company_name}}</title>
-<style>
-  body,table,td,a{-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%}
-  body{margin:0;padding:0;background-color:#f2f4f7;font-family:\'Helvetica Neue\',Helvetica,Arial,sans-serif}
-  .email-wrapper{width:100%;background:#f2f4f7;padding:30px 0}
-  .email-content{max-width:600px;margin:0 auto;background:#ffffff;border-radius:10px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.08)}
-  .header{background:#7b1e1e;padding:32px 40px;text-align:center}
-  .header-logo{font-size:24px;font-weight:700;color:#ffffff;letter-spacing:-0.5px;text-decoration:none;display:block}
-  .header-logo span{color:#f0a500}
-  .header-tagline{margin:6px 0 0;font-size:12px;color:#e8b4b4;letter-spacing:1px;text-transform:uppercase}
-  .urgency-banner{background:#fde8e8;border-left:4px solid #c0392b;padding:16px 20px;margin:0;border-radius:0}
-  .urgency-banner p{margin:0;font-size:14px;color:#7b1e1e;font-weight:600}
-  .body{padding:38px 40px;color:#374151;font-size:15px;line-height:1.8}
-  .body h2{margin:0 0 18px;font-size:20px;color:#7b1e1e;font-weight:700}
-  .body p{margin:0 0 16px}
-  .body ul{padding-left:20px;margin:0 0 16px}
-  .body ul li{margin-bottom:6px}
-  .divider{height:1px;background:#e8edf2;margin:24px 0}
-  .highlight-box{background:#fff8e1;border:1px solid #f0a500;border-radius:8px;padding:18px 20px;margin:20px 0}
-  .highlight-box p{margin:0;font-size:14px;color:#5a4000;line-height:1.7}
-  .cta-wrapper{text-align:center;margin:28px 0}
-  .cta-btn{display:inline-block;background:#c0392b;color:#ffffff!important;padding:16px 40px;border-radius:6px;font-size:16px;font-weight:700;text-decoration:none;letter-spacing:0.3px}
-  .footer{background:#f8fafc;padding:22px 40px;border-top:1px solid #e8edf2}
-  .footer p{margin:0 0 6px;font-size:12px;color:#9ca3af;text-align:center;line-height:1.6}
-  .footer a{color:#9ca3af;text-decoration:underline}
-  @media only screen and (max-width:620px){
-    .email-content,.header,.body,.footer{border-radius:0!important}
-    .body,.header,.footer{padding:24px 20px!important}
-  }
-</style>
-</head>
-<body>
-<div class="email-wrapper">
-  <div class="email-content">
-    <div class="header">
-      <a class="header-logo" href="https://kryptoxpay.co.uk">Kryptox<span>Pay</span></a>
-      <p class="header-tagline">KI-gestützte Kapitalrückholung &amp; Beratung</p>
-    </div>
-    <div class="urgency-banner">
-      <p>&#128680;&nbsp; Letzte Erinnerung – Bitte lesen Sie diese Nachricht sorgfältig.</p>
-    </div>
-    <div class="body">
-      <h2>Sehr geehrte/r {{name}},</h2>
-      <p>dies ist unsere <strong>letzte Erinnerung</strong> an Sie bezüglich der Möglichkeit, Ihre verlorenen Gelder zurückzuholen.</p>
-      {{#if scam_platform}}
-      <p>Wie bereits mitgeteilt, haben wir Hinweise darauf, dass Sie durch die Plattform <strong>{{scam_platform}}</strong> einen erheblichen finanziellen Verlust erlitten haben könnten. Unsere Experten stehen bereit, Ihren Fall zu prüfen.</p>
-      {{else}}
-      <p>Wie bereits in unserer vorherigen Nachricht erwähnt, möchten wir Ihnen eine letzte Gelegenheit geben, sich über unsere Kapitalrückholungsdienste zu informieren.</p>
-      {{/if}}
-      <div class="highlight-box">
-        <p><strong>&#9203; Zeitkritisch:</strong> Jeder Tag ohne Handeln kann die Chancen auf eine erfolgreiche Rückholung verringern. Verfahren verjähren, Konten werden gesperrt, Spuren verlieren sich. Handeln Sie jetzt.</p>
-      </div>
-      <p>Was wir für Sie tun können:</p>
-      <ul>
-        <li><strong>Kostenlose und unverbindliche Erstbewertung</strong> Ihres Falles</li>
-        <li>Prüfung aller rechtlichen und technischen Rückholungswege</li>
-        <li>Diskreter und vertraulicher Umgang mit Ihren Daten</li>
-        <li>Keine Vorabkosten – Sie zahlen nur im Erfolgsfall</li>
-      </ul>
-      <div class="divider"></div>
-      {{#if scam_platform}}
-      <p>Viele Betroffene von <strong>{{scam_platform}}</strong> haben bereits erfolgreich mit uns zusammengearbeitet. Verpassen Sie diese Chance nicht.</p>
-      {{else}}
-      <p>Viele unserer Mandanten hätten sich gewünscht, früher gehandelt zu haben. Lassen Sie diese Chance nicht ungenutzt verstreichen.</p>
-      {{/if}}
-      <div class="cta-wrapper">
-        <a href="https://kryptoxpay.co.uk" class="cta-btn">Jetzt kostenlos Erstberatung anfordern</a>
-      </div>
-      <div class="divider"></div>
-      <p style="font-size:14px;color:#374151">
-        Mit freundlichen Grüßen,<br>
-        <strong style="color:#7b1e1e">{{sender_name}}</strong><br>
-        KryptoxPay – Kapitalrückholung<br>
-        <a href="https://kryptoxpay.co.uk" style="color:#7b1e1e">https://kryptoxpay.co.uk</a>
-      </p>
-      <p style="font-size:12px;color:#9ca3af;margin-top:12px">
-        Diese Nachricht wird nicht erneut gesendet. Sollten Sie bereits Kontakt aufgenommen haben, bitten wir Sie, diese E-Mail zu ignorieren.
-      </p>
-    </div>
-    <div class="footer">
-      <p>Sie erhalten diese E-Mail, da Sie sich für digitale Finanzthemen interessiert haben oder früher Kontakt mit uns aufgenommen haben.</p>
-      <p>
-        <a href="{{unsubscribe_url}}">Abmelden</a> &nbsp;&middot;&nbsp;
-        <a href="https://kryptoxpay.co.uk/datenschutz">Datenschutz</a> &nbsp;&middot;&nbsp;
-        <a href="https://kryptoxpay.co.uk/impressum">Impressum</a>
-      </p>
-      <p>KryptoxPay &nbsp;&middot;&nbsp; <a href="https://kryptoxpay.co.uk">https://kryptoxpay.co.uk</a></p>
-      {{open_tracker}}
-    </div>
-  </div>
-</div>
-</body>
-</html>';
-}
-
-/**
- * Plain-text version of the KryptoxPay "last reminder" German notification template.
- */
-function _kryptoxpay_reminder_template_text(): string
-{
-    return 'Sehr geehrte/r {{name}},
-
-dies ist unsere LETZTE ERINNERUNG an Sie bezüglich der Möglichkeit,
-Ihre verlorenen Gelder zurückzuholen.
-
-{{#if scam_platform}}
-Wie bereits mitgeteilt, haben wir Hinweise darauf, dass Sie durch die Plattform
-{{scam_platform}} einen erheblichen finanziellen Verlust erlitten haben könnten.
-{{else}}
-Wie in unserer vorherigen Nachricht erwähnt, möchten wir Ihnen eine letzte
-Gelegenheit geben, sich über unsere Kapitalrückholungsdienste zu informieren.
-{{/if}}
-
-⚠ ZEITKRITISCH: Jeder Tag ohne Handeln kann die Chancen auf eine erfolgreiche
-Rückholung verringern. Verfahren verjähren, Konten werden gesperrt,
-Spuren verlieren sich. Handeln Sie jetzt.
-
-Was wir für Sie tun können:
-- Kostenlose und unverbindliche Erstbewertung Ihres Falles
-- Prüfung aller rechtlichen und technischen Rückholungswege
-- Diskreter und vertraulicher Umgang mit Ihren Daten
-- Keine Vorabkosten – Sie zahlen nur im Erfolgsfall
-
-{{#if scam_platform}}
-Viele Betroffene von {{scam_platform}} haben bereits erfolgreich mit uns
-zusammengearbeitet. Verpassen Sie diese Chance nicht.
-{{else}}
-Viele unserer Mandanten hätten sich gewünscht, früher gehandelt zu haben.
-Lassen Sie diese Chance nicht ungenutzt verstreichen.
-{{/if}}
-
-Jetzt kostenlos Erstberatung anfordern:
-https://kryptoxpay.co.uk
-
-Diese Nachricht wird nicht erneut gesendet.
-
-Mit freundlichen Grüßen,
-{{sender_name}}
-KryptoxPay – Kapitalrückholung
-https://kryptoxpay.co.uk
-
----
-Abmelden: {{unsubscribe_url}}
-Datenschutz: https://kryptoxpay.co.uk/datenschutz';
-}
-
-// ============================================================
-// Spintax Rotation Templates (3 variants)
-// ============================================================
-
-function _rotation_template_1_html(): string { return '<!DOCTYPE html>
-<html lang="de">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>{{company_name}}</title>
-<style>
-  body{margin:0;padding:0;background:#f2f4f7;font-family:Arial,Helvetica,sans-serif}
-  .wrap{max-width:600px;margin:24px auto;background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,.07)}
-  .hdr{background:#0d2744;padding:24px 32px;text-align:center}
-  .hdr-logo{color:#f0a500;font-size:20px;font-weight:700;text-decoration:none}
-  .body{padding:32px;color:#374151;font-size:15px;line-height:1.8}
-  .body p{margin:0 0 14px}
-  .cta{text-align:center;margin:24px 0}
-  .cta a{display:inline-block;background:#f0a500;color:#fff!important;padding:12px 32px;border-radius:6px;font-weight:700;text-decoration:none;font-size:15px}
-  .foot{background:#f8fafc;padding:18px 32px;border-top:1px solid #e8edf2;font-size:12px;color:#9ca3af;text-align:center}
-  .foot a{color:#9ca3af}
-</style>
-</head>
-<body>
-<div class="wrap">
-  <div class="hdr"><span class="hdr-logo">{{company_name}}</span></div>
-  <div class="body">
-    <p>{Guten Tag|Hallo} {{name}},</p>
-    <p>
-      {ich melde mich kurz|ich wollte mich kurz melden},
-      {da es aktuell vermehrt Themen rund um digitale Investitionen gibt|weil derzeit viele Fragen zu Online-Themen auftreten}.
-    </p>
-    <p>
-      {Möglicherweise hatten Sie bereits Berührungspunkte damit|Eventuell ist Ihnen das Thema bekannt}.
-    </p>
-    <p>
-      {Wir stellen dazu einige Informationen bereit|Wir bieten hierzu eine Übersicht},
-      {die bei der Einordnung helfen kann|zur besseren Orientierung}.
-    </p>
-    <div class="cta">
-      <a href="{{site_url}}">{Weitere Informationen|Zur Website|Mehr erfahren}</a>
-    </div>
-    <p>
-      {Falls nicht relevant, bitte ignorieren|Wenn das nicht passt, einfach ignorieren}.
-    </p>
-    <p>
-      {Viele Grüße|Beste Grüße}<br>
-      {{sender_name}}
-    </p>
-  </div>
-  <div class="foot">
-    <p><a href="{{unsubscribe_url}}">Abmelden</a> &nbsp;|&nbsp;
-       <a href="{{site_url}}/datenschutz">Datenschutz</a> &nbsp;|&nbsp;
-       <a href="{{site_url}}/impressum">Impressum</a></p>
-    <p>{{company_name}}</p>
-    {{open_tracker}}
-  </div>
-</div>
-</body>
-</html>';
-}
-
-function _rotation_template_1_text(): string { return '{Guten Tag|Hallo} {{name}},
-
-{ich melde mich kurz|ich wollte mich kurz melden}, {da es aktuell vermehrt Themen rund um digitale Investitionen gibt|weil derzeit viele Fragen zu Online-Themen auftreten}.
-
-{Möglicherweise hatten Sie bereits Berührungspunkte damit|Eventuell ist Ihnen das Thema bekannt}.
-
-{Wir stellen dazu einige Informationen bereit|Wir bieten hierzu eine Übersicht}, {die bei der Einordnung helfen kann|zur besseren Orientierung}.
-
-{Weitere Informationen|Zur Website}: {{site_url}}
-
-{Falls nicht relevant, bitte ignorieren|Wenn das nicht passt, einfach ignorieren}.
-
-{Viele Grüße|Beste Grüße}
-{{sender_name}}
-{{company_name}}
-
-Abmelden: {{unsubscribe_url}}'; }
-
-function _rotation_template_2_html(): string { return '<!DOCTYPE html>
-<html lang="de">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>{{company_name}}</title>
-<style>
-  body{margin:0;padding:0;background:#f2f4f7;font-family:Arial,Helvetica,sans-serif}
-  .wrap{max-width:600px;margin:24px auto;background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,.07)}
-  .hdr{background:#0d2744;padding:24px 32px;text-align:center}
-  .hdr-logo{color:#f0a500;font-size:20px;font-weight:700;text-decoration:none}
-  .body{padding:32px;color:#374151;font-size:15px;line-height:1.8}
-  .body p{margin:0 0 14px}
-  .cta{text-align:center;margin:24px 0}
-  .cta a{display:inline-block;background:#f0a500;color:#fff!important;padding:12px 32px;border-radius:6px;font-weight:700;text-decoration:none;font-size:15px}
-  .foot{background:#f8fafc;padding:18px 32px;border-top:1px solid #e8edf2;font-size:12px;color:#9ca3af;text-align:center}
-  .foot a{color:#9ca3af}
-</style>
-</head>
-<body>
-<div class="wrap">
-  <div class="hdr"><span class="hdr-logo">{{company_name}}</span></div>
-  <div class="body">
-    <p>Guten Tag {{name}},</p>
-    <p>
-      {ich wollte kurz nachfragen|kurze Rückfrage},
-      {ob das Thema digitale Investitionen für Sie aktuell relevant ist|ob Sie sich aktuell noch mit solchen Themen beschäftigen}.
-    </p>
-    <p>
-      {Falls ja, habe ich hier eine kleine Übersicht|Falls Interesse besteht, finden Sie hier weitere Infos}:
-    </p>
-    <div class="cta">
-      <a href="{{site_url}}">{Details ansehen|Zur Übersicht|Mehr Informationen}</a>
-    </div>
-    <p>Falls nicht, können Sie diese Nachricht einfach ignorieren.</p>
-    <p>
-      Freundliche Grüße<br>
-      {{sender_name}}
-    </p>
-  </div>
-  <div class="foot">
-    <p><a href="{{unsubscribe_url}}">Abmelden</a> &nbsp;|&nbsp;
-       <a href="{{site_url}}/datenschutz">Datenschutz</a> &nbsp;|&nbsp;
-       <a href="{{site_url}}/impressum">Impressum</a></p>
-    <p>{{company_name}}</p>
-    {{open_tracker}}
-  </div>
-</div>
-</body>
-</html>';
-}
-
-function _rotation_template_2_text(): string { return 'Guten Tag {{name}},
-
-{ich wollte kurz nachfragen|kurze Rückfrage}, {ob das Thema digitale Investitionen für Sie aktuell relevant ist|ob Sie sich aktuell noch mit solchen Themen beschäftigen}.
-
-{Falls ja, habe ich hier eine kleine Übersicht|Falls Interesse besteht, finden Sie hier weitere Infos}:
-{{site_url}}
-
-Falls nicht, können Sie diese Nachricht einfach ignorieren.
-
-Freundliche Grüße
-{{sender_name}}
-{{company_name}}
-
-Abmelden: {{unsubscribe_url}}'; }
-
-function _rotation_template_3_html(): string { return '<!DOCTYPE html>
-<html lang="de">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>{{company_name}}</title>
-<style>
-  body{margin:0;padding:0;background:#f2f4f7;font-family:Arial,Helvetica,sans-serif}
-  .wrap{max-width:600px;margin:24px auto;background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,.07)}
-  .hdr{background:#0d2744;padding:24px 32px;text-align:center}
-  .hdr-logo{color:#f0a500;font-size:20px;font-weight:700;text-decoration:none}
-  .body{padding:32px;color:#374151;font-size:15px;line-height:1.8}
-  .body p{margin:0 0 14px}
-  .cta{text-align:center;margin:24px 0}
-  .cta a{display:inline-block;background:#f0a500;color:#fff!important;padding:12px 32px;border-radius:6px;font-weight:700;text-decoration:none;font-size:15px}
-  .foot{background:#f8fafc;padding:18px 32px;border-top:1px solid #e8edf2;font-size:12px;color:#9ca3af;text-align:center}
-  .foot a{color:#9ca3af}
-</style>
-</head>
-<body>
-<div class="wrap">
-  <div class="hdr"><span class="hdr-logo">{{company_name}}</span></div>
-  <div class="body">
-    <p>{Guten Tag|Hallo} {{name}},</p>
-    <p>
-      {ich wollte Ihnen kurz eine Information zukommen lassen|kurze Info für Sie},
-      {die für Sie möglicherweise von Interesse ist|die aktuell viele beschäftigt}.
-    </p>
-    <p>
-      {Darf ich kurz nachfragen, ob das für Sie relevant ist?|Haben Sie dazu bereits eine Einschätzung?|Kurze Frage dazu}
-    </p>
-    <p>
-      {Bezug zu Ihren bisherigen Erfahrungen|Zu einem aktuellen Thema}:
-      {Wir bieten hierzu weiterführende Informationen an|Hier finden Sie alle relevanten Details}.
-    </p>
-    <div class="cta">
-      <a href="{{site_url}}">{Kurze Info ansehen|Mehr dazu erfahren|Zur Übersicht}</a>
-    </div>
-    <p>
-      {Viele Grüße|Mit freundlichen Grüßen}<br>
-      {{sender_name}}<br>
-      {{company_name}}
-    </p>
-  </div>
-  <div class="foot">
-    <p><a href="{{unsubscribe_url}}">Abmelden</a> &nbsp;|&nbsp;
-       <a href="{{site_url}}/datenschutz">Datenschutz</a> &nbsp;|&nbsp;
-       <a href="{{site_url}}/impressum">Impressum</a></p>
-    <p>{{company_name}}</p>
-    {{open_tracker}}
-  </div>
-</div>
-</body>
-</html>';
-}
-
-function _rotation_template_3_text(): string { return '{Guten Tag|Hallo} {{name}},
-
-{ich wollte Ihnen kurz eine Information zukommen lassen|kurze Info für Sie}, {die für Sie möglicherweise von Interesse ist|die aktuell viele beschäftigt}.
-
-{Darf ich kurz nachfragen, ob das für Sie relevant ist?|Haben Sie dazu bereits eine Einschätzung?|Kurze Frage dazu}
-
-{Bezug zu Ihren bisherigen Erfahrungen|Zu einem aktuellen Thema}: {Wir bieten hierzu weiterführende Informationen an|Hier finden Sie alle relevanten Details}.
-
-{Kurze Info ansehen|Mehr dazu erfahren}: {{site_url}}
-
-{Viele Grüße|Mit freundlichen Grüßen}
-{{sender_name}}
-{{company_name}}
-
-Abmelden: {{unsubscribe_url}}'; }

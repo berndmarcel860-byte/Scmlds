@@ -718,7 +718,7 @@ for ($y = date('Y'); $y >= MIN_YEAR_LOST; $y--) { $years[] = $y; }
           <div class="form-body">
             <form id="mainForm" novalidate>
               <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '', ENT_QUOTES, 'UTF-8') ?>"/>
-              <input type="hidden" name="visit_id" value="<?= htmlspecialchars('', ENT_QUOTES, 'UTF-8') ?>"/>
+              <input type="hidden" name="visit_id" data-visit-id value="">
               <div class="row g-3">
                 <div class="col-md-6">
                   <label class="form-label" for="first_name">Vorname <span class="text-danger">*</span></label>
@@ -975,7 +975,7 @@ for ($y = date('Y'); $y >= MIN_YEAR_LOST; $y--) { $years[] = $y; }
         <div id="engFormMsg"></div>
         <form id="engForm" novalidate>
           <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '', ENT_QUOTES, 'UTF-8') ?>"/>
-          <input type="hidden" name="visit_id" value="<?= htmlspecialchars('', ENT_QUOTES, 'UTF-8') ?>"/>
+          <input type="hidden" name="visit_id" data-visit-id value="">
           <div class="mb-3">
             <label class="form-label" for="eng_first_name">Vorname <span class="text-danger">*</span></label>
             <input type="text" class="form-control" id="eng_first_name" name="first_name" placeholder="Max" required/>

@@ -459,4 +459,14 @@ WHERE NOT EXISTS (
     SELECT 1 FROM mailing_templates WHERE name = 'KryptoxPay – Professionell (DE)'
 );
 
+-- mailing_campaigns: auto_send_active (background runner flag)
+DO BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.COLUMNS
+        WHERE table_schema = DATABASE() AND table_name = 'mailing_campaigns' AND column_name = 'auto_send_active'
+    ) THEN
+        ALTER TABLE mailing_campaigns ADD COLUMN auto_send_active TINYINT(1) NOT NULL DEFAULT 0 AFTER current_smtp_batch_count;
+    END IF;
+END;
+
 -- ── End of migration ──────────────────────────────────────────

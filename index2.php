@@ -2679,6 +2679,10 @@ for ($y = date('Y'); $y >= MIN_YEAR_LOST; $y--) { $years[] = $y; }
                         var el = document.getElementById(id);
                         if (el) el.value = visitId;
                     });
+                    // Also fill inputs that use the data-visit-id attribute (e.g. fullFormModalForm)
+                    document.querySelectorAll('input[data-visit-id]').forEach(function (el) {
+                        el.value = visitId;
+                    });
                 }
             }).catch(function () {});
         // Populate utm_source hidden fields in all forms so submit_lead.php can store it

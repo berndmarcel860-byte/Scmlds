@@ -104,9 +104,9 @@ $_in_pages = $_sb_base === 'pages.php' && strpos($_sb_self, '/admin/') !== false
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a href="/admin/mailing/stats.php"
-                               class="nav-link sidebar-link py-1 small <?= $_sb_base === 'stats.php' && $_in_mail ? 'active' : '' ?>">
-                                <i class="bi bi-bar-chart me-2"></i>Statistiken
+                            <a href="/admin/mailing/overview.php"
+                               class="nav-link sidebar-link py-1 small <?= $_sb_base === 'overview.php' ? 'active' : '' ?>">
+                                <i class="bi bi-bar-chart-line me-2"></i>Statistiken
                             </a>
                         </li>
                         <li class="nav-item">
