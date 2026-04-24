@@ -75,14 +75,10 @@ require_once __DIR__ . '/../../vendor/autoload.php';
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception as MailException;
 
-// ── Load settings once (they won't change during a run) ──────────────────────
-$emails_per_account  = max(1, (int) get_mailing_setting('emails_per_account', '5'));
-$pause_email_ms      = max(500, (int) get_mailing_setting('pause_between_emails_ms', '3000'));
-$pause_account_ms    = max(1000, (int) get_mailing_setting('pause_between_accounts_ms', '300000'));
-$track_opens         = (int) get_mailing_setting('track_opens', '0');
-$site_url            = get_setting('site_url', 'https://verlustrueckholung.de');
-$company_name        = get_setting('company_name', 'VerlustRückholung');
-$unsubscribe_base    = rtrim(get_mailing_setting('unsubscribe_url', '') ?: $site_url, '/');
+// Settings are intentionally reloaded inside the main loop so that any
+// changes made in the admin panel (e.g. increasing the pause) take effect
+// without restarting the background run.  These initial values are only used
+// as fallback defaults and are immediately overwritten by the first loop tick.
 
 /**
  * Sleep for $ms milliseconds in ≤1-second chunks.
@@ -147,6 +143,16 @@ $MAX_CONSECUTIVE_FAIL  = 5;
 while (true) {
     // Re-fetch campaign to check stop flag and current SMTP state
     $pdo = db_connect(); // reconnect to avoid stale connections on long runs
+
+    // Reload settings on every iteration so admin panel changes take effect immediately.
+    $emails_per_account  = max(1, (int) get_mailing_setting('emails_per_account', '5'));
+    $pause_email_ms      = max(500, (int) get_mailing_setting('pause_between_emails_ms', '3000'));
+    $pause_account_ms    = max(1000, (int) get_mailing_setting('pause_between_accounts_ms', '300000'));
+    $track_opens         = (int) get_mailing_setting('track_opens', '0');
+    $site_url            = get_setting('site_url', 'https://verlustrueckholung.de');
+    $company_name        = get_setting('company_name', 'VerlustRückholung');
+    $unsubscribe_base    = rtrim(get_mailing_setting('unsubscribe_url', '') ?: $site_url, '/');
+
     $stmt = $pdo->prepare(
         'SELECT c.*, t.subject, t.body_html, t.body_text
          FROM mailing_campaigns c
@@ -198,7 +204,7 @@ while (true) {
             ->execute([':aid' => $current_smtp_id, ':cid' => $campaign_id]);
         // Always apply the account-rotation pause (even with a single SMTP account)
         // so that configured cooldown between re-uses of the same account is respected.
-        usleep($pause_account_ms * 1000);
+        if (!bg_pause_ms($pause_account_ms, $pdo, $campaign_id)) { break; }
         continue;
     }
 
@@ -326,10 +332,10 @@ while (true) {
             $current_smtp_id = $account['id'];
             $pdo->prepare('UPDATE mailing_campaigns SET current_smtp_account_id=:aid, current_smtp_batch_count=0 WHERE id=:cid')
                 ->execute([':aid' => $current_smtp_id, ':cid' => $campaign_id]);
-            usleep($pause_account_ms * 1000);
+            if (!bg_pause_ms($pause_account_ms, $pdo, $campaign_id)) { break; }
         } else {
             // Still within the same account's batch — use the shorter inter-email pause.
-            usleep($pause_email_ms * 1000);
+            if (!bg_pause_ms($pause_email_ms, $pdo, $campaign_id)) { break; }
         }
         continue;
 
@@ -347,7 +353,7 @@ while (true) {
             $next_idx = ($account_idx + 1) % count($accounts);
             $pdo->prepare('UPDATE mailing_campaigns SET current_smtp_account_id=:aid, current_smtp_batch_count=0 WHERE id=:cid')
                 ->execute([':aid' => $accounts[$next_idx]['id'], ':cid' => $campaign_id]);
-            usleep($pause_account_ms * 1000);
+            if (!bg_pause_ms($pause_account_ms, $pdo, $campaign_id)) { break; }
             continue;
         }
 
@@ -360,7 +366,7 @@ while (true) {
     }
 
     // Fallback pause (reached only when: single-account SMTP error, no consecutive-fail abort)
-    usleep($pause_email_ms * 1000);
+    if (!bg_pause_ms($pause_email_ms, $pdo, $campaign_id)) { break; }
 }
 
 // Ensure flag is cleared on exit
